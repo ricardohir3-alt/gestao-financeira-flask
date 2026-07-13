@@ -40,6 +40,4 @@ Siga as instruções abaixo para rodar o projeto na sua máquina:
 ```bash
 git clone [https://github.com/ricardohir3-alt/gestao-financeira-flask.git](https://github.com/ricardohir3-alt/gestao-financeira-flask.git)
 cd gestao-financeira-flask
-```bash
-git clone [https://github.com/ricardohir3-alt/gestao-financeira-flask.git](https://github.com/ricardohir3-alt/gestao-financeira-flask.git)
 cd gestao-financeira-flask
