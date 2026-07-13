@@ -1,0 +1,184 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="px-3 md:px-0 pb-10">
+    
+    <!-- Cabeçalho, Botões e Meta -->
+    <div class="flex flex-col md:flex-row justify-between items-start md:items-center mb-4 md:mb-6 gap-3 md:gap-4">
+        <h2 class="text-lg md:text-2xl font-black text-gray-800 dark:text-gray-100 flex items-center gap-2">
+            <i data-lucide="shopping-bag" class="w-5 h-5 md:w-6 md:h-6 text-blue-500"></i> Lista de Compras
+        </h2>
+        
+        <div class="flex items-center gap-2 w-full md:w-auto">
+            <!-- Botão Exportar -->
+            <a href="/exportar_compras_csv" class="p-2 md:p-2.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl transition-colors shadow-sm" title="Exportar para Excel (CSV)">
+                <i data-lucide="download" class="w-4 h-4"></i>
+            </a>
+
+            <!-- Botão Importar -->
+            <form action="/importar_compras_csv" method="POST" enctype="multipart/form-data" class="m-0" id="form-importar">
+                <input type="file" name="arquivo_csv" id="import-csv" accept=".csv" class="hidden" onchange="iniciarImportacao()">
+                <label for="import-csv" class="cursor-pointer p-2 md:p-2.5 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl transition-colors shadow-sm block" title="Importar Planilha">
+                    <i data-lucide="upload" class="w-4 h-4"></i>
+                </label>
+            </form>
+
+            <!-- Teto -->
+            <form action="/compras" method="POST" class="flex items-center gap-2 bg-white dark:bg-gray-800 p-1.5 rounded-xl border border-gray-100 dark:border-gray-700 shadow-sm flex-1 md:flex-none">
+                <span class="text-[11px] md:text-xs font-bold text-gray-400 uppercase pl-2 whitespace-nowrap">Teto:</span>
+                <input type="number" step="0.01" name="valor_meta" placeholder="Ex: 500.00" value="{{ '%.2f'|format(meta_valor or 0) if meta_valor and meta_valor > 0 else '' }}" required
+                       class="w-full md:w-24 px-2 py-1.5 text-xs md:text-sm bg-gray-50 dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 font-bold text-gray-700 dark:border-gray-200">
+                <button type="submit" class="p-2 md:p-1.5 bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition-colors shadow-sm" title="Salvar Meta">
+                    <i data-lucide="check" class="w-4 h-4"></i>
+                </button>
+            </form>
+        </div>
+    </div>
+
+    <!-- Cards de Resumo -->
+    <div class="grid grid-cols-2 md:grid-cols-3 gap-2 md:gap-4 mb-4 md:mb-6">
+        <div class="bg-white dark:bg-gray-800 p-3 md:p-4 rounded-xl border border-gray-100 dark:border-gray-700 shadow-sm">
+            <span class="block text-[9px] md:text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-0.5 md:mb-1">Limite</span>
+            <span class="text-sm md:text-lg font-black text-gray-700 dark:text-gray-200">R$ {{ "%.2f"|format(meta_valor or 0) }}</span>
+        </div>
+        <div class="bg-white dark:bg-gray-800 p-3 md:p-4 rounded-xl border border-gray-100 dark:border-gray-700 shadow-sm">
+            <span class="block text-[9px] md:text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-0.5 md:mb-1">Total da Lista</span>
+            <span class="text-sm md:text-lg font-black text-blue-600 dark:text-blue-400">R$ {{ "%.2f"|format(total_lista or 0) }}</span>
+        </div>
+        <div class="col-span-2 md:col-span-1 bg-white dark:bg-gray-800 p-3 md:p-4 rounded-xl border border-gray-100 dark:border-gray-700 shadow-sm">
+            <span class="block text-[9px] md:text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-0.5 md:mb-1">Saldo Disponível</span>
+            <span class="text-base md:text-lg font-black {% if (saldo_meta or 0) >= 0 %}text-green-500{% else %}text-red-500{% endif %}">
+                R$ {{ "%.2f"|format(saldo_meta or 0) }}
+            </span>
+        </div>
+    </div>
+
+    <!-- Barra de Progresso -->
+    {% if meta_valor and meta_valor > 0 %}
+    <div class="bg-white dark:bg-gray-800 p-3 md:p-4 rounded-xl border border-gray-100 dark:border-gray-700 shadow-sm mb-4 md:mb-6">
+        <div class="flex justify-between items-center mb-1.5">
+            <span class="text-[11px] md:text-xs font-bold text-gray-500 dark:text-gray-400">Uso do Orçamento</span>
+            <span class="text-[11px] md:text-xs font-black {% if porcentagem_meta > 100 %}text-red-500 animate-pulse{% elif porcentagem_meta >= 80 %}text-amber-500{% else %}text-green-500{% endif %}">
+                {{ porcentagem_meta }}%
+            </span>
+        </div>
+        <div class="w-full bg-gray-100 dark:bg-gray-900 rounded-full h-2 md:h-3 shadow-inner overflow-hidden">
+            <div class="h-full transition-all duration-500 {% if porcentagem_meta > 100 %}bg-red-500{% elif porcentagem_meta >= 80 %}bg-amber-500{% else %}bg-green-500{% endif %}" 
+                 style="width: {% if porcentagem_meta > 100 %}100{% else %}{{ porcentagem_meta }}{% endif %}%"></div>
+        </div>
+    </div>
+    {% endif %}
+
+    <!-- Formulário de Adição -->
+    <div class="bg-white dark:bg-gray-800 p-4 md:p-5 rounded-2xl shadow-sm border border-gray-100 dark:border-gray-700 mb-4 md:mb-6">
+        <h3 class="text-xs md:text-sm font-bold text-gray-700 dark:text-gray-300 mb-3 md:mb-4 flex items-center gap-1.5">
+            <i data-lucide="plus-circle" class="w-4 h-4 text-blue-500"></i> Inserir Item
+        </h3>
+        
+        <form action="/compras" method="POST" id="form-produto">
+            <div class="grid grid-cols-2 md:grid-cols-4 gap-3 md:gap-4 items-end">
+                <div class="col-span-2">
+                    <label class="block text-[9px] md:text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-1">Descrição do Produto</label>
+                    <input type="text" name="descricao" placeholder="Ex: Arroz 5kg..." required
+                           class="w-full px-3 py-2 md:px-4 md:py-2.5 bg-gray-50 dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-xl text-sm text-gray-800 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-blue-500">
+                </div>
+                <div class="col-span-1">
+                    <label class="block text-[9px] md:text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-1">Multiplicador</label>
+                    <input type="number" name="quantidade" id="input-qtd" value="1" min="1" required oninput="calcularPrevia()"
+                           class="w-full px-3 py-2 md:px-4 md:py-2.5 bg-gray-50 dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-xl text-sm text-gray-800 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-blue-500 font-bold text-center">
+                </div>
+                <div class="col-span-1">
+                    <label class="block text-[9px] md:text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-1">Preço (R$)</label>
+                    <input type="number" step="0.01" name="preco" id="input-preco" placeholder="0.00" required oninput="calcularPrevia()"
+                           class="w-full px-3 py-2 md:px-4 md:py-2.5 bg-gray-50 dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-xl text-sm text-gray-800 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-blue-500 font-bold">
+                </div>
+            </div>
+            
+            <div class="mt-3 md:mt-4 pt-3 md:pt-4 border-t border-gray-100 dark:border-gray-700/60 flex flex-row justify-between items-center gap-3">
+                <div class="text-[11px] md:text-xs font-bold text-gray-500 dark:text-gray-400">
+                    Subtotal: <span class="text-xs md:text-sm font-black text-blue-600 dark:text-blue-400 ml-0.5 md:ml-1" id="previa-total">R$ 0.00</span>
+                </div>
+                <button type="submit" class="px-4 py-2 md:px-5 md:py-2.5 bg-gradient-to-r from-blue-600 to-indigo-600 text-white text-[11px] md:text-xs font-bold rounded-xl hover:from-blue-700 hover:to-indigo-700 transition-all shadow-sm flex items-center justify-center gap-1.5">
+                    <i data-lucide="shopping-cart" class="w-3 h-3 md:w-4 md:h-4"></i> Adicionar
+                </button>
+            </div>
+        </form>
+    </div>
+
+    <!-- Tabela de Produtos -->
+    <div class="bg-white dark:bg-gray-800 rounded-2xl border border-gray-100 dark:border-gray-700 overflow-hidden shadow-sm">
+        <div class="overflow-x-auto">
+            <table class="w-full text-left border-collapse whitespace-nowrap md:whitespace-normal">
+                <thead>
+                    <tr class="bg-gray-50/70 dark:bg-gray-900/40 border-b border-gray-100 dark:border-gray-700/70">
+                        <th class="px-3 py-2 md:px-5 md:py-3.5 text-[9px] md:text-[10px] font-bold text-gray-400 uppercase tracking-wider">Produto</th>
+                        <th class="px-3 py-2 md:px-5 md:py-3.5 text-[9px] md:text-[10px] font-bold text-gray-400 uppercase tracking-wider text-center">Qtd</th>
+                        <th class="px-3 py-2 md:px-5 md:py-3.5 text-[9px] md:text-[10px] font-bold text-gray-400 uppercase tracking-wider text-right">Preço Unit.</th>
+                        <th class="px-3 py-2 md:px-5 md:py-3.5 text-[9px] md:text-[10px] font-bold text-gray-400 uppercase tracking-wider text-right">Total</th>
+                        <th class="px-3 py-2 md:px-5 md:py-3.5 text-[9px] md:text-[10px] font-bold text-gray-400 uppercase tracking-wider text-center">Remover</th>
+                    </tr>
+                </thead>
+                <tbody class="divide-y divide-gray-100 dark:divide-gray-700/50 text-xs md:text-sm">
+                    {% for item in itens %}
+                    <tr class="hover:bg-gray-50/50 dark:hover:bg-gray-900/20 transition-colors">
+                        <td class="px-3 py-2 md:px-5 md:py-3.5 font-bold text-gray-800 dark:text-gray-200 truncate max-w-[120px] md:max-w-none" title="{{ item.descricao }}">{{ item.descricao }}</td>
+                        <td class="px-3 py-2 md:px-5 md:py-3.5 text-center font-bold text-gray-500 dark:text-gray-400">× {{ item.quantidade or 1 }}</td>
+                        <td class="px-3 py-2 md:px-5 md:py-3.5 text-right text-gray-600 dark:text-gray-400">R$ {{ "%.2f"|format(item.preco or 0) }}</td>
+                        <td class="px-3 py-2 md:px-5 md:py-3.5 text-right font-black text-gray-700 dark:text-gray-200">R$ {{ "%.2f"|format(item.total_item or 0) }}</td>
+                        <td class="px-3 py-2 md:px-5 md:py-3.5 text-center">
+                            <form action="/excluir_compra/{{ item.id }}" method="POST" class="m-0" onsubmit="return confirm('Remover este item?');">
+                                <button type="submit" class="p-1 md:p-1.5 text-gray-400 hover:text-red-500 dark:hover:text-red-400 rounded transition-colors bg-gray-50 hover:bg-red-50 dark:bg-gray-800 dark:hover:bg-red-900/20">
+                                    <i data-lucide="trash-2" class="w-3.5 h-3.5 md:w-4 md:h-4 mx-auto"></i>
+                                </button>
+                            </form>
+                        </td>
+                    </tr>
+                    {% else %}
+                    <tr>
+                        <td colspan="5" class="px-5 py-8 md:py-10 text-center text-[11px] md:text-xs text-gray-400 font-medium">
+                            Carrinho vazio. Use o formulário acima para adicionar produtos.
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+<script>
+    lucide.createIcons();
+
+    function calcularPrevia() {
+        const qtdInput = document.getElementById('input-qtd').value;
+        const precoInput = document.getElementById('input-preco').value;
+        const previaSpan = document.getElementById('previa-total');
+
+        const qtd = parseInt(qtdInput) || 0;
+        const preco = floatParse(precoInput);
+
+        const total = qtd * preco;
+        previaSpan.innerText = 'R$ ' + total.toFixed(2);
+    }
+
+    function floatParse(val) {
+        if (!val) return 0;
+        const num = parseFloat(String(val).replace(',', '.'));
+        return isNaN(num) ? 0 : num;
+    }
+
+    // Feedback visual ao importar CSV (ícone vira ampulheta girando)
+    function iniciarImportacao() {
+        const input = document.getElementById('import-csv');
+        if (!input.files || input.files.length === 0) return;
+
+        // Troca o botão para estado de carregamento
+        const label = document.querySelector('label[for="import-csv"]');
+        label.innerHTML = '<i data-lucide="loader-2" class="w-4 h-4 animate-spin"></i>';
+        label.classList.add('pointer-events-none', 'opacity-70');
+        
+        lucide.createIcons();
+        document.getElementById('form-importar').submit();
+    }
+</script>
+{% endblock %}

@@ -1,0 +1,84 @@
+{% extends "base.html" %}
+
+{% block content %}
+    <a href="javascript:history.back()" class="flex items-center gap-1 text-gray-500 hover:text-blue-600 dark:text-gray-400 dark:hover:text-blue-400 mb-6 transition-colors text-sm font-medium w-fit">
+        <i data-lucide="arrow-left" class="w-4 h-4"></i>
+        <span>Voltar</span>
+    </a>
+
+    <div class="mb-8">
+        <h2 class="text-2xl font-black text-gray-800 dark:text-white flex items-center gap-2">
+            <i data-lucide="user" class="w-6 h-6 text-blue-600 dark:text-blue-400"></i> Meu Perfil
+        </h2>
+        <p class="text-sm text-gray-500 dark:text-gray-400 mt-1">Gerencie suas informações pessoais e segurança.</p>
+    </div>
+
+    <!-- Header do Perfil -->
+    <div class="bg-white dark:bg-gray-800 rounded-2xl p-6 shadow-sm border border-gray-100 dark:border-gray-700 mb-6 flex items-center gap-5">
+        <div class="w-20 h-20 bg-gradient-to-br from-blue-500 to-indigo-600 rounded-full flex items-center justify-center text-white text-3xl font-black shadow-lg border-4 border-white dark:border-gray-900">
+            {{ nome_usuario[:1].upper() }}
+        </div>
+        <div>
+            <h3 class="text-xl font-bold text-gray-900 dark:text-white">{{ nome_usuario }}</h3>
+            <span class="inline-flex items-center gap-1 mt-1 px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-green-100 text-green-700 dark:bg-green-900/40 dark:text-green-400">
+                <i data-lucide="shield-check" class="w-3 h-3"></i> Conta Ativa
+            </span>
+        </div>
+    </div>
+
+    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+        <!-- Bloco de Dados Pessoais -->
+        <div class="bg-white dark:bg-gray-800 rounded-2xl shadow-sm border border-gray-100 dark:border-gray-700 overflow-hidden">
+            <div class="px-5 py-4 border-b border-gray-100 dark:border-gray-700 bg-gray-50/50 dark:bg-gray-900/50">
+                <h4 class="text-sm font-bold text-gray-700 dark:text-gray-200 flex items-center gap-2">
+                    <i data-lucide="contact" class="w-4 h-4 text-gray-400"></i> Informações da Conta
+                </h4>
+            </div>
+            <div class="p-5">
+                <form action="#" method="POST" class="space-y-4">
+                    <div>
+                        <label class="block text-xs font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wide mb-1.5">Nome de Usuário</label>
+                        <div class="relative">
+                            <i data-lucide="user" class="absolute left-3 top-2.5 w-4 h-4 text-gray-400"></i>
+                            <input type="text" name="nome" value="{{ nome_usuario }}" readonly
+                                   class="w-full pl-9 pr-3 py-2 bg-gray-100 dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-lg text-sm font-medium text-gray-600 dark:text-gray-400 cursor-not-allowed focus:ring-0">
+                        </div>
+                        <p class="text-[10px] text-gray-400 mt-1.5">* O nome de usuário atual não pode ser alterado.</p>
+                    </div>
+                </form>
+            </div>
+        </div>
+
+        <!-- Bloco de Segurança (Senha) -->
+        <div class="bg-white dark:bg-gray-800 rounded-2xl shadow-sm border border-gray-100 dark:border-gray-700 overflow-hidden">
+            <div class="px-5 py-4 border-b border-gray-100 dark:border-gray-700 bg-gray-50/50 dark:bg-gray-900/50">
+                <h4 class="text-sm font-bold text-gray-700 dark:text-gray-200 flex items-center gap-2">
+                    <i data-lucide="lock" class="w-4 h-4 text-gray-400"></i> Segurança
+                </h4>
+            </div>
+            <div class="p-5">
+                <form action="#" method="POST" class="space-y-4">
+                    <div>
+                        <label class="block text-xs font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wide mb-1.5">Nova Senha</label>
+                        <div class="relative">
+                            <i data-lucide="key" class="absolute left-3 top-2.5 w-4 h-4 text-gray-400"></i>
+                            <input type="password" name="nova_senha" placeholder="••••••••"
+                                   class="w-full pl-9 pr-3 py-2 bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-lg text-sm font-medium focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none transition-all">
+                        </div>
+                    </div>
+                    <div>
+                        <label class="block text-xs font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wide mb-1.5">Confirmar Nova Senha</label>
+                        <div class="relative">
+                            <i data-lucide="key" class="absolute left-3 top-2.5 w-4 h-4 text-gray-400"></i>
+                            <input type="password" name="confirmar_senha" placeholder="••••••••"
+                                   class="w-full pl-9 pr-3 py-2 bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-lg text-sm font-medium focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none transition-all">
+                        </div>
+                    </div>
+                    <button type="button" onclick="alert('Funcionalidade de alteração de senha em desenvolvimento.')" class="w-full bg-gray-800 dark:bg-gray-100 text-white dark:text-gray-900 font-bold py-2.5 rounded-lg text-sm hover:bg-gray-900 dark:hover:bg-white transition-all shadow-sm">
+                        Atualizar Senha
+                    </button>
+                </form>
+            </div>
+        </div>
+    </div>
+{% endblock %}

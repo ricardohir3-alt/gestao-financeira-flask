@@ -1,0 +1,131 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="max-w-md mx-auto mt-2 pb-10">
+    <!-- Botão Voltar -->
+    <a href="javascript:history.back()" class="flex items-center gap-1 text-gray-500 hover:text-blue-600 dark:text-gray-400 dark:hover:text-blue-400 mb-6 transition-colors text-sm font-medium">
+        <i data-lucide="arrow-left" class="w-4 h-4"></i>
+        <span>Voltar</span>
+    </a>
+
+    <!-- Título -->
+    <h2 class="text-xl font-bold mb-8 text-gray-800 dark:text-gray-200 flex items-center gap-2">
+        <div class="p-2 bg-blue-100 dark:bg-blue-900/50 rounded-lg">
+            <i data-lucide="bell" class="w-5 h-5 text-blue-600 dark:text-blue-400"></i>
+        </div>
+        Histórico de Atualizações
+    </h2>
+
+    <!-- Linha do Tempo -->
+    <div class="relative border-l-2 border-gray-200 dark:border-gray-700 ml-3">
+
+        <!-- ================= VERSÃO 1.5.2 (ATUAL/DESTAQUE) ================= -->
+        <div class="mb-8 ml-6 relative">
+            <span class="absolute flex items-center justify-center w-8 h-8 bg-emerald-100 rounded-full -left-[41px] top-0 ring-4 ring-white dark:ring-gray-900 dark:bg-emerald-900 shadow-sm">
+                <i data-lucide="database-sync" class="w-4 h-4 text-emerald-600 dark:text-emerald-400"></i>
+            </span>
+            <div class="bg-white dark:bg-gray-800 p-5 rounded-xl border-2 border-emerald-500/30 shadow-md relative overflow-hidden">
+                <div class="absolute top-0 right-0 w-16 h-16 bg-emerald-500/10 rounded-bl-full -z-10"></div>
+                <div class="flex justify-between items-center mb-2">
+                    <span class="text-base font-black text-gray-800 dark:text-gray-100">Versão 1.5.2</span>
+                    <span class="px-2.5 py-1 text-[10px] uppercase tracking-wider font-bold bg-emerald-600 text-white rounded-md shadow-sm">Recente</span>
+                </div>
+                <p class="text-xs font-medium text-emerald-600 dark:text-emerald-400 mb-3">{{ data_atual }}</p>
+                <ul class="space-y-2 text-sm text-gray-600 dark:text-gray-300">
+                    <li class="flex items-start gap-2">
+                        <i data-lucide="check-circle-2" class="w-4 h-4 text-emerald-500 mt-0.5 shrink-0"></i>
+                        <span><strong>Sincronização (Xerox):</strong> Exportação e Importação via CSV para trabalho offline.</span>
+                    </li>
+                    <li class="flex items-start gap-2">
+                        <i data-lucide="check-circle-2" class="w-4 h-4 text-emerald-500 mt-0.5 shrink-0"></i>
+                        <span><strong>Central de Logs:</strong> Novo módulo para rastreio e histórico de erros.</span>
+                    </li>
+                    <li class="flex items-start gap-2">
+                        <i data-lucide="check-circle-2" class="w-4 h-4 text-emerald-500 mt-0.5 shrink-0"></i>
+                        <span><strong>Diagnóstico IA:</strong> Integração com Gemini para análise automática de falhas.</span>
+                    </li>
+                </ul>
+            </div>
+        </div>
+
+        <!-- ================= VERSÃO 1.5.1 ================= -->
+        <div class="mb-8 ml-6 relative">
+            <span class="absolute flex items-center justify-center w-8 h-8 bg-indigo-100 rounded-full -left-[41px] top-0 ring-4 ring-white dark:ring-gray-900 dark:bg-indigo-900 shadow-sm">
+                <i data-lucide="sparkles" class="w-4 h-4 text-indigo-600 dark:text-indigo-400"></i>
+            </span>
+            <div class="bg-white dark:bg-gray-800 p-5 rounded-xl border border-gray-200 dark:border-gray-700 shadow-sm">
+                <div class="flex justify-between items-center mb-2">
+                    <span class="text-base font-black text-gray-800 dark:text-gray-100">Versão 1.5.1</span>
+                </div>
+                <p class="text-xs font-medium text-indigo-600 dark:text-indigo-400 mb-3">Julho 2026</p>
+                <ul class="space-y-2 text-sm text-gray-600 dark:text-gray-300">
+                    <li class="flex items-start gap-2">
+                        <i data-lucide="check-circle-2" class="w-4 h-4 text-indigo-500 mt-0.5 shrink-0"></i>
+                        <span><strong>Fricção Zero (OCR):</strong> Importação de comprovantes via prints/imagens.</span>
+                    </li>
+                    <li class="flex items-start gap-2">
+                        <i data-lucide="check-circle-2" class="w-4 h-4 text-indigo-500 mt-0.5 shrink-0"></i>
+                        <span><strong>Metas Dinâmicas:</strong> Orçamento por categoria com alertas.</span>
+                    </li>
+                </ul>
+            </div>
+        </div>
+
+        <!-- ================= VERSÃO 1.5.0 ================= -->
+        <div class="mb-8 ml-6 relative">
+            <span class="absolute flex items-center justify-center w-8 h-8 bg-blue-100 rounded-full -left-[41px] top-0 ring-4 ring-white dark:ring-gray-900 dark:bg-blue-900 shadow-sm">
+                <i data-lucide="bot" class="w-4 h-4 text-blue-600 dark:text-blue-400"></i>
+            </span>
+            <div class="bg-white dark:bg-gray-800 p-5 rounded-xl border border-gray-200 dark:border-gray-700 shadow-sm">
+                <div class="flex justify-between items-center mb-2">
+                    <span class="text-base font-black text-gray-800 dark:text-gray-100">Versão 1.5.0</span>
+                </div>
+                <p class="text-xs font-medium text-blue-600 dark:text-blue-400 mb-3">Julho 2026</p>
+                <ul class="space-y-2 text-sm text-gray-600 dark:text-gray-300">
+                    <li class="flex items-start gap-2">
+                        <i data-lucide="check-circle-2" class="w-4 h-4 text-blue-500 mt-0.5 shrink-0"></i>
+                        <span><strong>Integração IA (hir3):</strong> Atendimento automatizado via WhatsApp.</span>
+                    </li>
+                    <li class="flex items-start gap-2">
+                        <i data-lucide="check-circle-2" class="w-4 h-4 text-blue-500 mt-0.5 shrink-0"></i>
+                        <span><strong>Processamento Natural:</strong> Motor Gemini para análise de gastos.</span>
+                    </li>
+                </ul>
+            </div>
+        </div>
+
+        <!-- ================= VERSÃO 1.4.9 ================= -->
+        <div class="mb-8 ml-6 relative">
+            <span class="absolute flex items-center justify-center w-6 h-6 bg-green-100 rounded-full -left-[37px] top-1 ring-4 ring-white dark:ring-gray-900 dark:bg-green-900">
+                <span class="text-green-600 dark:text-green-400 text-xs font-bold">✓</span>
+            </span>
+            <div class="bg-white dark:bg-gray-800/80 p-4 rounded-xl border border-gray-200 dark:border-gray-700 shadow-sm">
+                <div class="flex justify-between items-center mb-1">
+                    <span class="text-sm font-bold text-gray-800 dark:text-gray-200">Versão 1.4.9</span>
+                </div>
+                <p class="text-xs text-gray-400 mb-3">Julho 2026</p>
+                <ul class="space-y-1.5 text-xs text-gray-600 dark:text-gray-400 list-disc pl-4">
+                    <li><strong>Módulos Isolados:</strong> Separação entre despesas e dívidas.</li>
+                    <li><strong>Estabilidade:</strong> Migração para tabela <code>lista_compras</code>.</li>
+                </ul>
+            </div>
+        </div>
+
+        <!-- VERSÕES ANTERIORES -->
+        <div class="mb-4 ml-6 relative opacity-60 hover:opacity-100 transition-opacity">
+             <span class="absolute flex items-center justify-center w-5 h-5 bg-gray-200 rounded-full -left-[35px] top-1.5 ring-4 ring-white dark:ring-gray-900 dark:bg-gray-700">
+                <div class="w-2 h-2 bg-gray-400 rounded-full"></div>
+            </span>
+            <div class="bg-gray-50 dark:bg-gray-800/50 p-4 rounded-xl border border-gray-100 dark:border-gray-700/50">
+                <h3 class="text-sm font-bold text-gray-700 dark:text-gray-300">Versões Anteriores (1.4.5 - 1.4.8)</h3>
+                <p class="text-xs text-gray-500 dark:text-gray-400">Implementação de PWA, login App-like e amortização de dívidas.</p>
+            </div>
+        </div>
+
+    </div>
+</div>
+
+<script>
+    lucide.createIcons();
+</script>
+{% endblock %}

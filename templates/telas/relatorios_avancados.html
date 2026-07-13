@@ -1,0 +1,292 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="max-w-3xl mx-auto px-3 md:px-0 pb-12 mt-2 md:mt-4">
+    
+    <!-- Botão Voltar -->
+    <a href="javascript:history.back()" class="flex items-center gap-1 text-gray-500 hover:text-blue-600 dark:text-gray-400 dark:hover:text-blue-400 mb-4 transition-colors text-sm font-medium w-fit">
+        <i data-lucide="arrow-left" class="w-4 h-4"></i>
+        <span>Voltar ao Início</span>
+    </a>
+
+    <!-- Header Premium -->
+    <div class="flex flex-col md:flex-row justify-between gap-4 mb-5 md:mb-6 bg-gradient-to-r from-indigo-600 to-blue-600 p-4 md:p-5 rounded-2xl shadow-lg shadow-blue-500/20 text-white relative overflow-hidden">
+        <!-- Efeito de brilho no fundo -->
+        <div class="absolute top-0 right-0 -mt-4 -mr-4 w-24 h-24 bg-white opacity-10 rounded-full blur-2xl"></div>
+        
+        <div class="relative z-10">
+            <h2 class="text-lg md:text-xl font-black flex items-center gap-2">
+                <i data-lucide="bar-chart-2" class="w-5 h-5 text-yellow-300"></i> Relatório Premium
+            </h2>
+            <p class="text-[11px] md:text-xs font-medium opacity-80 mt-0.5">Visão consolidada e inteligência de dados</p>
+        </div>
+
+        <div class="flex flex-row gap-2 w-full md:w-auto relative z-10">
+            <form action="/relatorios_avancados" method="GET" class="flex-1 md:flex-none flex items-center gap-2 bg-white/20 backdrop-blur-md px-3 py-2 rounded-xl border border-white/20">
+                <i data-lucide="calendar" class="w-4 h-4 text-white"></i>
+                <input type="month" name="mes" value="{{ mes_filtro }}" onchange="this.form.submit()"
+                       class="bg-transparent border-none text-white focus:ring-0 cursor-pointer text-xs md:text-sm font-bold p-0 w-full outline-none [&::-webkit-calendar-picker-indicator]:invert">
+            </form>
+            
+            <button onclick="gerarPDF()" id="btn-exportar" class="flex items-center justify-center gap-1.5 bg-white text-indigo-600 px-3 py-2 rounded-xl text-xs md:text-sm font-bold hover:bg-gray-50 transition-colors shadow-sm whitespace-nowrap">
+                <i data-lucide="download" class="w-4 h-4"></i> <span class="hidden md:inline">Exportar</span> PDF
+            </button>
+        </div>
+    </div>
+
+    <!-- Área de Captura do PDF -->
+    <div id="conteudo-relatorio">
+
+        <!-- Título Oculto (Só aparece no PDF gerado) -->
+        <div class="hidden print-title mb-6 text-center">
+            <h1 class="text-2xl font-black text-gray-800 dark:text-white">Fechamento Financeiro</h1>
+            <p class="text-sm font-bold text-gray-500">Mês de Referência: {{ mes_filtro[5:7] }}/{{ mes_filtro[0:4] }}</p>
+            <div class="w-16 h-1 bg-indigo-500 mx-auto mt-2 rounded-full"></div>
+        </div>
+
+        <!-- Seção de Gráficos -->
+        <div class="bg-white dark:bg-gray-800 p-3 md:p-4 rounded-2xl shadow-sm border border-gray-100 dark:border-gray-700 mb-4 html2pdf-graficos">
+            <div class="flex bg-gray-50 dark:bg-gray-900/50 rounded-xl p-1 mb-3 botoes-abas border border-gray-100 dark:border-gray-800">
+                <button onclick="mostrarGrafico('ondas')" id="btn-ondas" class="flex-1 py-2 text-[11px] md:text-xs font-bold rounded-lg bg-white dark:bg-gray-800 shadow-sm text-blue-600 dark:text-blue-400 transition-all flex justify-center items-center gap-1.5 border border-gray-100 dark:border-gray-700">
+                    <i data-lucide="trending-up" class="w-3.5 h-3.5"></i> Curva de Gastos
+                </button>
+                <button onclick="mostrarGrafico('donut')" id="btn-donut" class="flex-1 py-2 text-[11px] md:text-xs font-bold rounded-lg text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200 transition-all flex justify-center items-center gap-1.5">
+                    <i data-lucide="pie-chart" class="w-3.5 h-3.5"></i> Por Categoria
+                </button>
+            </div>
+
+            <div id="container-ondas">
+                {% if valores_grafico %}
+                    <div id="grafico-ondas"></div>
+                {% else %}
+                    <div class="flex flex-col items-center justify-center h-48 text-gray-400 dark:text-gray-500 bg-gray-50/50 dark:bg-gray-900/20 rounded-xl border border-dashed border-gray-200 dark:border-gray-700">
+                        <i data-lucide="bar-chart-2" class="w-8 h-8 mb-2 opacity-50"></i>
+                        <p class="text-[11px] md:text-xs font-medium">Nenhum dado financeiro neste mês.</p>
+                    </div>
+                {% endif %}
+            </div>
+
+            <div id="container-donut" class="hidden">
+                {% if valores_categorias %}
+                    <div id="grafico-donut" class="flex justify-center"></div>
+                {% else %}
+                    <div class="flex flex-col items-center justify-center h-48 text-gray-400 dark:text-gray-500 bg-gray-50/50 dark:bg-gray-900/20 rounded-xl border border-dashed border-gray-200 dark:border-gray-700">
+                        <i data-lucide="pie-chart" class="w-8 h-8 mb-2 opacity-50"></i>
+                        <p class="text-[11px] md:text-xs font-medium">Nenhuma categoria encontrada.</p>
+                    </div>
+                {% endif %}
+            </div>
+        </div>
+
+        <!-- Métricas Rápidas -->
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-3 md:gap-4 mb-4 md:mb-5">
+            <div class="bg-white dark:bg-gray-800 p-3.5 md:p-5 rounded-2xl shadow-sm border border-gray-100 dark:border-gray-700">
+                <p class="text-[11px] md:text-xs font-bold text-gray-700 dark:text-gray-300 mb-3 md:mb-4 flex items-center gap-1.5 border-b border-gray-50 dark:border-gray-700/50 pb-2">
+                    <i data-lucide="calendar-days" class="w-4 h-4 text-indigo-500"></i> Distribuição Quinzenal
+                </p>
+                <div class="mb-3.5">
+                    <div class="flex justify-between text-[10px] md:text-xs mb-1 font-bold"><span class="text-gray-500 dark:text-gray-400">1ª Quinzena</span><span class="text-blue-500">{{ perc_q1 }}%</span></div>
+                    <div class="w-full bg-gray-100 dark:bg-gray-900 rounded-full h-1.5 md:h-2 overflow-hidden"><div class="bg-blue-500 h-full rounded-full transition-all" style="width: {{ perc_q1 }}%"></div></div>
+                </div>
+                <div>
+                    <div class="flex justify-between text-[10px] md:text-xs mb-1 font-bold"><span class="text-gray-500 dark:text-gray-400">2ª Quinzena</span><span class="text-indigo-500">{{ perc_q2 }}%</span></div>
+                    <div class="w-full bg-gray-100 dark:bg-gray-900 rounded-full h-1.5 md:h-2 overflow-hidden"><div class="bg-indigo-500 h-full rounded-full transition-all" style="width: {{ perc_q2 }}%"></div></div>
+                </div>
+            </div>
+
+            <div class="bg-white dark:bg-gray-800 p-3.5 md:p-5 rounded-2xl shadow-sm border border-gray-100 dark:border-gray-700">
+                <p class="text-[11px] md:text-xs font-bold text-gray-700 dark:text-gray-300 mb-3 md:mb-4 flex items-center gap-1.5 border-b border-gray-50 dark:border-gray-700/50 pb-2">
+                    <i data-lucide="check-circle-2" class="w-4 h-4 text-emerald-500"></i> Eficiência de Pagamentos
+                </p>
+                <div class="mb-3.5">
+                    <div class="flex justify-between text-[10px] md:text-xs mb-1 font-bold"><span class="text-gray-500 dark:text-gray-400">Pagos</span><span class="text-emerald-500">{{ perc_pago }}%</span></div>
+                    <div class="w-full bg-gray-100 dark:bg-gray-900 rounded-full h-1.5 md:h-2 overflow-hidden"><div class="bg-emerald-500 h-full rounded-full transition-all" style="width: {{ perc_pago }}%"></div></div>
+                </div>
+                <div>
+                    <div class="flex justify-between text-[10px] md:text-xs mb-1 font-bold"><span class="text-gray-500 dark:text-gray-400">Pendentes</span><span class="text-amber-500">{{ perc_pendente }}%</span></div>
+                    <div class="w-full bg-gray-100 dark:bg-gray-900 rounded-full h-1.5 md:h-2 overflow-hidden"><div class="bg-amber-400 h-full rounded-full transition-all" style="width: {{ perc_pendente }}%"></div></div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Top 3 Gastos -->
+        <div class="bg-white dark:bg-gray-800 p-4 md:p-5 rounded-2xl shadow-sm border border-gray-100 dark:border-gray-700 mb-4 md:mb-5">
+            <p class="text-[11px] md:text-xs font-bold text-gray-700 dark:text-gray-300 mb-3 flex items-center gap-1.5 border-b border-gray-50 dark:border-gray-700/50 pb-2">
+                <i data-lucide="trending-down" class="w-4 h-4 text-rose-500"></i> Top 3 Maiores Despesas
+            </p>
+            <div class="space-y-2.5">
+                {% for gasto in top3_gastos %}
+                <div class="flex justify-between items-center bg-gray-50 dark:bg-gray-900/50 p-2.5 md:p-3 rounded-xl border border-gray-100 dark:border-gray-700/60 transition-colors hover:bg-rose-50/50 dark:hover:bg-rose-900/10">
+                    <div class="flex items-center gap-2 md:gap-3">
+                        <div class="w-6 h-6 md:w-7 md:h-7 rounded-lg bg-rose-100 dark:bg-rose-900/30 flex justify-center items-center text-rose-600 text-[10px] md:text-xs font-black shadow-sm">
+                            {{ loop.index }}
+                        </div>
+                        <span class="text-[11px] md:text-sm font-bold text-gray-700 dark:text-gray-200 truncate w-32 md:w-48">{{ gasto.descricao }}</span>
+                    </div>
+                    <span class="text-xs md:text-sm font-black text-rose-600 dark:text-rose-400">R$ {{ "%.2f"|format(gasto.valor) }}</span>
+                </div>
+                {% else %}
+                <div class="text-center py-5 text-[11px] md:text-xs text-gray-400 font-medium">Nenhum gasto registrado para formar o ranking.</div>
+                {% endfor %}
+            </div>
+        </div>
+
+        <!-- Amortização de Dívidas -->
+        <div class="bg-white dark:bg-gray-800 p-4 md:p-5 rounded-2xl shadow-sm border border-purple-100 dark:border-purple-900/30 mb-4 md:mb-5">
+            <p class="text-[11px] md:text-xs font-bold text-gray-700 dark:text-gray-300 mb-4 flex items-center gap-1.5 border-b border-purple-50 dark:border-purple-900/20 pb-2">
+                <i data-lucide="layers" class="w-4 h-4 text-purple-600"></i> Progresso de Contratos e Dívidas
+            </p>
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-3 md:gap-4">
+                {% for d in dividas %}
+                <div class="bg-white dark:bg-gray-800 p-3.5 md:p-4 rounded-xl border border-gray-100 dark:border-gray-700 shadow-sm relative overflow-hidden group">
+                    <div class="flex justify-between items-start mb-2.5">
+                        <div class="pr-2">
+                            <h4 class="text-xs md:text-sm font-bold text-gray-800 dark:text-gray-100 truncate w-36 md:w-48" title="{{ d.descricao }}">{{ d.descricao }}</h4>
+                            <p class="text-[9px] md:text-[10px] text-gray-500 font-medium mt-0.5">Parcela: <strong class="text-gray-700 dark:text-gray-300">R$ {{ "%.2f"|format(d.valor_parcela) }}</strong></p>
+                        </div>
+                    </div>
+
+                    <div class="mt-2 pt-2.5 border-t border-gray-50 dark:border-gray-700/50">
+                        <div class="flex justify-between text-[9px] md:text-[10px] font-bold mb-1.5">
+                            <span class="text-purple-600 dark:text-purple-400">{{ d.parcelas_pagas }} pagas</span>
+                            <span class="text-gray-400">de {{ d.total_parcelas }}</span>
+                        </div>
+                        
+                        <div class="w-full bg-gray-100 dark:bg-gray-700 rounded-full h-1.5 md:h-2 overflow-hidden mb-2">
+                            <div class="bg-gradient-to-r from-purple-500 to-indigo-500 h-full rounded-full transition-all duration-1000" style="width: {{ d.perc_paga }}%"></div>
+                        </div>
+                        
+                        <div class="flex justify-between items-center mt-2">
+                            <span class="text-[9px] md:text-[10px] text-gray-400 font-medium">{{ d.perc_paga }}% Concluído</span>
+                            <span class="text-[9px] md:text-[10px] text-gray-500 font-black uppercase tracking-wider">Restante: <span class="text-gray-700 dark:text-gray-300">R$ {{ "%.2f"|format(d.saldo_restante) }}</span></span>
+                        </div>
+                    </div>
+                </div>
+                {% else %}
+                <div class="col-span-full text-center py-6 text-[11px] md:text-xs text-gray-400 font-medium bg-gray-50/50 dark:bg-gray-900/20 rounded-xl border border-dashed border-gray-200 dark:border-gray-700">
+                    Nenhum contrato a longo prazo registrado no sistema.
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+
+        <!-- Reservas e Objetivos -->
+        <div class="bg-white dark:bg-gray-800 p-4 md:p-5 rounded-2xl shadow-sm border border-blue-100 dark:border-blue-900/30">
+            <p class="text-[11px] md:text-xs font-bold text-gray-700 dark:text-gray-300 mb-4 flex items-center gap-1.5 border-b border-blue-50 dark:border-blue-900/20 pb-2">
+                <i data-lucide="target" class="w-4 h-4 text-blue-500"></i> Suas Reservas e Metas
+            </p>
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-3 md:gap-4">
+                {% for r in reservas %}
+                {% set porcentagem = 0 %}
+                {% if r.meta > 0 %}
+                    {% set porcentagem = (r.guardado / r.meta * 100) | round(1) %}
+                {% endif %}
+                {% if porcentagem > 100 %}{% set porcentagem = 100 %}{% endif %}
+
+                <div class="bg-white dark:bg-gray-800 p-3.5 md:p-4 rounded-xl border border-gray-100 dark:border-gray-700 shadow-sm relative overflow-hidden group">
+                    <div class="flex justify-between items-start mb-2.5">
+                        <div class="pr-2">
+                            <h4 class="text-xs md:text-sm font-bold text-gray-800 dark:text-gray-100 truncate w-36 md:w-48" title="{{ r.nome }}">{{ r.nome }}</h4>
+                            <p class="text-[9px] md:text-[10px] text-gray-500 font-medium mt-0.5">Meta Final: <strong class="text-gray-700 dark:text-gray-300">R$ {{ "%.2f"|format(r.meta) }}</strong></p>
+                        </div>
+                    </div>
+
+                    <div class="mt-2 pt-2.5 border-t border-gray-50 dark:border-gray-700/50">
+                        <div class="w-full bg-gray-100 dark:bg-gray-700 rounded-full h-1.5 md:h-2 overflow-hidden mb-2">
+                            <div class="bg-gradient-to-r from-blue-500 to-cyan-400 h-full rounded-full transition-all duration-1000" style="width: {{ porcentagem }}%"></div>
+                        </div>
+                        
+                        <div class="flex justify-between items-center mt-2">
+                            <span class="text-[9px] md:text-[10px] text-gray-400 font-medium">{{ porcentagem }}% Alcançado</span>
+                            <span class="text-[9px] md:text-[10px] text-gray-500 font-black uppercase tracking-wider">Guardado: <span class="text-blue-600 dark:text-blue-400">R$ {{ "%.2f"|format(r.guardado) }}</span></span>
+                        </div>
+                    </div>
+                </div>
+                {% else %}
+                <div class="col-span-full text-center py-6 text-[11px] md:text-xs text-gray-400 font-medium bg-gray-50/50 dark:bg-gray-900/20 rounded-xl border border-dashed border-gray-200 dark:border-gray-700">
+                    Nenhuma reserva ou objetivo financeiro registrado.
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+
+    </div>
+
+    <!-- Scripts Otimizados -->
+    <script src="https://cdn.jsdelivr.net/npm/apexcharts"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
+
+    <script>
+        document.addEventListener("DOMContentLoaded", function() {
+            lucide.createIcons();
+            const isDarkMode = document.documentElement.classList.contains('dark');
+            const textColor = isDarkMode ? '#9ca3af' : '#6b7280';
+
+            {% if valores_grafico %}
+            var optionsOndas = { series: [{ name: 'Gastos', data: {{ valores_grafico | tojson }} }], chart: { type: 'area', height: window.innerWidth < 768 ? 180 : 220, toolbar: { show: false }, background: 'transparent' }, colors: ['#4f46e5'], stroke: { curve: 'smooth', width: 2.5 }, fill: { type: 'gradient', gradient: { shadeIntensity: 1, opacityFrom: 0.4, opacityTo: 0.05, stops: [0, 90, 100] } }, xaxis: { categories: {{ dias_grafico | tojson }}, labels: { style: { colors: textColor, fontSize: '9px' } } }, yaxis: { show: false }, theme: { mode: isDarkMode ? 'dark' : 'light' } };
+            new ApexCharts(document.querySelector("#grafico-ondas"), optionsOndas).render();
+            {% endif %}
+
+            {% if valores_categorias %}
+            var optionsDonut = { series: {{ valores_categorias | tojson }}, labels: {{ labels_categorias | tojson }}, chart: { type: 'donut', height: window.innerWidth < 768 ? 200 : 240, background: 'transparent' }, legend: { position: 'bottom', fontSize: '10px', markers: { width: 8, height: 8 }, labels: { colors: textColor } }, stroke: { width: 1, colors: isDarkMode ? ['#1f2937'] : ['#ffffff'] }, theme: { mode: isDarkMode ? 'dark' : 'light' } };
+            new ApexCharts(document.querySelector("#grafico-donut"), optionsDonut).render();
+            {% endif %}
+        });
+
+        function mostrarGrafico(tipo) {
+            const btnOndas = document.getElementById('btn-ondas');
+            const btnDonut = document.getElementById('btn-donut');
+            const contOndas = document.getElementById('container-ondas');
+            const contDonut = document.getElementById('container-donut');
+            const classeAtiva = "flex-1 py-2 text-[11px] md:text-xs font-bold rounded-lg bg-white dark:bg-gray-800 shadow-sm text-blue-600 dark:text-blue-400 transition-all flex justify-center items-center gap-1.5 border border-gray-100 dark:border-gray-700";
+            const classeInativa = "flex-1 py-2 text-[11px] md:text-xs font-bold rounded-lg text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200 transition-all flex justify-center items-center gap-1.5 border border-transparent";
+
+            if (tipo === 'ondas') {
+                btnOndas.className = classeAtiva;
+                btnDonut.className = classeInativa;
+                contOndas.classList.remove('hidden');
+                contDonut.classList.add('hidden');
+            } else {
+                btnDonut.className = classeAtiva;
+                btnOndas.className = classeInativa;
+                contDonut.classList.remove('hidden');
+                contOndas.classList.add('hidden');
+            }
+        }
+
+        function gerarPDF() {
+            const btnExportar = document.getElementById('btn-exportar');
+            const conteudo = document.getElementById('conteudo-relatorio');
+            const tituloOculto = document.querySelector('.print-title');
+            const botoesAbas = document.querySelector('.botoes-abas');
+
+            const textoOriginal = btnExportar.innerHTML;
+            btnExportar.disabled = true;
+            btnExportar.innerHTML = '<i data-lucide="loader" class="w-3.5 h-3.5 animate-spin"></i> <span class="hidden md:inline">Gerando...</span>';
+            if (typeof lucide !== 'undefined') lucide.createIcons();
+
+            tituloOculto.classList.remove('hidden');
+            botoesAbas.classList.add('hidden');
+
+            const opt = {
+                margin:       10,
+                filename:     'Relatorio_Financeiro.pdf',
+                image:        { type: 'jpeg', quality: 0.98 },
+                html2canvas:  { scale: 2, useCORS: true, logging: false },
+                jsPDF:        { unit: 'mm', format: 'a4', orientation: 'portrait' }
+            };
+
+            html2pdf().set(opt).from(conteudo).save()
+            .then(() => console.log("PDF gerado com sucesso!"))
+            .catch((erro) => alert("Erro ao gerar o PDF. Tente novamente."))
+            .finally(() => {
+                btnExportar.innerHTML = textoOriginal;
+                btnExportar.disabled = false;
+                tituloOculto.classList.add('hidden');
+                botoesAbas.classList.remove('hidden');
+                if (typeof lucide !== 'undefined') lucide.createIcons();
+            });
+        }
+    </script>
+</div>
+{% endblock %}

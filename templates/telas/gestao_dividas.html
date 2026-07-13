@@ -1,0 +1,192 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="max-w-4xl mx-auto mt-2 md:mt-4 px-3 md:px-0 pb-12">
+
+    <!-- Cabeçalho (Botão Voltar sempre visível) -->
+    <a href="javascript:history.back()" class="flex items-center gap-1 text-gray-500 hover:text-purple-600 dark:text-gray-400 dark:hover:text-purple-400 mb-4 md:mb-6 transition-colors text-sm font-medium w-fit">
+        <i data-lucide="arrow-left" class="w-4 h-4"></i>
+        <span>Voltar</span>
+    </a>
+
+    <!-- ========================================== -->
+    <!-- FORMULÁRIO CENTRAL (NOVO E EDIÇÃO)         -->
+    <!-- ========================================== -->
+    <div class="bg-white dark:bg-gray-800 p-4 md:p-6 rounded-2xl shadow-sm border border-purple-100 dark:border-purple-900/40 relative overflow-hidden group">
+        <div class="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-purple-400 to-purple-600"></div>
+
+        <h2 class="text-lg md:text-xl font-black mb-4 md:mb-5 text-gray-800 dark:text-gray-100 flex items-center gap-2">
+            <div class="p-1.5 md:p-2 bg-purple-50 dark:bg-purple-900/30 rounded-lg">
+                <i data-lucide="{% if divida %}edit-3{% else %}folder-plus{% endif %}" class="w-5 h-5 md:w-6 md:h-6 text-purple-600 dark:text-purple-400"></i>
+            </div>
+            {% if divida %} Editar Contrato {% else %} Cadastrar Nova Dívida {% endif %}
+        </h2>
+
+        {% if not divida %}
+        <div class="flex items-start gap-2 md:gap-3 mb-4 md:mb-6 bg-purple-50/80 dark:bg-purple-900/20 border border-purple-100 dark:border-purple-800/30 p-3 md:p-4 rounded-xl shadow-inner">
+            <i data-lucide="info" class="w-4 h-4 md:w-5 md:h-5 text-purple-600 dark:text-purple-400 mt-0.5 shrink-0"></i>
+            <p class="text-[11px] md:text-xs text-purple-800 dark:text-purple-300 font-medium leading-relaxed">
+                Cadastre contratos e financiamentos. Eles não afetam os gastos do seu mês atual, servindo para amortização e controle a longo prazo.
+            </p>
+        </div>
+        {% endif %}
+
+        <form action="{{ '/editar_divida/' ~ divida.id if divida else '/nova_divida' }}" method="POST">
+
+            <!-- Linha 1: Identificação -->
+            <div class="mb-3 md:mb-4">
+                <label class="block text-[11px] md:text-xs font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wider mb-1 md:mb-1.5">
+                    Descrição / Nome do Acordo
+                </label>
+                <input type="text" name="descricao" value="{{ divida.descricao if divida else '' }}" placeholder="Ex: Financiamento Carro, Acordo Banco..." required
+                       class="w-full px-3 py-2 md:px-4 md:py-3 text-sm md:text-base bg-gray-50 dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-xl text-gray-800 dark:text-gray-100 focus:bg-white dark:focus:bg-gray-800 focus:ring-2 focus:ring-purple-500 transition-all duration-200">
+            </div>
+
+            <!-- Linha 2: Matemática Financeira (Cálculo Automático Ativo) -->
+            <div class="grid grid-cols-2 md:grid-cols-3 gap-3 md:gap-4 mb-3 md:mb-4 p-4 rounded-xl bg-gray-50 dark:bg-gray-900/50 border border-gray-100 dark:border-gray-700/50">
+                <div class="col-span-2 md:col-span-1">
+                    <label class="block text-[11px] md:text-xs font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wider mb-1 md:mb-1.5">Valor Total (R$)</label>
+                    <input type="number" step="0.01" name="{{ 'valor_total' if divida else 'valor_total_divida' }}" id="input-total" value="{{ divida.valor_total if divida else '' }}" placeholder="0.00" required oninput="calcularTotalOuParcela('total')"
+                           class="w-full px-3 py-2 md:px-4 md:py-3 text-sm md:text-base font-black bg-white dark:bg-gray-950 border border-gray-200 dark:border-gray-700 rounded-xl text-gray-800 dark:text-gray-100 focus:ring-2 focus:ring-purple-500">
+                </div>
+                <div>
+                    <label class="block text-[11px] md:text-xs font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wider mb-1 md:mb-1.5">Qtd. Parcelas</label>
+                    <input type="number" name="total_parcelas" id="input-qtd-parcelas" value="{{ divida.total_parcelas if divida else '' }}" placeholder="Ex: 36" required oninput="calcularTotalOuParcela('qtd')"
+                           class="w-full px-3 py-2 md:px-4 md:py-3 text-sm md:text-base font-black text-center bg-white dark:bg-gray-950 border border-gray-200 dark:border-gray-700 rounded-xl text-gray-800 dark:text-gray-100 focus:ring-2 focus:ring-purple-500">
+                </div>
+                <div>
+                    <label class="block text-[11px] md:text-xs font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wider mb-1 md:mb-1.5">Valor Parcela (R$)</label>
+                    <input type="number" step="0.01" name="{{ 'valor_parcela' if divida else 'valor' }}" id="input-parcela" value="{{ divida.valor_parcela if divida else '' }}" placeholder="0.00" required oninput="calcularTotalOuParcela('parcela')"
+                           class="w-full px-3 py-2 md:px-4 md:py-3 text-sm md:text-base font-black bg-white dark:bg-gray-950 border border-gray-200 dark:border-gray-700 rounded-xl text-gray-800 dark:text-gray-100 focus:ring-2 focus:ring-purple-500">
+                </div>
+            </div>
+
+            <!-- Linha 3: Metadados Alternativos -->
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-3 md:gap-4 mb-5 md:mb-6">
+                {% if not divida %}
+                <div>
+                    <label class="block text-[11px] md:text-xs font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wider mb-1 md:mb-1.5">Data do Contrato (Opcional)</label>
+                    <!-- REQUIRED REMOVIDO DAQUI -->
+                    <input type="date" name="data_gasto" class="w-full px-3 py-2 md:px-4 md:py-3 text-sm md:text-base bg-gray-50 dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-xl text-gray-800 dark:text-gray-100 focus:ring-2 focus:ring-purple-500">
+                </div>
+                <div>
+                    <label class="block text-[11px] md:text-xs font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wider mb-1 md:mb-1.5">Categoria</label>
+                    <!-- SELECT TROCADO POR DATALIST PARA PERMITIR DIGITAÇÃO LIVRE -->
+                    <input list="lista-categorias" name="categoria" placeholder="Escolha ou digite uma nova..." value="Dívida / Empréstimo" required class="w-full px-3 py-2 md:px-4 md:py-3 text-sm md:text-base bg-gray-50 dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-xl text-gray-800 dark:text-gray-100 focus:ring-2 focus:ring-purple-500">
+                    <datalist id="lista-categorias">
+                        <option value="Dívida / Empréstimo">
+                        <option value="Habitação (Financiamento)">
+                        <option value="Transporte (Veículo)">
+                        <option value="Educação (Faculdade)">
+                        <option value="Cartão de Crédito">
+                    </datalist>
+                </div>
+                {% else %}
+                <div>
+                    <label class="block text-[11px] md:text-xs font-bold text-purple-600 dark:text-purple-400 uppercase tracking-wider mb-1 md:mb-1.5 flex items-center gap-1">
+                        <i data-lucide="check-circle-2" class="w-3 h-3"></i> Parcelas Já Pagas
+                    </label>
+                    <input type="number" name="parcelas_pagas" value="{{ divida.parcelas_pagas }}" min="0" required class="w-full px-3 py-2 md:px-4 md:py-3 text-sm md:text-base font-bold bg-purple-50 dark:bg-purple-900/20 border border-purple-200 dark:border-purple-800 rounded-xl text-purple-800 dark:text-purple-200 focus:ring-2 focus:ring-purple-500">
+                </div>
+                {% endif %}
+            </div>
+
+            <!-- Botão -->
+            <button type="submit" class="w-full bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-700 hover:to-indigo-700 text-white font-bold py-3 md:py-3.5 px-4 rounded-xl transition-all duration-300 shadow-md shadow-purple-500/30 flex items-center justify-center gap-2 text-sm md:text-base">
+                <i data-lucide="save" class="w-4 h-4 md:w-5 md:h-5"></i>
+                <span>{% if divida %} Salvar Alterações {% else %} Registrar Contrato {% endif %}</span>
+            </button>
+        </form>
+    </div>
+
+    <!-- ========================================== -->
+    <!-- LISTAGEM DE CONTRATOS (SÓ APARECE NO NOVO) -->
+    <!-- ========================================== -->
+    {% if not divida %}
+    <div class="mt-8 md:mt-10">
+        <h3 class="text-lg md:text-xl font-black text-gray-800 dark:text-gray-100 mb-4 flex items-center gap-2">
+            <i data-lucide="layers" class="w-5 h-5 text-purple-600 dark:text-purple-400"></i> Seus Contratos Ativos
+        </h3>
+
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <!-- Loop de dívidas -->
+            {% for item in dividas %}
+                {% set total_p = item.total_parcelas|int %}
+                {% set pagas = item.parcelas_pagas|int if item.parcelas_pagas else 0 %}
+                {% set progresso = 0 %}
+                {% if total_p > 0 %}
+                    {% set progresso = ((pagas / total_p) * 100)|round(1) %}
+                {% endif %}
+                {% set saldo_devedor = (total_p - pagas) * item.valor_parcela %}
+
+                <div class="bg-white dark:bg-gray-800 p-4 rounded-xl border border-gray-100 dark:border-gray-700 shadow-sm relative overflow-hidden group hover:border-purple-300 dark:hover:border-purple-700/50 transition-colors">
+
+                    <!-- Topo do Card: Título e Ações -->
+                    <div class="flex justify-between items-start mb-3">
+                        <div class="pr-2">
+                            <h4 class="font-bold text-sm md:text-base text-gray-800 dark:text-gray-100 truncate" title="{{ item.descricao }}">{{ item.descricao }}</h4>
+                            <p class="text-[10px] md:text-xs text-gray-500 font-medium mt-0.5">Parcela: <strong class="text-gray-700 dark:text-gray-300">R$ {{ "%.2f"|format(item.valor_parcela) }}</strong></p>
+                        </div>
+                        <div class="flex items-center gap-1.5 shrink-0">
+                            <a href="/editar_divida/{{ item.id }}" class="p-1.5 bg-gray-50 dark:bg-gray-700/50 text-blue-500 rounded-lg hover:bg-blue-100 dark:hover:bg-blue-900/50 transition-colors">
+                                <i data-lucide="edit-3" class="w-3.5 h-3.5 md:w-4 md:h-4"></i>
+                            </a>
+                            <form action="/excluir_divida/{{ item.id }}" method="POST" class="m-0" onsubmit="return confirm('Tem certeza que deseja excluir este contrato?');">
+                                <button type="submit" class="p-1.5 bg-gray-50 dark:bg-gray-700/50 text-red-500 rounded-lg hover:bg-red-100 dark:hover:bg-red-900/50 transition-colors">
+                                    <i data-lucide="trash-2" class="w-3.5 h-3.5 md:w-4 md:h-4"></i>
+                                </button>
+                            </form>
+                        </div>
+                    </div>
+
+                    <!-- Barra de Progresso e Amortização -->
+                    <div class="mt-4 pt-3 border-t border-gray-100 dark:border-gray-700/50">
+                        <div class="flex justify-between text-[10px] font-bold mb-1.5">
+                            <span class="text-purple-600 dark:text-purple-400">{{ pagas }} pagas</span>
+                            <span class="text-gray-400">de {{ total_p }}</span>
+                        </div>
+
+                        <div class="w-full bg-gray-100 dark:bg-gray-700 rounded-full h-2 overflow-hidden mb-2">
+                            <div class="bg-gradient-to-r from-purple-500 to-indigo-500 h-full rounded-full transition-all duration-1000" style="width: {{ progresso }}%"></div>
+                        </div>
+
+                        <div class="flex justify-between items-center">
+                            <span class="text-[9px] md:text-[10px] text-gray-400 font-medium">{{ progresso }}% Concluído</span>
+                            <span class="text-[9px] md:text-[10px] text-gray-500 font-black uppercase tracking-wider">Saldo: <span class="text-gray-700 dark:text-gray-300">R$ {{ "%.2f"|format(saldo_devedor) }}</span></span>
+                        </div>
+                    </div>
+                </div>
+            {% else %}
+                <div class="col-span-full bg-gray-50 dark:bg-gray-800/40 p-8 rounded-xl border-2 border-dashed border-gray-200 dark:border-gray-700 text-center">
+                    <i data-lucide="check-circle-2" class="w-10 h-10 text-gray-300 dark:text-gray-600 mx-auto mb-3"></i>
+                    <p class="text-sm font-bold text-gray-500 dark:text-gray-400">Nenhum contrato pendente!</p>
+                    <p class="text-xs text-gray-400 dark:text-gray-500 mt-1">Use o formulário acima para registrar.</p>
+                </div>
+            {% endfor %}
+        </div>
+    </div>
+    {% endif %}
+
+</div>
+
+<script>
+    lucide.createIcons();
+
+    // Calculadora Inteligente
+    function calcularTotalOuParcela(origem) {
+        const inputParcela = document.getElementById('input-parcela');
+        const inputTotal = document.getElementById('input-total');
+        const inputQtd = document.getElementById('input-qtd-parcelas');
+
+        const parcela = parseFloat(inputParcela.value) || 0;
+        const total = parseFloat(inputTotal.value) || 0;
+        const qtd = parseInt(inputQtd.value) || 0;
+
+        if ((origem === 'total' || origem === 'qtd') && total > 0 && qtd > 0) {
+            inputParcela.value = (total / qtd).toFixed(2);
+        } else if ((origem === 'parcela' || origem === 'qtd') && parcela > 0 && qtd > 0 && origem !== 'total') {
+            inputTotal.value = (parcela * qtd).toFixed(2);
+        }
+    }
+</script>
+{% endblock %}

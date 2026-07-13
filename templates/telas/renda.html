@@ -1,0 +1,27 @@
+{% extends "base.html" %}
+
+{% block content %}
+    <!-- Botão Voltar -->
+    <a href="javascript:history.back()" class="flex items-center gap-1 text-gray-500 hover:text-blue-600 dark:text-gray-400 dark:hover:text-blue-400 mb-4 transition-colors text-sm font-medium">
+        <i data-lucide="arrow-left" class="w-4 h-4"></i>
+        <span>Voltar</span>
+    </a>
+
+    <h2 class="text-xl font-semibold mb-6 text-gray-700 dark:text-gray-300">Ajustar Renda Mensal</h2>
+
+    <form action="/renda" method="POST" class="bg-blue-50 dark:bg-blue-950/40 p-6 rounded-lg border border-blue-200 dark:border-blue-900 shadow-sm">
+        <p class="text-sm text-gray-600 dark:text-gray-400 mb-6 leading-relaxed">
+            Atualize o valor da sua renda base. O sistema recalculará automaticamente o valor disponível para a sua quinzena atual.
+        </p>
+        
+        <div class="mb-6">
+            <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Renda Total (R$)</label>
+            <input type="number" step="0.01" name="renda" value="{{ renda_bruta }}" required
+                    class="w-full px-4 py-3 bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 rounded-md text-gray-800 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-blue-500 shadow-inner">
+        </div>
+
+        <button type="submit" class="w-full bg-blue-600 text-white font-bold py-3 px-4 rounded-md hover:bg-blue-700 transition duration-200 shadow-md">
+            Atualizar Renda
+        </button>
+    </form>
+{% endblock %}
