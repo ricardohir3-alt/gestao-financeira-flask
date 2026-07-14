@@ -41,3 +41,18 @@ Siga as instruções abaixo para rodar o projeto na sua máquina:
 git clone [https://github.com/ricardohir3-alt/gestao-financeira-flask.git](https://github.com/ricardohir3-alt/gestao-financeira-flask.git)
 cd gestao-financeira-flask
 
+###2. Crie e ative um ambiente virtual
+Bash
+python -m venv venv
+# No Windows:
+venv\Scripts\activate
+# No Linux/Mac:
+source venv/bin/activate
+
+###3. Instale as dependências
+Bash
+pip install Flask google-generativeai werkzeug
+
+###4. Execute a aplicação
+Bash
+python flask_app.py
