@@ -10,14 +10,38 @@
         <h2 class="text-2xl font-black text-gray-800 dark:text-white flex items-center gap-2">
             <i data-lucide="user" class="w-6 h-6 text-blue-600 dark:text-blue-400"></i> Meu Perfil
         </h2>
-        <p class="text-sm text-gray-500 dark:text-gray-400 mt-1">Gerencie suas informações pessoais e segurança.</p>
+        <p class="text-sm text-gray-500 dark:text-gray-400 mt-1">Gerencie suas informações pessoais, segurança e finanças.</p>
     </div>
 
     <!-- Header do Perfil -->
     <div class="bg-white dark:bg-gray-800 rounded-2xl p-6 shadow-sm border border-gray-100 dark:border-gray-700 mb-6 flex items-center gap-5">
-        <div class="w-20 h-20 bg-gradient-to-br from-blue-500 to-indigo-600 rounded-full flex items-center justify-center text-white text-3xl font-black shadow-lg border-4 border-white dark:border-gray-900">
-            {{ nome_usuario[:1].upper() }}
+        
+        <div class="relative group cursor-pointer">
+            <!-- Formulário Invisível para Envio da Foto -->
+            <form action="/upload_foto_perfil" method="POST" enctype="multipart/form-data" id="form-foto" class="hidden">
+                <input type="file" name="foto" id="input-foto" accept="image/*" onchange="document.getElementById('form-foto').submit();">
+            </form>
+            
+            <label for="input-foto" class="cursor-pointer block relative">
+                {% if foto_perfil %}
+                    <!-- Mostra a Foto se Existir -->
+                    <div class="w-20 h-20 rounded-full bg-gray-200 shadow-lg border-4 border-white dark:border-gray-900 overflow-hidden relative">
+                        <img src="{{ foto_perfil }}" alt="Foto de Perfil" class="w-full h-full object-cover">
+                    </div>
+                {% else %}
+                    <!-- Mostra a Inicial se NÃO Existir Foto -->
+                    <div class="w-20 h-20 bg-gradient-to-br from-blue-500 to-indigo-600 rounded-full flex items-center justify-center text-white text-3xl font-black shadow-lg border-4 border-white dark:border-gray-900">
+                        {{ nome_usuario[:1].upper() if nome_usuario else 'U' }}
+                    </div>
+                {% endif %}
+                
+                <!-- Overlay de Hover com Ícone de Câmera -->
+                <div class="absolute inset-0 bg-black/50 rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity border-4 border-transparent">
+                    <i data-lucide="camera" class="w-6 h-6 text-white"></i>
+                </div>
+            </label>
         </div>
+
         <div>
             <h3 class="text-xl font-bold text-gray-900 dark:text-white">{{ nome_usuario }}</h3>
             <span class="inline-flex items-center gap-1 mt-1 px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-green-100 text-green-700 dark:bg-green-900/40 dark:text-green-400">
@@ -27,7 +51,7 @@
     </div>
 
     <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-        <!-- Bloco de Dados Pessoais -->
+        <!-- Bloco de Dados Pessoais e Licença -->
         <div class="bg-white dark:bg-gray-800 rounded-2xl shadow-sm border border-gray-100 dark:border-gray-700 overflow-hidden">
             <div class="px-5 py-4 border-b border-gray-100 dark:border-gray-700 bg-gray-50/50 dark:bg-gray-900/50">
                 <h4 class="text-sm font-bold text-gray-700 dark:text-gray-200 flex items-center gap-2">
@@ -35,7 +59,7 @@
                 </h4>
             </div>
             <div class="p-5">
-                <form action="#" method="POST" class="space-y-4">
+                <form action="#" method="POST" class="space-y-5">
                     <div>
                         <label class="block text-xs font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wide mb-1.5">Nome de Usuário</label>
                         <div class="relative">
@@ -45,6 +69,49 @@
                         </div>
                         <p class="text-[10px] text-gray-400 mt-1.5">* O nome de usuário atual não pode ser alterado.</p>
                     </div>
+
+                    <!-- Detalhes do Plano do Usuário -->
+                    <div class="pt-2">
+                        <label class="block text-xs font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wide mb-2">Detalhes do Plano</label>
+                        <div class="bg-gray-50 dark:bg-gray-900/50 rounded-xl p-4 border border-gray-200 dark:border-gray-700 space-y-3">
+                            
+                            <!-- Licença -->
+                            <div class="flex justify-between items-center">
+                                <span class="text-sm font-medium text-gray-600 dark:text-gray-400 flex items-center gap-2">
+                                    <i data-lucide="award" class="w-4 h-4"></i> Licença
+                                </span>
+                                <span class="text-sm font-bold {% if licenca_usuario == 'Premium' %}text-amber-500{% else %}text-blue-600{% endif %}">
+                                    {{ licenca_usuario | default('Básica') }}
+                                </span>
+                            </div>
+
+                            <!-- Valor a Pagar -->
+                            <div class="flex justify-between items-center">
+                                <span class="text-sm font-medium text-gray-600 dark:text-gray-400 flex items-center gap-2">
+                                    <i data-lucide="circle-dollar-sign" class="w-4 h-4"></i> Valor Mensal
+                                </span>
+                                <span class="text-sm font-black text-gray-800 dark:text-gray-200">
+                                    {% if valor_licenca and valor_licenca|float > 0 %}
+                                        R$ {{ "%.2f"|format(valor_licenca|float) }}
+                                    {% else %}
+                                        <span class="px-2 py-0.5 rounded-md text-[10px] font-bold bg-green-100 text-green-700 dark:bg-green-900/40 dark:text-green-400 uppercase tracking-wider">Gratuito</span>
+                                    {% endif %}
+                                </span>
+                            </div>
+
+                            <!-- Módulos Liberados -->
+                            <div class="flex justify-between items-start pt-2 border-t border-gray-200 dark:border-gray-700/50">
+                                <span class="text-sm font-medium text-gray-600 dark:text-gray-400 flex items-center gap-2 mt-0.5">
+                                    <i data-lucide="layout-grid" class="w-4 h-4"></i> Módulos
+                                </span>
+                                <span class="text-xs font-bold text-gray-700 dark:text-gray-300 text-right max-w-[160px] leading-snug">
+                                    {{ modulos_liberados | default('Básico') }}
+                                </span>
+                            </div>
+
+                        </div>
+                    </div>
+
                 </form>
             </div>
         </div>
@@ -74,11 +141,44 @@
                                    class="w-full pl-9 pr-3 py-2 bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-lg text-sm font-medium focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none transition-all">
                         </div>
                     </div>
-                    <button type="button" onclick="alert('Funcionalidade de alteração de senha em desenvolvimento.')" class="w-full bg-gray-800 dark:bg-gray-100 text-white dark:text-gray-900 font-bold py-2.5 rounded-lg text-sm hover:bg-gray-900 dark:hover:bg-white transition-all shadow-sm">
+                    <button type="button" onclick="alert('Funcionalidade de alteração de senha em desenvolvimento.')" class="w-full bg-gray-800 dark:bg-gray-100 text-white dark:text-gray-900 font-bold py-2.5 rounded-lg text-sm hover:bg-gray-900 dark:hover:bg-white transition-all shadow-sm mt-2">
                         Atualizar Senha
                     </button>
                 </form>
             </div>
         </div>
+
+        <!-- NOVO BLOCO: Ajustar Renda -->
+        <div class="bg-white dark:bg-gray-800 rounded-2xl shadow-sm border border-gray-100 dark:border-gray-700 overflow-hidden">
+            <div class="px-5 py-4 border-b border-gray-100 dark:border-gray-700 bg-gray-50/50 dark:bg-gray-900/50">
+                <h4 class="text-sm font-bold text-gray-700 dark:text-gray-200 flex items-center gap-2">
+                    <i data-lucide="dollar-sign" class="w-4 h-4 text-green-500"></i> Ajustar Renda
+                </h4>
+            </div>
+            <div class="p-5">
+                <!-- Aponte o 'action' para a rota correta do Flask que irá processar essa atualização -->
+                <form action="/renda" method="POST" class="space-y-4">
+                    <div>
+                        <label class="block text-xs font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wide mb-1.5">Renda Mensal (R$)</label>
+                        <div class="relative">
+                            <i data-lucide="wallet" class="absolute left-3 top-2.5 w-4 h-4 text-gray-400"></i>
+                            <input type="number" step="0.01" name="renda" placeholder="Ex: 3500.00" value="{{ renda_atual | default('') }}" required
+                                   class="w-full pl-9 pr-3 py-2 bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-lg text-sm font-medium focus:ring-2 focus:ring-green-500 focus:border-transparent outline-none transition-all">
+                        </div>
+                        <p class="text-[10px] text-gray-400 mt-1.5">O valor informado será utilizado como base para cálculos e relatórios de desempenho financeiro.</p>
+                    </div>
+                    <button type="submit" class="w-full bg-green-600 hover:bg-green-700 text-white font-bold py-2.5 rounded-lg text-sm transition-all shadow-sm mt-2 flex justify-center items-center gap-2">
+                        Salvar Nova Renda
+                    </button>
+                </form>
+            </div>
+        </div>
+
     </div>
+    
+    <script>
+        window.addEventListener('DOMContentLoaded', () => {
+            lucide.createIcons();
+        });
+    </script>
 {% endblock %}

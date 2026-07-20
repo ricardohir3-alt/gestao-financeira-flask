@@ -1,18 +1,25 @@
-import os # NOVO: Para ler variáveis de ambiente (esconder a chave secreta)
-import requests
+# 1. Bibliotecas Nativas do Python (Já vêm instaladas)
+import os
+import shutil
+import platform
 import secrets
-from hir3_engine import analisar_mensagem_com_hir3
-from flask import Flask, render_template, request, redirect, url_for, session, url_for, Response
 import sqlite3
-from datetime import datetime, timedelta
-import pdfplumber
-import pytesseract
-from PIL import Image
-from flask import request, jsonify
 import csv
 import io
 import calendar
-from werkzeug.security import generate_password_hash, check_password_hash # criptografar senhas
+from datetime import datetime, timedelta
+
+# 2. Bibliotecas Externas (Instaladas via pip)
+import flask  # <--- ESSENCIAL para mostrar a versão na tela de sistema!
+from flask import Flask, render_template, request, redirect, url_for, session, Response, jsonify, flash
+import requests
+import pdfplumber
+import pytesseract
+from PIL import Image
+from werkzeug.security import generate_password_hash, check_password_hash
+
+# 3. Seus Módulos Locais (Seus próprios arquivos)
+from hir3_engine import analisar_mensagem_com_hir3
 
 app = Flask(__name__)
 # A chave agora busca do servidor; se não achar (rodando local), usa uma padrão
@@ -37,7 +44,6 @@ def iniciar_banco():
             data_criacao DATETIME DEFAULT CURRENT_TIMESTAMP
         )
     ''')
-
     # Adicione este bloco junto com a criação das outras tabelas
     cursor.execute('''
         CREATE TABLE IF NOT EXISTS logs_sistema (
@@ -47,7 +53,6 @@ def iniciar_banco():
             data_criacao DATETIME DEFAULT CURRENT_TIMESTAMP
         )
     ''')
-
     cursor.execute('''
         CREATE TABLE IF NOT EXISTS gastos (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -99,7 +104,6 @@ def iniciar_banco():
             FOREIGN KEY(usuario_id) REFERENCES usuarios(id)
         )
     ''')
-
     # Cria a tabela de dívidas longas (se ela ainda não existir)
     cursor.execute('''
     CREATE TABLE IF NOT EXISTS dividas (
@@ -180,6 +184,214 @@ def iniciar_banco():
     conexao_temp.close()
 
 # ==============================================================================
+# ROTA DE LOGIN E LOGOULT (SALVA O ID DO USUÁRIO NA SESSÃO E VERIFICA LICENÇA)
+# ==============================================================================
+
+@app.route('/login', methods=['GET', 'POST'])
+def login():
+    erro = None
+    sucesso = request.args.get('sucesso')
+
+    if request.method == 'POST':
+        usuario = request.form.get('usuario')
+        senha_digitada = request.form.get('senha')
+        # CORREÇÃO 1: Nome exato que está no HTML
+        manter_conectado = request.form.get('lembrar')
+
+        # CORREÇÃO 2: Caminho absoluto do PythonAnywhere
+        conexao = sqlite3.connect('/home/Hir3solutions/mysite/financas.db')
+        conexao.row_factory = sqlite3.Row
+        cursor = conexao.cursor()
+
+        # BUSCAMOS O REGISTRO DO USUÁRIO (Ignorando maiúsculas/minúsculas)
+        cursor.execute("SELECT * FROM usuarios WHERE LOWER(usuario) = LOWER(?)", (usuario,))
+        usuario_banco = cursor.fetchone()
+        conexao.close()
+
+        if usuario_banco and check_password_hash(usuario_banco['senha'], senha_digitada):
+
+            # --- NOVA REGRA DE BLOQUEIO AQUI ---
+            if usuario_banco['licenca'] in ['Bloqueada', 'Inativa', 'Vencida'] and usuario_banco[0] != 1:
+                erro = "Acesso Negado: Sua licença está inativa ou bloqueada. Contate o administrador."
+                return render_template('login.html', erro=erro, sucesso=sucesso)
+            # -----------------------------------
+
+            session['logado'] = True
+            session['user_id'] = usuario_banco[0]
+            session['usuario'] = usuario_banco['usuario']
+
+            # =================================================================
+            # A MÁGICA DO ADMIN ACONTECE AQUI
+            # =================================================================
+            dict_usuario = dict(usuario_banco)
+            is_admin_db = dict_usuario.get('is_admin', 0)
+
+            session['is_admin'] = (usuario_banco[0] == 1 or is_admin_db == 1)
+            # =================================================================
+
+            if manter_conectado:
+                session.permanent = True
+            else:
+                session.permanent = False
+
+            return redirect(url_for('home'))
+        else:
+            erro = "Usuário ou senha inválidos!"
+
+    return render_template('login.html', erro=erro, sucesso=sucesso)
+
+@app.route('/logout')
+def logout():
+    session.clear()
+    return redirect(url_for('login'))
+
+@app.route('/recuperar_senha', methods=['GET', 'POST'])
+def recuperar():
+    erro = None
+    if request.method == 'POST':
+        usuario = request.form.get('usuario')
+        senha_atual = request.form.get('senha_atual') # NOVO CAMPO
+        nova_senha = request.form.get('nova_senha')
+
+        conexao = sqlite3.connect('/home/Hir3solutions/mysite/financas.db')
+        conexao.row_factory = sqlite3.Row # Permite buscar colunas por nome
+        cursor = conexao.cursor()
+
+        # Busca o usuário ignorando maiúsculas/minúsculas
+        cursor.execute('SELECT * FROM usuarios WHERE LOWER(usuario) = LOWER(?)', (usuario,))
+        usuario_banco = cursor.fetchone()
+
+        if usuario_banco:
+            # A MÁGICA DA SEGURANÇA AQUI: Verifica se a senha atual está correta
+            if check_password_hash(usuario_banco['senha'], senha_atual):
+                # Se a senha atual bater, criptografa e salva a nova
+                nova_senha_hash = generate_password_hash(nova_senha)
+
+                # Usamos usuario_banco['usuario'] para garantir a grafia original do banco
+                cursor.execute('UPDATE usuarios SET senha = ? WHERE usuario = ?', (nova_senha_hash, usuario_banco['usuario']))
+                conexao.commit()
+                conexao.close()
+
+                return redirect(url_for('login', sucesso="Senha alterada com sucesso! Faça login com a nova senha."))
+            else:
+                erro = "A senha atual está incorreta. Operação cancelada!"
+                conexao.close()
+        else:
+            erro = "Usuário não encontrado no sistema!"
+            conexao.close()
+
+    return render_template('telas/recuperar.html', erro=erro)
+
+# ==============================================================================
+# DASHBOARD
+# ==============================================================================
+@app.route('/', methods=['GET'])
+def home():
+    if 'logado' not in session:
+        return redirect(url_for('login'))
+
+    user_id = session['user_id'] # Captura o usuário logado
+
+    # Abrimos a conexão com o banco mais cedo para poder buscar a renda do usuário
+    conexao = sqlite3.connect('financas.db')
+    conexao.row_factory = sqlite3.Row
+    cursor = conexao.cursor()
+
+    # --- ATUALIZAÇÃO CRÍTICA AQUI: Busca a renda fixa e individual no banco de dados ---
+    cursor.execute("SELECT renda FROM usuarios WHERE id = ?", (user_id,))
+    resultado_usuario = cursor.fetchone()
+
+    # Garante que a renda seja tratada como NÚMERO (float), vinda do banco, e não mais da sessão temporária
+    try:
+        if resultado_usuario and resultado_usuario['renda'] is not None:
+            renda_atual = float(resultado_usuario['renda'])
+        else:
+            renda_atual = 0.00
+    except (ValueError, TypeError):
+        renda_atual = 0.00
+    # -----------------------------------------------------------------------------------
+
+    mes_atual = datetime.now().strftime('%Y-%m')
+    mes_filtro = request.args.get('mes', mes_atual)
+
+    cursor.execute('SELECT * FROM gastos WHERE data LIKE ? AND usuario_id = ? ORDER BY data DESC',
+                   (mes_filtro + '%', user_id))
+    lista_gastos = cursor.fetchall()
+
+    # CORREÇÃO 2: Força o valor de cada gasto a ser lido como float na hora de somar
+    total_gastos = sum(float(gasto['valor']) for gasto in lista_gastos)
+
+    # 1. Gráfico de Ondas (Agrupado por dia via Banco de Dados)
+    cursor.execute('''
+        SELECT substr(data, 9, 2) as dia, SUM(valor) as total
+        FROM gastos
+        WHERE data LIKE ? AND usuario_id = ?
+        GROUP BY dia ORDER BY dia
+    ''', (mes_filtro + '%', user_id))
+
+    dados_grafico = cursor.fetchall()
+    dias_grafico = [row['dia'] for row in dados_grafico]
+    # Força a leitura do gráfico em float também
+    valores_grafico = [float(row['total']) for row in dados_grafico]
+
+    conexao.close()
+
+    # --- CÁLCULOS DO DASHBOARD ---
+
+    # 2. Gráfico Donut (Agrupado por Categoria via Python - Muito rápido!)
+    categorias_dict = {}
+    for g in lista_gastos:
+        cat = g['categoria']
+        # Converte para float na divisão por categorias
+        categorias_dict[cat] = categorias_dict.get(cat, 0) + float(g['valor'])
+
+    labels_categorias = list(categorias_dict.keys())
+    valores_categorias = list(categorias_dict.values())
+
+    # CORREÇÃO 3: Convertendo a quinzena para string na hora de comparar
+    total_q1 = sum(float(g['valor']) for g in lista_gastos if str(g['quinzena']) == '1')
+    total_q2 = sum(float(g['valor']) for g in lista_gastos if str(g['quinzena']) == '2')
+    perc_q1 = round((total_q1 / total_gastos * 100), 1) if total_gastos > 0 else 0
+    perc_q2 = round((total_q2 / total_gastos * 100), 1) if total_gastos > 0 else 0
+
+    total_pago = sum(float(g['valor']) for g in lista_gastos if g['status'] == 'PAGO')
+    total_pendente = sum(float(g['valor']) for g in lista_gastos if g['status'] == 'PENDENTE')
+    perc_pago = round((total_pago / total_gastos * 100), 1) if total_gastos > 0 else 0
+    perc_pendente = round((total_pendente / total_gastos * 100), 1) if total_gastos > 0 else 0
+
+    # Ordena o TOP 3 forçando o valor como número, para não ordenar como texto
+    top3_gastos = sorted(lista_gastos, key=lambda x: float(x['valor']), reverse=True)[:3]
+
+    # CORREÇÃO 4: O CÁLCULO FINAL DE DEDUÇÃO (Agora ambos são números flutuantes reais)
+    disponivel_geral = renda_atual - total_gastos
+
+    # Formatação Final para o Visual (R$)
+    renda_formatada = f"{renda_atual:,.2f}".replace(",", "X").replace(".", ",").replace("X", ".")
+    gastos_formatado = f"{total_gastos:,.2f}".replace(",", "X").replace(".", ",").replace("X", ".")
+    disponivel_formatado = f"{disponivel_geral:,.2f}".replace(",", "X").replace(".", ",").replace("X", ".")
+    total_q1_fmt = f"{total_q1:,.2f}".replace(",", "X").replace(".", ",").replace("X", ".")
+    total_q2_fmt = f"{total_q2:,.2f}".replace(",", "X").replace(".", ",").replace("X", ".")
+    total_pago_fmt = f"{total_pago:,.2f}".replace(",", "X").replace(".", ",").replace("X", ".")
+    total_pendente_fmt = f"{total_pendente:,.2f}".replace(",", "X").replace(".", ",").replace("X", ".")
+
+    # Retorno Limpo sem Variáveis Duplicadas
+    return render_template('index.html',
+                           renda_total=renda_formatada,
+                           gastos_totais=gastos_formatado,
+                           valor_disponivel=disponivel_formatado,
+                           gastos=lista_gastos,
+                           mes_filtro=mes_filtro,
+                           dias_grafico=dias_grafico,
+                           valores_grafico=valores_grafico,
+                           labels_categorias=labels_categorias,
+                           valores_categorias=valores_categorias,
+                           perc_q1=perc_q1, perc_q2=perc_q2,
+                           total_q1=total_q1_fmt, total_q2=total_q2_fmt,
+                           perc_pago=perc_pago, perc_pendente=perc_pendente,
+                           total_pago=total_pago_fmt, total_pendente=total_pendente_fmt,
+                           top3_gastos=top3_gastos)
+
+# ==============================================================================
 # ROTA DE GESTÃO DE USUÁRIOS (PROTEGIDA PARA ADMIN)
 # ==============================================================================
 
@@ -189,12 +401,13 @@ def usuarios():
     if 'logado' not in session:
         return redirect(url_for('login'))
 
-    # 2. ID do admin
-    admin_id = 1
-
-    # 3. Verifica se é o admin
-    if session.get('user_id') != admin_id:
-        return render_template('telas/usuarios.html', usuarios=[], logs=[])
+    # 3. TRAVA DE SEGURANÇA CORRIGIDA
+    # Agora a trava verifica se a flag 'is_admin' está verdadeira na sessão.
+    # O "Admin Master" (ID 1) e qualquer usuário promovido a admin passarão por aqui.
+    if not session.get('is_admin'):
+        # Renderiza a tela correta (gestao_usuarios) sem precisar consultar o banco de dados.
+        # O HTML vai ver que 'is_admin' é falso e vai exibir a tela linda de Acesso Restrito!
+        return render_template('telas/gestao_usuarios.html')
 
     conexao = sqlite3.connect('financas.db')
     conexao.row_factory = sqlite3.Row # Permite acessar colunas por nome
@@ -214,29 +427,101 @@ def usuarios():
             except sqlite3.IntegrityError:
                 pass
 
+        # Editar usuário (ATUALIZADO COM VALOR E MÓDULOS)
+        elif 'editar' in request.form:
+            id_edit = request.form.get('id_usuario_edit')
+            novo_nome = request.form.get('novo_nome')
+            nova_licenca = request.form.get('nova_licenca')
+            novo_valor_raw = request.form.get('novo_valor', '0')
+            novos_modulos = request.form.get('novos_modulos', 'Todos')
+
+            # Converte a vírgula do valor em ponto para salvar no banco
+            try:
+                novo_valor = float(str(novo_valor_raw).replace(',', '.'))
+            except ValueError:
+                novo_valor = 0.00
+
+            try:
+                # Atualiza nome, licença, valor e módulos
+                cursor.execute("""
+                    UPDATE usuarios
+                    SET usuario = ?, licenca = ?, valor_licencas = ?, modulos_liberados = ?
+                    WHERE id = ?
+                """, (novo_nome, nova_licenca, novo_valor, novos_modulos, id_edit))
+                conexao.commit()
+            except sqlite3.OperationalError:
+                # Se a coluna modulos_liberados ainda não existir, atualiza sem ela para não travar
+                cursor.execute("UPDATE usuarios SET usuario = ?, licenca = ?, valor_licencas = ? WHERE id = ?",
+                               (novo_nome, nova_licenca, novo_valor, id_edit))
+                conexao.commit()
+            except sqlite3.Error as e:
+                print(f"Erro ao atualizar usuário: {e}")
+
         # Excluir usuário
         elif 'excluir' in request.form:
             id_del = request.form.get('id_usuario')
             cursor.execute("DELETE FROM usuarios WHERE id = ? AND id != 1", (id_del,))
             conexao.commit()
 
-    # LEITURA DE USUÁRIOS
-    cursor.execute("SELECT id, usuario, licenca FROM usuarios")
-    lista_users = cursor.fetchall()
+    # LEITURA DE USUÁRIOS (COM TRATAMENTO DE SEGURANÇA)
+    try:
+        cursor.execute("SELECT id, usuario, licenca, valor_licencas, modulos_liberados FROM usuarios")
+        lista_users = cursor.fetchall()
+    except sqlite3.OperationalError:
+        # Se a coluna de módulos ainda não existir no banco, cria uma estrutura falsa temporária
+        cursor.execute("SELECT id, usuario, licenca, valor_licencas, 'Todos' as modulos_liberados FROM usuarios")
+        lista_users = cursor.fetchall()
 
-    # LEITURA DE LOGS (Com tratamento de erro caso a tabela não exista ainda)
+    # LEITURA DE LOGS
     logs = []
     try:
         cursor.execute("SELECT * FROM logs_sistema ORDER BY id DESC LIMIT 50")
         logs = [dict(row) for row in cursor.fetchall()]
     except sqlite3.OperationalError:
-        # Se a tabela não existir, retorna lista vazia
         logs = []
 
     conexao.close()
 
-    # Enviamos 'usuarios' e 'logs' para o template
-    return render_template('telas/usuarios.html', usuarios=lista_users, logs=logs)
+    # ==========================================
+    # DADOS DINÂMICOS DO SISTEMA (NOVO)
+    # ==========================================
+
+    # 1. Tamanho do Banco de Dados
+    db_size_mb = 0.0
+    if os.path.exists('financas.db'):
+        db_size_mb = round(os.path.getsize('financas.db') / (1024 * 1024), 2)
+
+    # 2. Tamanho da Pasta de Uploads
+    uploads_size_mb = 0.0
+    uploads_path = 'static/uploads' # Ajuste se sua pasta for diferente
+    if os.path.exists(uploads_path):
+        total_size = 0
+        for dirpath, _, filenames in os.walk(uploads_path):
+            for f in filenames:
+                fp = os.path.join(dirpath, f)
+                if not os.path.islink(fp):
+                    total_size += os.path.getsize(fp)
+        uploads_size_mb = round(total_size / (1024 * 1024), 2)
+
+    # 3. Uso do Disco Rígido do Servidor
+    try:
+        total_disk, used_disk, free_disk = shutil.disk_usage("/")
+        disk_percent = int((used_disk / total_disk) * 100)
+    except:
+        disk_percent = 0
+
+    # 4. Agrupando as métricas para enviar ao HTML
+    sys_info = {
+        'db_size': str(db_size_mb).replace('.', ','),
+        'uploads_size': str(uploads_size_mb).replace('.', ','),
+        'disk_percent': disk_percent,
+        'python_version': platform.python_version(),
+        'flask_version': flask.__version__,
+        'app_version': 'v1.5.4'
+    }
+
+    # Enviamos 'usuarios', 'logs' e 'sys_info' para o template
+    return render_template('telas/gestao_usuarios.html', usuarios=lista_users, logs=logs, sys_info=sys_info)
 
 # ==============================================================================
 # ROTA DE GESTÃO DE LICENÇAS (ADMIN)
@@ -254,7 +539,6 @@ def licencas():
     if request.method == 'POST':
         id_usuario = request.form.get('id_usuario')
         nova_licenca = request.form.get('nova_licenca')
-        # Capturando do form no plural
         valor_raw = request.form.get('valor_licencas', '0')
 
         try:
@@ -262,117 +546,244 @@ def licencas():
         except ValueError:
             novo_valor = 0.00
 
-        # Salvando no banco no plural
         cursor.execute("UPDATE usuarios SET licenca = ?, valor_licencas = ? WHERE id = ?", (nova_licenca, novo_valor, id_usuario))
         conexao.commit()
-        conexao.close() # Fechar conexão antes do redirect
+        conexao.close()
         return redirect(url_for('licencas'))
 
     cursor.execute("SELECT COUNT(*) as total FROM usuarios")
     total_usuarios = cursor.fetchone()['total']
 
-    # Buscando do banco no plural
     cursor.execute("SELECT id, usuario, licenca, valor_licencas FROM usuarios WHERE id != 1")
     lista_usuarios = cursor.fetchall()
 
     conexao.close()
 
-    # A variável 'versao_atual' não é mais necessária aqui, pois o
-    # @app.context_processor já a injeta automaticamente em todos os templates.
-
     return render_template('telas/licencas.html',
                            total_usuarios=total_usuarios,
                            usuarios=lista_usuarios)
 
+@app.route('/tornar_admin/<int:id>', methods=['POST'])
+def tornar_admin(id):
+    # 1. TRAVA DE SEGURANÇA: Verifica se quem clicou é o Admin Master (ID 1)
+    if session.get('user_id') != 1:
+        flash('Acesso negado. Apenas o administrador master pode promover usuários.', 'error')
+        return redirect(url_for('usuarios'))
+
+    try:
+        # 2. Conecta ao banco de dados SQLite
+        conn = sqlite3.connect('/home/Hir3solutions/mysite/financas.db')
+        cursor = conn.cursor()
+
+        # 3. Atualiza o nível de acesso do usuário no banco.
+        # ATENÇÃO: Esta linha VAI FALHAR se a coluna 'is_admin' não existir na sua tabela 'usuarios'
+        cursor.execute("UPDATE usuarios SET is_admin = 1 WHERE id = ?", (id,))
+
+        # 4. Salva a alteração e fecha a conexão
+        conn.commit()
+        conn.close()
+
+        flash('Usuário promovido a Administrador com sucesso!', 'success')
+
+    except sqlite3.OperationalError as e:
+        flash('Erro de banco de dados: Você precisa criar a coluna "is_admin" na tabela "usuarios"!', 'error')
+        print(f"Erro SQLite: {e}")
+    except Exception as e:
+        flash(f'Erro ao promover usuário: {str(e)}', 'error')
+        print(f"Erro: {e}")
+
+    # 5. ATUALIZADO: Agora redireciona corretamente para a função 'def usuarios():'
+    return redirect(url_for('usuarios'))
+
 # ==============================================================================
-# ROTA DE LOGIN E LOGOULT (SALVA O ID DO USUÁRIO NA SESSÃO E VERIFICA LICENÇA)
+# ROTAS DO PAINEL FINANCEIRO E COBRANÇAS
 # ==============================================================================
 
-@app.route('/login', methods=['GET', 'POST'])
-def login():
-    erro = None
-    sucesso = request.args.get('sucesso')
+@app.route('/financeiro')
+def financeiro():
+    # 1. Trava de Segurança
+    if 'logado' not in session or not session.get('is_admin'):
+        flash('Acesso restrito ao setor financeiro.', 'error')
+        return redirect(url_for('index'))
 
-    if request.method == 'POST':
-        usuario = request.form.get('usuario')
-        senha_digitada = request.form.get('senha')
-        manter_conectado = request.form.get('manter_conectado')
+    conexao = sqlite3.connect('financas.db')
+    conexao.row_factory = sqlite3.Row
+    cursor = conexao.cursor()
 
+    # 2. Dicionário padrão para os cards (evita erros se o banco estiver vazio)
+    fin_data = {
+        'receita_prevista': 0.0,
+        'cobrancas_ativas': 0,
+        'recebido_mes': 0.0,
+        'taxa_recebimento': 0,
+        'valor_atrasado': 0.0,
+        'qtd_atrasados': 0
+    }
+    cobrancas_pendentes = []
+
+    try:
+        # 3. Busca faturas pendentes ou atrasadas juntando com o nome do usuário
+        cursor.execute('''
+            SELECT c.id, u.usuario, u.licenca, c.data_vencimento, c.valor_fatura, c.status_pagamento
+            FROM cobrancas c
+            JOIN usuarios u ON c.usuario_id = u.id
+            WHERE c.status_pagamento != 'Em Dia'
+            ORDER BY c.data_vencimento ASC
+        ''')
+        cobrancas_pendentes = [dict(row) for row in cursor.fetchall()]
+
+        # 4. Calcula os totais para o Resumo Geral
+        cursor.execute("SELECT status_pagamento, valor_fatura FROM cobrancas")
+        todas_cobrancas = cursor.fetchall()
+
+        for cob in todas_cobrancas:
+            valor = float(cob['valor_fatura']) if cob['valor_fatura'] else 0.0
+            status = cob['status_pagamento']
+
+            fin_data['receita_prevista'] += valor
+            fin_data['cobrancas_ativas'] += 1
+
+            if status == 'Em Dia':
+                fin_data['recebido_mes'] += valor
+            elif status == 'Atrasado':
+                fin_data['valor_atrasado'] += valor
+                fin_data['qtd_atrasados'] += 1
+
+        # 5. Calcula a porcentagem da meta de recebimento
+        if fin_data['receita_prevista'] > 0:
+            fin_data['taxa_recebimento'] = int((fin_data['recebido_mes'] / fin_data['receita_prevista']) * 100)
+
+    except sqlite3.OperationalError:
+        # ATENÇÃO: Se a tabela não existir, o sistema cria automaticamente!
+        cursor.execute('''
+            CREATE TABLE IF NOT EXISTS cobrancas (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                usuario_id INTEGER,
+                valor_fatura REAL,
+                data_vencimento TEXT,
+                status_pagamento TEXT
+            )
+        ''')
+        conexao.commit()
+
+    conexao.close()
+
+    return render_template('financeiro.html', fin_data=fin_data, cobrancas_pendentes=cobrancas_pendentes)
+
+
+@app.route('/atualizar_cobranca', methods=['POST'])
+def atualizar_cobranca():
+    # Rota ativada pelo botão "Atualizar Financeiro" na aba Gestão do Sistema
+    if not session.get('is_admin'):
+        return redirect(url_for('index'))
+
+    id_usuario = request.form.get('id_usuario_cobranca')
+    status = request.form.get('status_pagamento')
+    vencimento = request.form.get('data_vencimento')
+    valor_raw = request.form.get('valor_fatura', '0')
+
+    # Trata o valor (troca vírgula por ponto)
+    try:
+        valor = float(str(valor_raw).replace(',', '.'))
+    except ValueError:
+        valor = 0.00
+
+    try:
         conexao = sqlite3.connect('financas.db')
-        # ATUALIZAÇÃO: Permite acessar as colunas pelo nome (ex: usuario_banco['licenca'])
-        # sem quebrar a busca pelos números de índice [0] e [2] que você já utiliza
-        conexao.row_factory = sqlite3.Row
         cursor = conexao.cursor()
 
-        # BUSCAMOS O REGISTRO DO USUÁRIO
-        # ATUALIZADO: Ignorando maiúsculas/minúsculas usando LOWER()
-        cursor.execute("SELECT * FROM usuarios WHERE LOWER(usuario) = LOWER(?)", (usuario,))
-        usuario_banco = cursor.fetchone()
+        # Verifica se o usuário já tem uma cobrança registrada
+        cursor.execute("SELECT id FROM cobrancas WHERE usuario_id = ?", (id_usuario,))
+        existe = cursor.fetchone()
+
+        if existe:
+            cursor.execute('''
+                UPDATE cobrancas
+                SET status_pagamento = ?, data_vencimento = ?, valor_fatura = ?
+                WHERE usuario_id = ?
+            ''', (status, vencimento, valor, id_usuario))
+        else:
+            cursor.execute('''
+                INSERT INTO cobrancas (usuario_id, status_pagamento, data_vencimento, valor_fatura)
+                VALUES (?, ?, ?, ?)
+            ''', (id_usuario, status, vencimento, valor))
+
+        conexao.commit()
+        flash('Financeiro atualizado com sucesso!', 'success')
+    except Exception as e:
+        flash(f'Erro ao salvar cobrança: {e}', 'error')
+    finally:
         conexao.close()
 
-        # O índice [2] é a senha, o índice [0] é o ID do usuário na tabela
-        if usuario_banco and check_password_hash(usuario_banco[2], senha_digitada):
+    return redirect(url_for('usuarios'))
 
-            # --- NOVA REGRA DE BLOQUEIO AQUI ---
-            # Verifica se a licença do usuário está bloqueada, inativa ou vencida (ignorando o Admin, ID 1)
-            if usuario_banco['licenca'] in ['Bloqueada', 'Inativa', 'Vencida'] and usuario_banco[0] != 1:
-                erro = "Acesso Negado: Sua licença está inativa ou bloqueada. Contate o administrador."
-                return render_template('login.html', erro=erro, sucesso=sucesso)
-            # -----------------------------------
 
-            session['logado'] = True
+@app.route('/marcar_pago/<int:id>', methods=['POST'])
+def marcar_pago(id):
+    # Rota ativada pelo botão verde de "Check" na tela do Painel Financeiro
+    if not session.get('is_admin'):
+        return redirect(url_for('index'))
 
-            # Salvamos o ID para filtrar os dados por usuário depois
-            session['user_id'] = usuario_banco[0]
-
-            # Salvamos o nome do usuário para o Avatar no topo da tela
-            session['usuario'] = usuario_banco[1]
-
-            # ATUALIZAÇÃO: Define se é Admin (True se o ID for 1, False se for outro)
-            session['is_admin'] = (usuario_banco[0] == 1)
-
-            if manter_conectado:
-                session.permanent = True
-            else:
-                session.permanent = False
-
-            return redirect(url_for('home'))
-        else:
-            erro = "Usuário ou senha inválidos!"
-
-    return render_template('login.html', erro=erro, sucesso=sucesso)
-
-@app.route('/logout')
-def logout():
-    session.pop('logado', None)
-    return redirect(url_for('login'))
-
-# --- NOVA ROTA: REDEFINIÇÃO DE SENHA CRIPTOGRAFADA ---
-@app.route('/recuperar', methods=['GET', 'POST'])
-def recuperar():
-    erro = None
-    if request.method == 'POST':
-        usuario = request.form.get('usuario')
-        nova_senha = request.form.get('nova_senha')
-
+    try:
         conexao = sqlite3.connect('financas.db')
         cursor = conexao.cursor()
 
-        # Verifica se o usuário digitado realmente existe no banco
-        cursor.execute('SELECT * FROM usuarios WHERE usuario = ?', (usuario,))
-        if cursor.fetchone():
-            # Criptografa a nova senha antes de salvar
-            nova_senha_hash = generate_password_hash(nova_senha)
-            cursor.execute('UPDATE usuarios SET senha = ? WHERE usuario = ?', (nova_senha_hash, usuario))
-            conexao.commit()
-            conexao.close()
-            # Redireciona para o login exibindo o aviso de sucesso
-            return redirect(url_for('login', sucesso="Senha redefinida com sucesso! Use suas novas credenciais."))
-        else:
-            erro = "Usuário não encontrado no sistema!"
-            conexao.close()
+        cursor.execute("UPDATE cobrancas SET status_pagamento = 'Em Dia' WHERE id = ?", (id,))
+        conexao.commit()
 
-    return render_template('telas/recuperar.html', erro=erro)
+        flash('Fatura marcada como PAGA com sucesso!', 'success')
+    except Exception as e:
+        flash(f'Erro ao dar baixa na fatura: {e}', 'error')
+    finally:
+        conexao.close()
+
+    return redirect(url_for('financeiro'))
+
+from datetime import datetime, timedelta
+
+@app.route('/renovar_cobranca', methods=['POST'])
+def renovar_cobranca():
+    if not session.get('is_admin'):
+        return redirect(url_for('index'))
+
+    cobranca_id = request.form.get('cobranca_id')
+    periodo = request.form.get('periodo')
+
+    try:
+        conexao = sqlite3.connect('financas.db')
+        cursor = conexao.cursor()
+
+        if periodo == 'indeterminado':
+            novo_vencimento = 'Vitalício'
+        else:
+            # Calcula a data atual + os dias selecionados
+            dias = int(periodo)
+            data_futura = datetime.now() + timedelta(days=dias)
+
+            # Formato YYYY-MM-DD para visualização limpa
+            novo_vencimento = data_futura.strftime('%Y-%m-%d')
+
+        # Atualiza a data e já marca como "Em Dia"
+        cursor.execute('''
+            UPDATE cobrancas
+            SET data_vencimento = ?, status_pagamento = 'Em Dia'
+            WHERE id = ?
+        ''', (novo_vencimento, cobranca_id))
+
+        conexao.commit()
+
+        if periodo == 'indeterminado':
+            flash('Assinatura renovada para tempo indeterminado (Vitalício)!', 'success')
+        else:
+            flash(f'Assinatura renovada com sucesso para +{periodo} dias!', 'success')
+
+    except Exception as e:
+        flash(f'Erro ao renovar assinatura: {e}', 'error')
+    finally:
+        conexao.close()
+
+    return redirect(url_for('financeiro'))
+
 # ==============================================================================
 # MEU PERFIL
 # ==============================================================================
@@ -383,19 +794,46 @@ def perfil():
 
     user_id = session['user_id']
     conexao = sqlite3.connect('financas.db')
+    conexao.row_factory = sqlite3.Row # Adicionado para pegarmos os dados pelo nome da coluna
     cursor = conexao.cursor()
 
     if request.method == 'POST':
         # Aqui no futuro podemos processar a atualização de senha ou nome
         pass
 
-    cursor.execute("SELECT usuario FROM usuarios WHERE id = ?", (user_id,))
-    usuario = cursor.fetchone()
+    try:
+        # Pede ao banco TODAS as informações novas do usuário
+        cursor.execute("SELECT usuario, licenca, valor_licencas, modulos_liberados FROM usuarios WHERE id = ?", (user_id,))
+        usuario_data = cursor.fetchone()
+    except sqlite3.OperationalError:
+        # Plano B: se a coluna de módulos ou valor ainda não existir, puxa só o básico para não dar erro 500
+        cursor.execute("SELECT usuario, licenca FROM usuarios WHERE id = ?", (user_id,))
+        row = cursor.fetchone()
+        if row:
+            usuario_data = {'usuario': row['usuario'], 'licenca': row['licenca'], 'valor_licencas': 0.0, 'modulos_liberados': 'Todos'}
+        else:
+            usuario_data = None
+
     conexao.close()
 
-    nome_usuario = usuario[0] if usuario else session.get('usuario', '')
+    # Distribuindo as informações capturadas nas variáveis que o HTML está esperando
+    if usuario_data:
+        nome_usuario = usuario_data['usuario']
+        licenca_usuario = usuario_data['licenca']
+        valor_licenca = usuario_data['valor_licencas']
+        modulos_liberados = usuario_data['modulos_liberados']
+    else:
+        # Valores de segurança caso a sessão fique maluca
+        nome_usuario = session.get('usuario', '')
+        licenca_usuario = 'Básica'
+        valor_licenca = 0.0
+        modulos_liberados = 'Todos'
 
-    return render_template('perfil.html', nome_usuario=nome_usuario)
+    return render_template('perfil.html',
+                           nome_usuario=nome_usuario,
+                           licenca_usuario=licenca_usuario,
+                           valor_licenca=valor_licenca,
+                           modulos_liberados=modulos_liberados)
 
 # ==============================================================================
 # ROTA DE ATUALIZAÇÕES (CHANGELOG)
@@ -449,7 +887,7 @@ def renda():
 
 # --- AJUSTE NA FUNÇÃO DE CONEXÃO (ADICIONE ISSO NO SEU ARQUIVO) ---
 def get_db_connection():
-    conn = sqlite3.connect('financas.db')
+    conn = sqlite3.connect('/home/Hir3solutions/mysite/financas.db')
     conn.row_factory = sqlite3.Row  # <--- ESSENCIAL PARA O g.descricao funcionar
     return conn
 
@@ -528,6 +966,49 @@ def processar_comprovante_imagem():
 # NOVO GASTO
 # ==============================================================================
 
+import sqlite3
+import json # <- Essencial para a IA funcionar
+
+# ==============================================================================
+# MOTOR DE APRENDIZADO DA IA (hir3) - BLINDADO
+# ==============================================================================
+def registrar_aprendizado_ia(user_id, modulo, acao, dados):
+    """
+    Registra os padrões de comportamento do usuário para treinamento contínuo da IA.
+    Envolvido em try/except para NUNCA travar o sistema se algo der errado.
+    """
+    try:
+        import json # Importação de segurança
+        conexao = sqlite3.connect('financas.db')
+        cursor = conexao.cursor()
+
+        cursor.execute('''
+            CREATE TABLE IF NOT EXISTS ia_comportamento_usuario (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                usuario_id INTEGER,
+                modulo TEXT,
+                acao TEXT,
+                dados_json TEXT,
+                data_registro DATETIME DEFAULT CURRENT_TIMESTAMP
+            )
+        ''')
+
+        cursor.execute('''
+            INSERT INTO ia_comportamento_usuario (usuario_id, modulo, acao, dados_json)
+            VALUES (?, ?, ?, ?)
+        ''', (user_id, modulo, acao, json.dumps(dados)))
+
+        conexao.commit()
+    except Exception as e:
+        print(f"[AVISO IA] Erro silencioso no motor de aprendizado: {e}")
+    finally:
+        conexao.close()
+
+
+# ==============================================================================
+# ROTAS DE GASTOS - BLINDADAS CONTRA ERRO 500
+# ==============================================================================
+
 @app.route('/novo_gasto', methods=['GET', 'POST'])
 def novo_gasto():
     user_id = session.get('user_id')
@@ -535,28 +1016,61 @@ def novo_gasto():
         return redirect(url_for('login'))
 
     if request.method == 'POST':
-        descricao = request.form.get('descricao')
-        valor = float(request.form.get('valor', '0').replace(',', '.'))
-        categoria = request.form.get('categoria')
-        data = request.form.get('data_gasto') or request.form.get('data')
+        try:
+            descricao = request.form.get('descricao', 'Gasto sem nome')
+            categoria = request.form.get('categoria', 'Outros')
+            data = request.form.get('data_gasto') or request.form.get('data')
+            status = request.form.get('status', 'PAGO')
 
-        quinzena = request.form.get('quinzena')
-        quinzena = int(quinzena) if quinzena else 0
-        status = request.form.get('status', 'PAGO')
+            valor_raw = request.form.get('valor', '0').strip()
+            if not valor_raw:
+                valor_raw = '0'
+            try:
+                valor = float(valor_raw.replace(',', '.'))
+            except ValueError:
+                valor = 0.0
 
-        conexao = sqlite3.connect('financas.db')
-        cursor = conexao.cursor()
+            quinzena_raw = request.form.get('quinzena', '0')
+            quinzena = int(quinzena_raw) if str(quinzena_raw).isdigit() else 0
 
-        cursor.execute('''
-            INSERT INTO gastos (usuario_id, descricao, valor, categoria, data, quinzena, status)
-            VALUES (?, ?, ?, ?, ?, ?, ?)
-        ''', (user_id, descricao, valor, categoria, data, quinzena, status))
+            conexao = sqlite3.connect('financas.db')
+            cursor = conexao.cursor()
 
-        conexao.commit()
-        conexao.close()
-        return redirect(url_for('home'))
+            # ==========================================
+            # AUTO-CORREÇÃO DO BANCO DE DADOS
+            # Cria a coluna de quinzena caso ela não exista
+            # ==========================================
+            try:
+                cursor.execute("ALTER TABLE gastos ADD COLUMN quinzena INTEGER DEFAULT 0")
+                conexao.commit()
+            except sqlite3.OperationalError:
+                pass # Se a coluna já existir, ele segue o jogo!
+
+            # Agora insere com a certeza absoluta de que a coluna existe
+            cursor.execute('''
+                INSERT INTO gastos (usuario_id, descricao, valor, categoria, data, quinzena, status)
+                VALUES (?, ?, ?, ?, ?, ?, ?)
+            ''', (user_id, descricao, valor, categoria, data, quinzena, status))
+
+            conexao.commit()
+            conexao.close()
+
+            # ALIMENTANDO A IA (Silenciosamente)
+            try:
+                registrar_aprendizado_ia(user_id, 'gastos', 'criar', {
+                    'descricao': descricao, 'categoria': categoria, 'valor': valor, 'quinzena': quinzena, 'status': status
+                })
+            except Exception:
+                pass
+
+            return redirect(url_for('home'))
+
+        except Exception as e:
+            print(f"ERRO FATAL EM NOVO GASTO: {e}")
+            return redirect(url_for('home'))
 
     return render_template('telas/novo_gasto.html')
+
 
 @app.route('/editar_gasto/<int:id>', methods=['GET', 'POST'])
 def editar_gasto(id):
@@ -564,32 +1078,65 @@ def editar_gasto(id):
         return redirect(url_for('login'))
 
     user_id = session['user_id']
-    conn = get_db_connection()
-    cursor = conn.cursor()
+    conexao = sqlite3.connect('financas.db')
+    conexao.row_factory = sqlite3.Row
+    cursor = conexao.cursor()
+
+    # ==========================================
+    # AUTO-CORREÇÃO DO BANCO DE DADOS
+    # ==========================================
+    try:
+        cursor.execute("ALTER TABLE gastos ADD COLUMN quinzena INTEGER DEFAULT 0")
+        conexao.commit()
+    except sqlite3.OperationalError:
+        pass
 
     if request.method == 'POST':
-        descricao = request.form['descricao']
-        data = request.form['data_gasto'] # Capture o valor do input
-        valor = request.form['valor']
-        categoria = request.form['categoria']
-        quinzena = request.form['quinzena']
-        status = request.form['status']
+        try:
+            descricao = request.form.get('descricao', '')
+            data = request.form.get('data_gasto', '')
+            categoria = request.form.get('categoria', '')
+            status = request.form.get('status', 'PAGO')
 
-        # CORREÇÃO: Mudei para 'data' para coincidir com o banco
-        cursor.execute("""
-            UPDATE gastos
-            SET descricao=?, data=?, valor=?, categoria=?, quinzena=?, status=?
-            WHERE id=? AND usuario_id=?
-        """, (descricao, data, valor, categoria, quinzena, status, id, user_id))
+            valor_raw = request.form.get('valor', '0').strip()
+            if not valor_raw:
+                valor_raw = '0'
+            try:
+                valor = float(valor_raw.replace(',', '.'))
+            except ValueError:
+                valor = 0.0
 
-        conn.commit()
-        conn.close()
-        return redirect('/')
+            quinzena_raw = request.form.get('quinzena', '0')
+            quinzena = int(quinzena_raw) if str(quinzena_raw).isdigit() else 0
+
+            # O fallback sumiu porque garantimos que a coluna existe no try acima!
+            cursor.execute("""
+                UPDATE gastos
+                SET descricao=?, data=?, valor=?, categoria=?, quinzena=?, status=?
+                WHERE id=? AND usuario_id=?
+            """, (descricao, data, valor, categoria, quinzena, status, id, user_id))
+
+            conexao.commit()
+            conexao.close()
+
+            try:
+                registrar_aprendizado_ia(user_id, 'gastos', 'editar', {
+                    'id_gasto': id, 'nova_descricao': descricao, 'nova_categoria': categoria, 'novo_valor': valor, 'nova_quinzena': quinzena
+                })
+            except Exception:
+                pass
+
+            return redirect('/')
+
+        except Exception as e:
+            print(f"Erro fatal ao editar gasto: {e}")
+            conexao.close()
+            return redirect('/')
 
     # GET: Busca o gasto atual
     cursor.execute("SELECT * FROM gastos WHERE id=? AND usuario_id=?", (id, user_id))
     gasto = cursor.fetchone()
-    conn.close()
+    conexao.close()
 
     if not gasto:
         return "Gasto não encontrado ou sem permissão", 404
@@ -598,7 +1145,7 @@ def editar_gasto(id):
 
 @app.route('/excluir_gasto/<int:id>', methods=['POST'])
 def excluir_gasto(id):
-    if 'logado' not in session:
+    if 'user_id' not in session:
         return redirect(url_for('login'))
 
     user_id = session['user_id']
@@ -606,15 +1153,28 @@ def excluir_gasto(id):
     cursor = conexao.cursor()
 
     try:
-        # Segurança: Garante que o gasto pertence ao usuário ativo antes de deletar
+        cursor.execute("SELECT descricao, categoria, valor FROM gastos WHERE id = ? AND usuario_id = ?", (id, user_id))
+        gasto_apagado = cursor.fetchone()
+
         cursor.execute("DELETE FROM gastos WHERE id = ? AND usuario_id = ?", (id, user_id))
         conexao.commit()
+
+        if gasto_apagado:
+            # ALIMENTANDO A IA DE FORMA SEGURA
+            try:
+                registrar_aprendizado_ia(user_id, 'gastos', 'excluir', {
+                    'descricao_excluida': gasto_apagado[0],
+                    'categoria': gasto_apagado[1],
+                    'valor': gasto_apagado[2]
+                })
+            except Exception:
+                pass
+
     except Exception as e:
         print(f"Erro ao excluir gasto: {e}")
     finally:
         conexao.close()
 
-    # Captura o mês que estava filtrado para não perder a navegação do usuário
     mes_filtro = request.form.get('mes_filtro')
     if mes_filtro:
         return redirect(url_for('home', mes=mes_filtro))
@@ -989,6 +1549,7 @@ def compras():
     conexao.commit()
 
     if request.method == 'POST':
+        # Salvar Meta de Compras
         if 'valor_meta' in request.form:
             valor_meta = parse_valor(request.form.get('valor_meta'))
             cursor.execute('''
@@ -1000,7 +1561,8 @@ def compras():
             conexao.close()
             return redirect('/compras')
 
-        elif 'descricao' in request.form:
+        # Adicionar novo item
+        elif 'adicionar' in request.form or ('descricao' in request.form and 'id_item_edit' not in request.form):
             descricao = request.form.get('descricao', '').strip()
             quantidade = int(request.form.get('quantidade', 1))
             preco = parse_valor(request.form.get('preco'))
@@ -1011,6 +1573,24 @@ def compras():
                     INSERT INTO lista_compras (usuario_id, descricao, quantidade, preco, total_item, mes)
                     VALUES (?, ?, ?, ?, ?, ?)
                 ''', (user_id, descricao, quantidade, preco, total_item, mes_atual))
+                conexao.commit()
+            conexao.close()
+            return redirect('/compras')
+
+        # Editar item existente (NOVA FUNCIONALIDADE)
+        elif 'editar' in request.form:
+            id_edit = request.form.get('id_item_edit')
+            descricao = request.form.get('descricao', '').strip()
+            quantidade = int(request.form.get('quantidade', 1))
+            preco = parse_valor(request.form.get('preco'))
+            total_item = quantidade * preco
+
+            if descricao and id_edit:
+                cursor.execute('''
+                    UPDATE lista_compras
+                    SET descricao = ?, quantidade = ?, preco = ?, total_item = ?
+                    WHERE id = ? AND usuario_id = ?
+                ''', (descricao, quantidade, preco, total_item, id_edit, user_id))
                 conexao.commit()
             conexao.close()
             return redirect('/compras')
@@ -1061,16 +1641,35 @@ def exportar_compras_csv():
     conexao.close()
 
     output = io.StringIO()
-    output.write('\ufeff')
+    output.write('\ufeff') # Garante a leitura correta de acentos no Excel
     writer = csv.writer(output, delimiter=';')
-    writer.writerow(['Descricao', 'Quantidade', 'Preco'])
+
+    # Cabeçalho atualizado
+    writer.writerow(['Descrição', 'Quantidade', 'Preço Unitário', 'Total do Item'])
+
+    row_num = 2 # Começa na linha 2 porque a linha 1 é o cabeçalho
     for item in itens:
+        descricao = item[0]
+        quantidade = item[1]
         preco_br = str(item[2]).replace('.', ',')
-        writer.writerow([item[0], item[1], preco_br])
+
+        # Injeção de Fórmula Dinâmica do Excel: Multiplica Quantidade (B) x Preço (C)
+        formula_total = f'=B{row_num}*C{row_num}'
+
+        writer.writerow([descricao, quantidade, preco_br, formula_total])
+        row_num += 1
+
+    # Espaçamento e Linha Final de Soma (Totalizador)
+    writer.writerow(['', '', '', ''])
+    if row_num > 2:
+        # Cria um =SOMA(D2:DX) contendo todos os totais acima
+        formula_soma_geral = f'=SOMA(D2:D{row_num-1})'
+        writer.writerow(['', '', 'TOTAL GERAL:', formula_soma_geral])
 
     output.seek(0)
+    # Atualizei o nome do arquivo para incluir o mês na hora de salvar
     return Response(output.getvalue(), mimetype="text/csv; charset=utf-8",
-                    headers={"Content-Disposition": "attachment;filename=lista_compras.csv"})
+                    headers={"Content-Disposition": f"attachment;filename=lista_compras_{mes_atual}.csv"})
 
 @app.route('/importar_compras_csv', methods=['POST'])
 def importar_compras_csv():
@@ -1113,115 +1712,6 @@ def excluir_compra(id):
     conexao.commit()
     conexao.close()
     return redirect('/compras')
-
-# ==============================================================================
-# DASHBOARD --------------------------------------------------------------------
-# ==============================================================================
-@app.route('/', methods=['GET'])
-def home():
-    if 'logado' not in session:
-        return redirect(url_for('login'))
-
-    user_id = session['user_id'] # Captura o usuário logado
-
-    # Abrimos a conexão com o banco mais cedo para poder buscar a renda do usuário
-    conexao = sqlite3.connect('financas.db')
-    conexao.row_factory = sqlite3.Row
-    cursor = conexao.cursor()
-
-    # --- ATUALIZAÇÃO CRÍTICA AQUI: Busca a renda fixa e individual no banco de dados ---
-    cursor.execute("SELECT renda FROM usuarios WHERE id = ?", (user_id,))
-    resultado_usuario = cursor.fetchone()
-
-    # Garante que a renda seja tratada como NÚMERO (float), vinda do banco, e não mais da sessão temporária
-    try:
-        if resultado_usuario and resultado_usuario['renda'] is not None:
-            renda_atual = float(resultado_usuario['renda'])
-        else:
-            renda_atual = 0.00
-    except (ValueError, TypeError):
-        renda_atual = 0.00
-    # -----------------------------------------------------------------------------------
-
-    mes_atual = datetime.now().strftime('%Y-%m')
-    mes_filtro = request.args.get('mes', mes_atual)
-
-    cursor.execute('SELECT * FROM gastos WHERE data LIKE ? AND usuario_id = ? ORDER BY data DESC',
-                   (mes_filtro + '%', user_id))
-    lista_gastos = cursor.fetchall()
-
-    # CORREÇÃO 2: Força o valor de cada gasto a ser lido como float na hora de somar
-    total_gastos = sum(float(gasto['valor']) for gasto in lista_gastos)
-
-    # 1. Gráfico de Ondas (Agrupado por dia via Banco de Dados)
-    cursor.execute('''
-        SELECT substr(data, 9, 2) as dia, SUM(valor) as total
-        FROM gastos
-        WHERE data LIKE ? AND usuario_id = ?
-        GROUP BY dia ORDER BY dia
-    ''', (mes_filtro + '%', user_id))
-
-    dados_grafico = cursor.fetchall()
-    dias_grafico = [row['dia'] for row in dados_grafico]
-    # Força a leitura do gráfico em float também
-    valores_grafico = [float(row['total']) for row in dados_grafico]
-
-    conexao.close()
-
-    # --- CÁLCULOS DO DASHBOARD ---
-
-    # 2. Gráfico Donut (Agrupado por Categoria via Python - Muito rápido!)
-    categorias_dict = {}
-    for g in lista_gastos:
-        cat = g['categoria']
-        # Converte para float na divisão por categorias
-        categorias_dict[cat] = categorias_dict.get(cat, 0) + float(g['valor'])
-
-    labels_categorias = list(categorias_dict.keys())
-    valores_categorias = list(categorias_dict.values())
-
-    # CORREÇÃO 3: Convertendo a quinzena para string na hora de comparar
-    total_q1 = sum(float(g['valor']) for g in lista_gastos if str(g['quinzena']) == '1')
-    total_q2 = sum(float(g['valor']) for g in lista_gastos if str(g['quinzena']) == '2')
-    perc_q1 = round((total_q1 / total_gastos * 100), 1) if total_gastos > 0 else 0
-    perc_q2 = round((total_q2 / total_gastos * 100), 1) if total_gastos > 0 else 0
-
-    total_pago = sum(float(g['valor']) for g in lista_gastos if g['status'] == 'PAGO')
-    total_pendente = sum(float(g['valor']) for g in lista_gastos if g['status'] == 'PENDENTE')
-    perc_pago = round((total_pago / total_gastos * 100), 1) if total_gastos > 0 else 0
-    perc_pendente = round((total_pendente / total_gastos * 100), 1) if total_gastos > 0 else 0
-
-    # Ordena o TOP 3 forçando o valor como número, para não ordenar como texto
-    top3_gastos = sorted(lista_gastos, key=lambda x: float(x['valor']), reverse=True)[:3]
-
-    # CORREÇÃO 4: O CÁLCULO FINAL DE DEDUÇÃO (Agora ambos são números flutuantes reais)
-    disponivel_geral = renda_atual - total_gastos
-
-    # Formatação Final para o Visual (R$)
-    renda_formatada = f"{renda_atual:,.2f}".replace(",", "X").replace(".", ",").replace("X", ".")
-    gastos_formatado = f"{total_gastos:,.2f}".replace(",", "X").replace(".", ",").replace("X", ".")
-    disponivel_formatado = f"{disponivel_geral:,.2f}".replace(",", "X").replace(".", ",").replace("X", ".")
-    total_q1_fmt = f"{total_q1:,.2f}".replace(",", "X").replace(".", ",").replace("X", ".")
-    total_q2_fmt = f"{total_q2:,.2f}".replace(",", "X").replace(".", ",").replace("X", ".")
-    total_pago_fmt = f"{total_pago:,.2f}".replace(",", "X").replace(".", ",").replace("X", ".")
-    total_pendente_fmt = f"{total_pendente:,.2f}".replace(",", "X").replace(".", ",").replace("X", ".")
-
-    # Retorno Limpo sem Variáveis Duplicadas
-    return render_template('index.html',
-                           renda_total=renda_formatada,
-                           gastos_totais=gastos_formatado,
-                           valor_disponivel=disponivel_formatado,
-                           gastos=lista_gastos,
-                           mes_filtro=mes_filtro,
-                           dias_grafico=dias_grafico,
-                           valores_grafico=valores_grafico,
-                           labels_categorias=labels_categorias,
-                           valores_categorias=valores_categorias,
-                           perc_q1=perc_q1, perc_q2=perc_q2,
-                           total_q1=total_q1_fmt, total_q2=total_q2_fmt,
-                           perc_pago=perc_pago, perc_pendente=perc_pendente,
-                           total_pago=total_pago_fmt, total_pendente=total_pendente_fmt,
-                           top3_gastos=top3_gastos)
 
 # ==============================================================================
 # ROTA DE RELATÓRIOS (EXCLUSIVA PREMIUM)
@@ -1320,7 +1810,6 @@ def relatorios_avancados():
 # ==============================================================================
 # BOOT IA HIR3
 # ==============================================================================
-
 from flask import request, jsonify
 import json
 import sqlite3
@@ -1339,29 +1828,73 @@ modelo_hir3 = genai.GenerativeModel('gemini-1.5-flash')
 TOKEN_VERIFICACAO = "minhas_financas_secreto_123"
 
 # ==============================================================================
+# FUNÇÃO PARA BUSCAR A MEMÓRIA DO USUÁRIO
+# ==============================================================================
+def buscar_memoria_hir3(user_id):
+    """
+    Busca os últimos comportamentos do usuário para ensinar o Gemini
+    a adivinhar categorias e quinzenas com base no histórico real dele.
+    """
+    try:
+        conexao = sqlite3.connect('financas.db')
+        cursor = conexao.cursor()
+
+        # Busca as últimas 10 ações (apenas do módulo de gastos)
+        cursor.execute('''
+            SELECT acao, dados_json FROM ia_comportamento_usuario
+            WHERE usuario_id = ? AND modulo = 'gastos'
+            ORDER BY data_registro DESC LIMIT 10
+        ''', (user_id,))
+
+        historico = cursor.fetchall()
+        conexao.close()
+
+        if not historico:
+            return "O usuário é novo. Tente deduzir a categoria pela lógica padrão."
+
+        memoria_texto = "Abaixo está o histórico recente de como o usuário categoriza seus gastos. Use isso para aprender o padrão dele e deduzir categorias/quinzenas parecidas:\n"
+        for acao, dados_json in historico:
+            memoria_texto += f"- Ação Feita: {acao} | Dados: {dados_json}\n"
+
+        return memoria_texto
+    except Exception as e:
+        print(f"Erro ao buscar memória para a IA: {e}")
+        return "Sem acesso à memória no momento."
+
+# ==============================================================================
 # CÉREBRO DO HIR3 (INTEGRAÇÃO IA)
 # ==============================================================================
-def analisar_mensagem_com_hir3(texto_usuario):
-    # Este é o 'Prompt de Sistema'. Ele programa a personalidade e as regras do hir3.
+def analisar_mensagem_com_hir3(texto_usuario, user_id): # <--- ATENÇÃO: Adicionamos o user_id aqui!
+
+    # 1. Busca a memória específica desse usuário
+    memoria_do_usuario = buscar_memoria_hir3(user_id)
+
+    # 2. Injeta a memória no Prompt do Gemini
     prompt = f"""
-    Você é o 'hir3', um assistente financeiro de Inteligência Artificial para WhatsApp.
+    Você é o 'hir3', um assistente financeiro carismático de Inteligência Artificial para WhatsApp.
+    Você não é um bot engessado, você APRENDE com os hábitos do usuário!
+
+    [MEMÓRIA DE COMPORTAMENTO DO USUÁRIO]
+    {memoria_do_usuario}
+    [FIM DA MEMÓRIA]
+
     O usuário vai te enviar uma mensagem e você DEVE extrair as informações e me devolver ÚNICA e EXCLUSIVAMENTE um objeto JSON válido, sem nenhuma formatação Markdown em volta.
 
     Regras de ação:
     1. Se o usuário relatar um gasto (ex: "comprei um lanche por 20", "gastei 50 no uber"):
-       Retorne o JSON: {{"acao": "registrar_gasto", "valor": <float>, "descricao": "<texto resumido>", "categoria": "<adivinhe a categoria: Alimentação, Transporte, Saúde, Habitação, Lazer ou Outros>", "mensagem_hir3": "<Sua resposta amigável e curta confirmando o registro>"}}
+       Retorne o JSON: {{"acao": "registrar_gasto", "valor": <float>, "descricao": "<texto resumido>", "categoria": "<Adivinhe a categoria: Alimentação, Transporte, Saúde, Habitação, Lazer ou Outros. PRIORIZE COMO O USUÁRIO FEZ NO PASSADO SEGUNDO A MEMÓRIA>", "quinzena": <1 ou 2, tente deduzir pela memória>, "mensagem_hir3": "<Sua resposta amigável e curta confirmando o registro>"}}
 
-    2. Se o usuário perguntar sobre saldo ou pedir resumo:
-       Retorne o JSON: {{"acao": "consultar_saldo", "mensagem_hir3": "<Uma frase engraçada e curta avisando que vai calcular o saldo>"}}
+    2. Se o usuário perguntar sobre saldo, resumo, ou quanto falta pra meta:
+       Retorne o JSON: {{"acao": "consultar_saldo", "mensagem_hir3": "<Uma frase inteligente e curta avisando que você vai buscar o extrato>"}}
 
-    3. Se for qualquer outra coisa (oi, bom dia, dúvida):
+    3. Se for qualquer outra coisa (oi, bom dia, dúvida, meme):
        Retorne o JSON: {{"acao": "conversar", "mensagem_hir3": "<Sua resposta carismática como assistente hir3>"}}
 
-    Mensagem do usuário: "{texto_usuario}"
+    Mensagem atual do usuário: "{texto_usuario}"
     """
 
     try:
-        # Envia a mensagem para o Gemini
+        # Envia a mensagem com a memória embutida para o Gemini
         resposta = modelo_hir3.generate_content(prompt)
 
         # Limpa o texto caso a IA tente colocar "```json" em volta do código
@@ -1376,7 +1909,7 @@ def analisar_mensagem_com_hir3(texto_usuario):
         # Se a internet falhar ou a API der erro, o hir3 não quebra, ele avisa:
         return {
             "acao": "conversar",
-            "mensagem_hir3": "Ops! Meu cérebro de silício deu uma travada rápida. Pode repetir?"
+            "mensagem_hir3": "Ops! Meu cérebro de silício deu uma travada rápida com os servidores da Google. Tenta mandar a mensagem de novo?"
         }
 
 # ==========================================
@@ -1543,7 +2076,7 @@ def enviar_whatsapp(telefone_destino, texto_mensagem):
 @app.context_processor
 def inject_global_vars():
     # Defina aqui a versão centralizada
-    versao = "1.5.2"
+    versao = "1.5.6"
 
     # Gera a data automaticamente (ex: "Julho 2026")
     data_formatada = datetime.now().strftime('%B %Y').capitalize()

@@ -20,39 +20,38 @@
         </h2>
 
         <form action="{{ '/editar_gasto/' ~ gasto.id if gasto else '/novo_gasto' }}" method="POST">
-            
+
             <!-- Reduzido gap e margem inferior no mobile (gap-3 e mb-3) -->
             <div class="grid grid-cols-1 md:grid-cols-2 gap-3 md:gap-5 mb-3 md:mb-5">
                 <div>
                     <label class="block text-[11px] md:text-xs font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wider mb-1 md:mb-1.5 flex items-center gap-1">
                         <i data-lucide="file-text" class="w-3 h-3"></i> Descrição
                     </label>
-                    <!-- Inputs mais baixos no mobile: py-2 em vez de py-3 -->
                     <input type="text" name="descricao" value="{{ gasto.descricao if gasto else '' }}" placeholder="Ex: Energia, Mercado..." required
                            class="w-full px-3 py-2 md:px-4 md:py-3 text-sm md:text-base bg-gray-50 dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-xl text-gray-800 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-blue-500">
                 </div>
                 <div>
                     <label class="block text-[11px] md:text-xs font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wider mb-1 md:mb-1.5 flex items-center gap-1">
-                        <i data-lucide="calendar" class="w-3 h-3"></i> Data do Gasto (Opcional)
+                        <i data-lucide="calendar" class="w-3 h-3"></i> Data do Gasto/Vencimento
                     </label>
-                    <input type="date" name="data_gasto" value="{{ gasto.data_gasto if gasto else '' }}" 
+                    <input type="date" name="data_gasto" value="{{ gasto.data if gasto else '' }}" required
                            class="w-full px-3 py-2 md:px-4 md:py-3 text-sm md:text-base bg-gray-50 dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-xl text-gray-800 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-blue-500">
                 </div>
             </div>
 
-            <div class="grid grid-cols-1 md:grid-cols-2 gap-3 md:gap-5 mb-3 md:mb-5">
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-3 md:gap-5 mb-4 md:mb-5">
                 <div>
                     <label class="block text-[11px] md:text-xs font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wider mb-1 md:mb-1.5 flex items-center gap-1">
                         <i data-lucide="dollar-sign" class="w-3 h-3"></i> Valor (R$)
                     </label>
-                    <input type="number" step="0.01" name="valor" value="{{ gasto.valor if gasto else '' }}" placeholder="Ex: 150.00" required
+                    <!-- ATUALIZADO: type="text" + inputmode="text" + onblur="avaliarCalculo(this)" -->
+                    <input type="text" inputmode="text" name="valor" value="{{ gasto.valor if gasto else '' }}" placeholder="Ex: =10+15.50 ou 150.00" required onblur="avaliarCalculo(this)"
                            class="w-full px-3 py-2 md:px-4 md:py-3 text-sm md:text-base bg-gray-50 dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-xl text-gray-800 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-blue-500">
                 </div>
                 <div>
                     <label class="block text-[11px] md:text-xs font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wider mb-1 md:mb-1.5 flex items-center gap-1">
                         <i data-lucide="tag" class="w-3 h-3"></i> Categoria
                     </label>
-                    <!-- SELECT TROCADO POR INPUT + DATALIST PARA PERMITIR DIGITAÇÃO LIVRE -->
                     <input type="text" list="lista-categorias" name="categoria" value="{{ gasto.categoria if gasto else '' }}" placeholder="Escolha ou digite uma nova..." required
                            class="w-full px-3 py-2 md:px-4 md:py-3 text-sm md:text-base bg-gray-50 dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-xl text-gray-800 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-blue-500">
                     <datalist id="lista-categorias">
@@ -63,12 +62,12 @@
                 </div>
             </div>
 
-            <!-- Caixa azul de desconto mais compacta -->
+            <!-- CAIXA AZUL DE SELEÇÃO DE QUINZENA/INTEGRAL -->
             <div class="bg-blue-50/50 dark:bg-blue-900/10 p-3.5 md:p-5 rounded-xl border border-blue-100 dark:border-blue-900/30 mb-4 md:mb-5">
                 <label class="block text-sm font-bold text-blue-800 dark:text-blue-300 mb-2 md:mb-3 flex items-center gap-1">
                     <i data-lucide="layers" class="w-4 h-4"></i> Desconto do Gasto
                 </label>
-                
+
                 <div class="flex bg-white dark:bg-gray-800 rounded-lg p-1 mb-3 md:mb-4 border border-gray-200 dark:border-gray-700 shadow-sm">
                     <label class="flex-1 text-center cursor-pointer relative">
                         <input type="radio" name="modalidade" value="quinzena" class="peer hidden" onchange="toggleModalidade()" {% if not gasto or gasto.quinzena|string != '0' %}checked{% endif %}>
@@ -102,6 +101,7 @@
                 <div id="aviso-integral" class="hidden">
                     <p class="text-[11px] text-indigo-600 dark:text-indigo-400 text-center font-medium mt-1">Deduzido do montante principal do mês.</p>
                 </div>
+                <!-- O input real que será enviado no POST para o banco de dados -->
                 <input type="hidden" name="quinzena" id="quinzena-real" value="{{ gasto.quinzena if gasto else '1' }}">
             </div>
 
@@ -124,21 +124,20 @@
     <!-- ================= SEÇÃO DE IMPORTAÇÃO INTELIGENTE ================= -->
     {% if not gasto %}
     <div class="mt-4 md:mt-6 bg-white dark:bg-gray-800 p-4 md:p-6 rounded-2xl shadow-sm border border-gray-100 dark:border-gray-700">
-        
+
         <div class="flex items-center gap-2 mb-2">
             <div class="p-1.5 md:p-2 bg-purple-100 dark:bg-purple-900/50 rounded-lg">
                 <i data-lucide="sparkles" class="w-4 h-4 md:w-5 md:h-5 text-purple-600 dark:text-purple-400"></i>
             </div>
             <h3 class="text-base md:text-lg font-bold text-gray-800 dark:text-gray-200">Importação Inteligente</h3>
         </div>
-        
+
         <p class="text-[11px] md:text-sm text-gray-500 dark:text-gray-400 mb-4 md:mb-5 ml-1">
             Escolha como deseja importar seus gastos. A Inteligência Artificial fará a leitura automática.
         </p>
 
-        <!-- Container com as duas opções lado a lado -->
         <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-            
+
             <!-- OPÇÃO 1: EXTRATO BANCÁRIO (PDF) -->
             <form action="/upload_extrato" method="POST" enctype="multipart/form-data" class="w-full flex flex-col h-full">
                 <label for="extrato_pdf" class="flex-1 flex flex-col items-center justify-center w-full min-h-[120px] md:min-h-[144px] border-2 border-dashed border-gray-300 dark:border-gray-600 rounded-xl cursor-pointer bg-gray-50 dark:bg-gray-900 hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors group p-3 md:p-4">
@@ -147,7 +146,7 @@
                     <p class="text-[10px] md:text-xs text-gray-500 dark:text-gray-400 text-center">Nubank, Itaú, Caixa...</p>
                     <input id="extrato_pdf" name="extrato" type="file" accept="application/pdf" class="hidden" required onchange="mostrarNomeArquivo(this, 'nome_pdf')" />
                 </label>
-                
+
                 <div id="nome_pdf" class="hidden mt-2 text-[11px] md:text-xs text-center text-green-600 dark:text-green-400 font-medium flex items-center justify-center gap-1">
                     <i data-lucide="check-circle" class="w-3 h-3"></i> <span id="texto_nome_pdf" class="truncate max-w-[150px] md:max-w-[200px]"></span>
                 </div>
@@ -184,6 +183,21 @@
 <script>
     lucide.createIcons();
 
+    function mostrarNomeArquivo(input, containerId) {
+        const divMensagem = document.getElementById(containerId);
+        const spanNome = document.getElementById('texto_' + containerId);
+
+        if (input.files && input.files.length > 0) {
+            spanNome.textContent = input.files[0].name;
+            divMensagem.classList.remove('hidden');
+        } else {
+            divMensagem.classList.add('hidden');
+        }
+    }
+
+    // =====================================
+    // LÓGICA DA QUINZENA
+    // =====================================
     function toggleModalidade() {
         const modalidade = document.querySelector('input[name="modalidade"]:checked');
         if (!modalidade) return;
@@ -212,20 +226,46 @@
         }
     }
 
-    // Função atualizada para lidar com múltiplos inputs na mesma tela
-    function mostrarNomeArquivo(input, containerId) {
-        const divMensagem = document.getElementById(containerId);
-        const spanNome = document.getElementById('texto_' + containerId);
-        
-        if (input.files && input.files.length > 0) {
-            spanNome.textContent = input.files[0].name;
-            divMensagem.classList.remove('hidden');
-        } else {
-            divMensagem.classList.add('hidden');
+    // =====================================
+    // NOVA LÓGICA: CALCULADORA INTELIGENTE (VALOR)
+    // =====================================
+    function avaliarCalculo(elemento) {
+        let valor = elemento.value.trim();
+        // Se o usuário digitou '=' no começo
+        if (valor.startsWith('=')) {
+            // Troca vírgula por ponto para o JavaScript conseguir calcular
+            let expressao = valor.substring(1).replace(/,/g, '.');
+
+            // Trava de segurança: só permite números e operadores matemáticos
+            if (/^[0-9+\-*/.() ]+$/.test(expressao)) {
+                try {
+                    // Faz o cálculo matemático de forma segura
+                    let resultado = Function('"use strict";return (' + expressao + ')')();
+
+                    // Devolve o valor formatado com 2 casas decimais (ex: 20.00)
+                    elemento.value = resultado.toFixed(2);
+                } catch (e) {
+                    console.error("Erro ao calcular a expressão:", e);
+                }
+            }
         }
     }
 
     document.addEventListener('DOMContentLoaded', () => {
+        // Seleciona o campo de data
+        const inputData = document.querySelector('input[name="data_gasto"]');
+
+        // Se o campo estiver vazio (ou seja, é um Novo Gasto), preenche com a data de hoje
+        if (inputData && !inputData.value) {
+            const hoje = new Date();
+            const ano = hoje.getFullYear();
+            const mes = String(hoje.getMonth() + 1).padStart(2, '0');
+            const dia = String(hoje.getDate()).padStart(2, '0');
+
+            inputData.value = `${ano}-${mes}-${dia}`;
+        }
+
+        // Executa a verificação visual da quinzena ao carregar
         if (document.getElementById('seletor-quinzena')) {
             toggleModalidade();
         }

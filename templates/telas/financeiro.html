@@ -1,0 +1,278 @@
+{% extends "base.html" %}
+
+{% block content %}
+    <a href="javascript:history.back()" class="flex items-center gap-1 text-gray-500 hover:text-blue-600 dark:text-gray-400 dark:hover:text-blue-400 mb-4 transition-colors text-sm font-medium">
+        <i data-lucide="arrow-left" class="w-4 h-4"></i>
+        <span>Voltar</span>
+    </a>
+
+    <div class="w-full bg-white dark:bg-gray-800 p-6 rounded-xl shadow-sm border border-gray-100 dark:border-gray-700">
+        <h2 class="text-xl font-bold mb-6 text-gray-800 dark:text-gray-200 flex items-center gap-2">
+            <i data-lucide="receipt" class="w-6 h-6 text-indigo-600 dark:text-indigo-400"></i> Painel Financeiro
+        </h2>
+
+        <!-- TABS DE NAVEGAÇÃO FINANCEIRA -->
+        <div class="flex gap-4 border-b border-gray-200 dark:border-gray-700 mb-6 overflow-x-auto pb-1">
+            <button onclick="showFinTab('resumo')" id="btn-resumo" class="pb-2 border-b-2 border-indigo-500 font-bold text-sm text-indigo-600 dark:text-indigo-400 transition-all whitespace-nowrap">Resumo Geral</button>
+            <button onclick="showFinTab('faturas')" id="btn-faturas" class="pb-2 border-b-2 border-transparent hover:border-gray-300 font-bold text-sm text-gray-500 transition-all whitespace-nowrap">Faturas Pendentes</button>
+            <button onclick="showFinTab('historico')" id="btn-historico" class="pb-2 border-b-2 border-transparent hover:border-gray-300 font-bold text-sm text-gray-500 transition-all whitespace-nowrap">Histórico de Pagamentos</button>
+        </div>
+
+        {% if session.get('is_admin') %}
+            
+            <!-- ABA: RESUMO GERAL -->
+            <div id="div-resumo" class="block">
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-8">
+                    <!-- Card Receita Prevista -->
+                    <div class="p-5 bg-gradient-to-br from-indigo-50 to-white dark:from-indigo-900/20 dark:to-gray-900 rounded-2xl border border-indigo-100 dark:border-indigo-800/30 shadow-sm relative overflow-hidden">
+                        <div class="absolute top-0 right-0 w-24 h-24 bg-indigo-500/10 rounded-bl-full -z-10"></div>
+                        <div class="flex justify-between items-start mb-2">
+                            <div>
+                                <p class="text-[10px] uppercase font-bold text-indigo-500 dark:text-indigo-400 tracking-wider">Receita Prevista (Mês)</p>
+                                <h3 class="text-2xl font-black text-gray-800 dark:text-gray-100 mt-1">R$ {{ "%.2f"|format(fin_data.receita_prevista|default(0)) }}</h3>
+                            </div>
+                            <div class="p-2 bg-indigo-100 dark:bg-indigo-900/50 rounded-lg">
+                                <i data-lucide="trending-up" class="w-5 h-5 text-indigo-600 dark:text-indigo-400"></i>
+                            </div>
+                        </div>
+                        <p class="text-xs text-gray-500 mt-2"><span class="text-indigo-500 font-medium">+{{ fin_data.cobrancas_ativas|default(0) }}</span> faturas ativas no sistema</p>
+                    </div>
+
+                    <!-- Card Recebido -->
+                    <div class="p-5 bg-gradient-to-br from-emerald-50 to-white dark:from-emerald-900/20 dark:to-gray-900 rounded-2xl border border-emerald-100 dark:border-emerald-800/30 shadow-sm relative overflow-hidden">
+                        <div class="absolute top-0 right-0 w-24 h-24 bg-emerald-500/10 rounded-bl-full -z-10"></div>
+                        <div class="flex justify-between items-start mb-2">
+                            <div>
+                                <p class="text-[10px] uppercase font-bold text-emerald-500 dark:text-emerald-400 tracking-wider">Total Recebido</p>
+                                <h3 class="text-2xl font-black text-gray-800 dark:text-gray-100 mt-1">R$ {{ "%.2f"|format(fin_data.recebido_mes|default(0)) }}</h3>
+                            </div>
+                            <div class="p-2 bg-emerald-100 dark:bg-emerald-900/50 rounded-lg">
+                                <i data-lucide="check-circle" class="w-5 h-5 text-emerald-600 dark:text-emerald-400"></i>
+                            </div>
+                        </div>
+                        <p class="text-xs text-gray-500 mt-2"><span class="text-emerald-500 font-medium">{{ fin_data.taxa_recebimento|default(0) }}%</span> da previsão mensal</p>
+                    </div>
+
+                    <!-- Card Inadimplência -->
+                    <div class="p-5 bg-gradient-to-br from-rose-50 to-white dark:from-rose-900/20 dark:to-gray-900 rounded-2xl border border-rose-100 dark:border-rose-800/30 shadow-sm relative overflow-hidden">
+                        <div class="absolute top-0 right-0 w-24 h-24 bg-rose-500/10 rounded-bl-full -z-10"></div>
+                        <div class="flex justify-between items-start mb-2">
+                            <div>
+                                <p class="text-[10px] uppercase font-bold text-rose-500 dark:text-rose-400 tracking-wider">Atrasados (Inadimplência)</p>
+                                <h3 class="text-2xl font-black text-gray-800 dark:text-gray-100 mt-1">R$ {{ "%.2f"|format(fin_data.valor_atrasado|default(0)) }}</h3>
+                            </div>
+                            <div class="p-2 bg-rose-100 dark:bg-rose-900/50 rounded-lg">
+                                <i data-lucide="alert-triangle" class="w-5 h-5 text-rose-600 dark:text-rose-400"></i>
+                            </div>
+                        </div>
+                        <p class="text-xs text-gray-500 mt-2"><span class="text-rose-500 font-medium">{{ fin_data.qtd_atrasados|default(0) }} usuários</span> com pendências</p>
+                    </div>
+                </div>
+
+                <div class="bg-blue-50 dark:bg-blue-900/20 border border-blue-100 dark:border-blue-800 p-4 rounded-xl flex items-start gap-3">
+                    <i data-lucide="info" class="w-5 h-5 text-blue-500 mt-0.5"></i>
+                    <div>
+                        <h4 class="font-bold text-blue-700 dark:text-blue-400 text-sm">Resumo da Carteira</h4>
+                        <p class="text-sm text-blue-600 dark:text-blue-300 mt-1">Este painel exibe a saúde financeira do seu sistema SaaS. Para visualizar cobranças detalhadas por usuário, vá até a aba "Gestão do Sistema > Usuários" e clique no ícone de cifrão.</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- ABA: FATURAS PENDENTES -->
+            <div id="div-faturas" class="hidden">
+                <div class="flex justify-between items-center mb-4">
+                    <h3 class="text-sm font-bold text-gray-600 dark:text-gray-300 uppercase tracking-wider">Próximos Vencimentos & Atrasos</h3>
+                    <div class="relative">
+                        <input type="text" placeholder="Buscar usuário..." class="pl-8 pr-4 py-2 bg-gray-50 dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-lg text-sm focus:ring-2 focus:ring-indigo-500 w-48 transition-all">
+                        <i data-lucide="search" class="w-4 h-4 text-gray-400 absolute left-2.5 top-2.5"></i>
+                    </div>
+                </div>
+
+                <div class="overflow-x-auto rounded-xl border border-gray-200 dark:border-gray-700 shadow-sm">
+                    <table class="w-full text-left text-sm whitespace-nowrap">
+                        <thead class="bg-gray-50 dark:bg-gray-800 text-gray-500 dark:text-gray-400 text-xs uppercase font-bold tracking-wider">
+                            <tr>
+                                <th class="px-6 py-4">Usuário / Plano</th>
+                                <th class="px-6 py-4">Vencimento</th>
+                                <th class="px-6 py-4">Valor</th>
+                                <th class="px-6 py-4">Status</th>
+                                <th class="px-6 py-4 text-right">Ação</th>
+                            </tr>
+                        </thead>
+                        <tbody class="divide-y divide-gray-100 dark:divide-gray-700 bg-white dark:bg-gray-900">
+                            {% for cob in cobrancas_pendentes %}
+                            <tr class="hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors">
+                                <td class="px-6 py-4">
+                                    <div class="flex items-center gap-3">
+                                        <div class="w-8 h-8 rounded-full bg-indigo-100 dark:bg-indigo-900/50 flex items-center justify-center text-indigo-600 font-bold uppercase text-xs">
+                                            {{ cob.usuario[0] if cob.usuario else 'U' }}
+                                        </div>
+                                        <div>
+                                            <p class="font-bold text-gray-800 dark:text-gray-200">{{ cob.usuario }}</p>
+                                            <p class="text-[10px] text-gray-500">{{ cob.licenca }}</p>
+                                        </div>
+                                    </div>
+                                </td>
+                                <td class="px-6 py-4 text-gray-600 dark:text-gray-300 font-medium">
+                                    {{ cob.data_vencimento }}
+                                </td>
+                                <td class="px-6 py-4 font-black text-gray-800 dark:text-gray-200">
+                                    R$ {{ "%.2f"|format(cob.valor_fatura) }}
+                                </td>
+                                <td class="px-6 py-4">
+                                    {% if cob.status_pagamento == 'Atrasado' %}
+                                        <span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md text-xs font-bold bg-rose-100 text-rose-700 dark:bg-rose-900/30 dark:text-rose-400 border border-rose-200 dark:border-rose-800/50">
+                                            <div class="w-1.5 h-1.5 rounded-full bg-rose-500 animate-pulse"></div> Atrasado
+                                        </span>
+                                    {% else %}
+                                        <span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md text-xs font-bold bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400 border border-amber-200 dark:border-amber-800/50">
+                                            <div class="w-1.5 h-1.5 rounded-full bg-amber-500"></div> Pendente
+                                        </span>
+                                    {% endif %}
+                                </td>
+                                <td class="px-6 py-4 text-right">
+                                    
+                                    <!-- NOVO BOTÃO DE RENOVAR -->
+                                    <button type="button" onclick="abrirModalRenovacao('{{ cob.id }}', '{{ cob.usuario }}')" title="Renovar Assinatura" class="p-2 inline-block text-indigo-500 bg-indigo-50 hover:bg-indigo-100 dark:bg-indigo-900/20 dark:hover:bg-indigo-900/40 rounded-lg transition-colors border border-transparent mr-1">
+                                        <i data-lucide="refresh-cw" class="w-4 h-4"></i>
+                                    </button>
+
+                                    <!-- BOTÃO MARCAR PAGO -->
+                                    <form action="/marcar_pago/{{ cob.id }}" method="POST" class="inline-block">
+                                        <button type="submit" title="Baixa Rápida (Pago)" class="p-2 text-emerald-600 bg-emerald-50 hover:bg-emerald-100 dark:bg-emerald-900/20 dark:hover:bg-emerald-900/40 rounded-lg transition-colors border border-emerald-100 dark:border-emerald-800">
+                                            <i data-lucide="check" class="w-4 h-4"></i>
+                                        </button>
+                                    </form>
+                                    
+                                    <!-- BOTÃO WHATSAPP -->
+                                    <a href="https://api.whatsapp.com/send?phone=SEUNUMERO&text=Olá, {{ cob.usuario }}. Notamos que sua fatura de R$ {{ '%.2f'|format(cob.valor_fatura) }} está pendente." target="_blank" title="Cobrar no WhatsApp" class="p-2 inline-block text-emerald-500 bg-emerald-50 hover:bg-emerald-100 dark:bg-emerald-900/10 dark:hover:bg-emerald-900/30 rounded-lg transition-colors ml-1 border border-transparent">
+                                        <i data-lucide="message-circle" class="w-4 h-4"></i>
+                                    </a>
+                                </td>
+                            </tr>
+                            {% else %}
+                            <tr>
+                                <td colspan="5" class="px-6 py-12 text-center">
+                                    <div class="flex flex-col items-center justify-center text-gray-400">
+                                        <i data-lucide="inbox" class="w-12 h-12 mb-3 text-gray-300 dark:text-gray-600"></i>
+                                        <p class="font-medium text-gray-500 dark:text-gray-400">Nenhuma fatura pendente ou atrasada.</p>
+                                        <p class="text-xs mt-1">Todos os usuários estão em dia!</p>
+                                    </div>
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <!-- ABA: HISTÓRICO DE PAGAMENTOS -->
+            <div id="div-historico" class="hidden">
+                <div class="bg-gray-50 dark:bg-gray-900 rounded-xl border border-gray-200 dark:border-gray-700 p-6 text-center">
+                    <i data-lucide="history" class="w-10 h-10 text-gray-400 mx-auto mb-3"></i>
+                    <h3 class="font-bold text-gray-700 dark:text-gray-300 mb-2">Histórico Completo</h3>
+                    <p class="text-sm text-gray-500 dark:text-gray-400 max-w-md mx-auto">
+                        Aqui você poderá visualizar o registro de todos os pagamentos já realizados, exportar relatórios em PDF ou Excel e filtrar por período. Em construção.
+                    </p>
+                </div>
+            </div>
+
+            <!-- MODAL DE RENOVAÇÃO -->
+            <div id="modal-renovacao" class="fixed inset-0 z-50 hidden flex items-center justify-center bg-black/50 backdrop-blur-sm transition-opacity">
+                <div class="bg-white dark:bg-gray-800 p-6 rounded-3xl shadow-2xl w-full max-w-md border border-gray-100 dark:border-gray-700 transform transition-all">
+                    <h3 class="text-xl font-bold text-gray-800 dark:text-gray-100 mb-2 flex items-center gap-2">
+                        <i data-lucide="refresh-cw" class="w-5 h-5 text-indigo-500"></i> Renovar Assinatura
+                    </h3>
+                    
+                    <form action="/renovar_cobranca" method="POST" id="form-renovacao">
+                        <input type="hidden" name="cobranca_id" id="renovacao-id">
+                        <p class="text-sm text-gray-500 dark:text-gray-400 mb-6">Selecione o novo ciclo para renovar a fatura de <strong id="renovacao-usuario" class="text-indigo-600 dark:text-indigo-400"></strong>.</p>
+                        
+                        <div class="mb-6">
+                            <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Período de Renovação</label>
+                            <select name="periodo" required class="w-full px-4 py-3 bg-gray-50 dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-xl text-gray-800 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-indigo-500 cursor-pointer transition-all">
+                                <option value="30" selected>30 Dias (Mensal)</option>
+                                <option value="60">60 Dias (Bimestral)</option>
+                                <option value="90">90 Dias (Trimestral)</option>
+                                <option value="indeterminado">Tempo Indeterminado (Vitalício)</option>
+                            </select>
+                        </div>
+                        
+                        <div class="flex gap-3">
+                            <button type="submit" class="flex-1 bg-indigo-600 text-white font-bold py-3.5 rounded-xl hover:bg-indigo-700 transition duration-200 shadow-md flex justify-center items-center gap-2 active:scale-95">
+                                <i data-lucide="check" class="w-5 h-5"></i> Confirmar
+                            </button>
+                            <button type="button" onclick="fecharModalRenovacao()" class="px-5 py-3.5 bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 font-bold rounded-xl hover:bg-gray-200 dark:hover:bg-gray-600 transition active:scale-95">
+                                Cancelar
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+
+        {% else %}
+            <!-- TELA DE ACESSO NEGADO -->
+            <div class="flex flex-col items-center justify-center py-12 px-4">
+                <div class="w-full max-w-md bg-white dark:bg-gray-800 p-8 rounded-3xl shadow-xl border border-gray-100 dark:border-gray-700 text-center relative overflow-hidden">
+                    <div class="absolute top-0 right-0 w-32 h-32 bg-red-500/5 rounded-bl-full -z-10"></div>
+                    <div class="absolute bottom-0 left-0 w-24 h-24 bg-red-500/5 rounded-tr-full -z-10"></div>
+
+                    <div class="inline-flex items-center justify-center w-24 h-24 rounded-full bg-red-50 dark:bg-red-900/30 mb-6 shadow-inner border-4 border-white dark:border-gray-800">
+                        <i data-lucide="shield-alert" class="w-12 h-12 text-red-500 dark:text-red-400 animate-pulse"></i>
+                    </div>
+
+                    <h1 class="text-2xl font-black text-gray-800 dark:text-gray-100 mb-2">Acesso Restrito</h1>
+                    <p class="text-sm text-gray-500 dark:text-gray-400 mb-8 leading-relaxed">
+                        Esta área é exclusiva para o <strong>Setor Financeiro / Administradores</strong>. 
+                    </p>
+
+                    <a href="/" class="w-full bg-gray-800 hover:bg-black dark:bg-gray-700 dark:hover:bg-gray-600 text-white font-bold py-3.5 rounded-2xl transition-all flex justify-center items-center gap-2">
+                        <i data-lucide="arrow-left" class="w-4 h-4"></i> Voltar ao Início
+                    </a>
+                </div>
+            </div>
+        {% endif %}
+    </div>
+
+    <script>
+        function showFinTab(tab) {
+            const allTabs = ['div-resumo', 'div-faturas', 'div-historico'];
+            const allBtns = ['btn-resumo', 'btn-faturas', 'btn-historico'];
+
+            allTabs.forEach(t => {
+                const el = document.getElementById(t);
+                if (el) el.classList.add('hidden');
+            });
+            
+            allBtns.forEach(b => {
+                const btn = document.getElementById(b);
+                if (btn) {
+                    btn.className = "pb-2 border-b-2 border-transparent font-bold text-sm text-gray-500 hover:border-gray-300 transition-all whitespace-nowrap";
+                }
+            });
+            
+            const targetDiv = document.getElementById('div-' + tab);
+            if (targetDiv) targetDiv.classList.remove('hidden');
+
+            const targetBtn = document.getElementById('btn-' + tab);
+            if (targetBtn) {
+                targetBtn.className = "pb-2 border-b-2 border-indigo-500 font-bold text-sm text-indigo-600 dark:text-indigo-400 transition-all whitespace-nowrap";
+            }
+        }
+
+        // Funções do Modal de Renovação
+        function abrirModalRenovacao(id, usuario) {
+            document.getElementById('renovacao-id').value = id;
+            document.getElementById('renovacao-usuario').innerText = usuario;
+            document.getElementById('modal-renovacao').classList.remove('hidden');
+        }
+
+        function fecharModalRenovacao() {
+            document.getElementById('modal-renovacao').classList.add('hidden');
+        }
+
+        window.addEventListener('DOMContentLoaded', () => {
+            lucide.createIcons();
+        });
+    </script>
+{% endblock %}

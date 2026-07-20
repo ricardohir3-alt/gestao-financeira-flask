@@ -10,13 +10,13 @@ modelo = genai.GenerativeModel('gemini-1.5-flash')
 
 def analisar_mensagem_com_hir3(texto_usuario):
     """
-    Função principal do hir3. 
+    Função principal do hir3.
     Lê o WhatsApp, interpreta a intenção e devolve um JSON puro.
     """
-    
+
     prompt = f"""
     Você é o 'hir3', o assistente virtual de inteligência artificial do sistema financeiro 'Minhas Finanças'.
-    Sua missão é interpretar a mensagem do usuário e extrair os dados retornando ÚNICA e EXCLUSIVAMENTE um objeto JSON válido. 
+    Sua missão é interpretar a mensagem do usuário e extrair os dados retornando ÚNICA e EXCLUSIVAMENTE um objeto JSON válido.
     NÃO adicione formatação Markdown (como ```json) e não escreva nenhum texto antes ou depois do JSON.
 
     Siga rigorosamente estas 4 regras de intenção:
@@ -37,16 +37,16 @@ def analisar_mensagem_com_hir3(texto_usuario):
 
     Mensagem do usuário: "{texto_usuario}"
     """
-    
+
     try:
         # Envia para o Gemini
         resposta = modelo.generate_content(prompt)
-        
+
         # Limpeza para garantir formato JSON
         texto_limpo = resposta.text.replace('```json', '').replace('```', '').strip()
-        
+
         return json.loads(texto_limpo)
-        
+
     except json.JSONDecodeError:
         print(f"Erro de formatação do Gemini. Resposta crua: {resposta.text}")
         return {

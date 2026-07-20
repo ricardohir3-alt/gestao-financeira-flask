@@ -1,0 +1,473 @@
+{% extends "base.html" %}
+
+{% block content %}
+    <a href="javascript:history.back()" class="flex items-center gap-1 text-gray-500 hover:text-blue-600 dark:text-gray-400 dark:hover:text-blue-400 mb-4 transition-colors text-sm font-medium">
+        <i data-lucide="arrow-left" class="w-4 h-4"></i>
+        <span>Voltar</span>
+    </a>
+
+    <div class="w-full bg-white dark:bg-gray-800 p-6 rounded-xl shadow-sm border border-gray-100 dark:border-gray-700">
+        <h2 class="text-xl font-bold mb-6 text-gray-800 dark:text-gray-200 flex items-center gap-2">
+            <i data-lucide="settings" class="w-6 h-6 text-blue-600 dark:text-blue-400"></i> Gestão do Sistema
+        </h2>
+
+        <!-- ABA DE NAVEGAÇÃO -->
+        <div class="flex gap-4 border-b border-gray-200 dark:border-gray-700 mb-6 overflow-x-auto pb-1">
+            <button onclick="showTab('usuarios')" id="btn-usuarios" class="pb-2 border-b-2 border-blue-500 font-bold text-sm text-blue-600 dark:text-blue-400 transition-all whitespace-nowrap">Usuários</button>
+            <button onclick="showTab('cobrancas')" id="btn-cobrancas" class="pb-2 border-b-2 border-transparent hover:border-gray-300 font-bold text-sm text-gray-500 transition-all whitespace-nowrap">Cobranças</button>
+            <button onclick="showTab('sistema')" id="btn-sistema" class="pb-2 border-b-2 border-transparent hover:border-gray-300 font-bold text-sm text-gray-500 transition-all whitespace-nowrap">Sistema</button>
+            <button onclick="showTab('logs')" id="btn-logs" class="pb-2 border-b-2 border-transparent hover:border-gray-300 font-bold text-sm text-gray-500 transition-all whitespace-nowrap">Logs & Erros</button>
+            
+            <!-- NOVA ABA DE EDIÇÃO (Oculta por padrão) -->
+            <button onclick="showTab('editar')" id="btn-editar" class="hidden pb-2 border-b-2 border-transparent font-bold text-sm text-amber-500 transition-all whitespace-nowrap">Editar Usuário</button>
+        </div>
+
+        {% if session.get('is_admin') %}
+            
+            <!-- SEÇÃO DE USUÁRIOS -->
+            <div id="div-usuarios" class="block">
+                <form action="/usuarios" method="POST" class="mb-8 space-y-4">
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1 flex items-center gap-1">
+                                <i data-lucide="user" class="w-4 h-4"></i> Novo Usuário
+                            </label>
+                            <input type="text" name="usuario" placeholder="Nome de usuário" required
+                                   class="w-full px-4 py-3 bg-gray-50 dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-xl text-gray-800 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all">
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1 flex items-center gap-1">
+                                <i data-lucide="shield-check" class="w-4 h-4"></i> Licença Inicial
+                            </label>
+                            <select name="licenca" required class="w-full px-4 py-3 bg-gray-50 dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-xl text-gray-800 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all cursor-pointer">
+                                <option value="Básica" selected>Básica (Free)</option>
+                                <option value="Premium">Premium</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div class="relative w-full">
+                        <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1 flex items-center gap-1">
+                            <i data-lucide="key" class="w-4 h-4"></i> Senha Inicial
+                        </label>
+                        <input type="password" id="senha-input" name="senha" required
+                               class="w-full px-4 py-3 pr-10 bg-gray-50 dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-xl text-gray-800 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all">
+                        <button type="button" onclick="toggleSenha()" class="absolute right-4 top-10 text-gray-400 hover:text-gray-600 transition-colors">
+                            <i id="olhinho-icone" data-lucide="eye" class="w-5 h-5"></i>
+                        </button>
+                    </div>
+                    <button type="submit" name="cadastrar" class="w-full bg-blue-600 text-white font-bold py-3.5 px-4 rounded-xl hover:bg-blue-700 transition duration-200 shadow-md flex items-center justify-center gap-2 mt-4 active:scale-95">
+                        <i data-lucide="user-plus" class="w-5 h-5"></i> Adicionar Usuário
+                    </button>
+                </form>
+
+                <h3 class="text-sm font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wider mb-3">Usuários Cadastrados</h3>
+                {% for u in usuarios %}
+                <div class="flex justify-between items-center p-4 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl shadow-sm mb-2 hover:border-blue-300 transition-colors">
+                    <span class="flex items-center gap-3 text-gray-700 dark:text-gray-200 font-medium">
+                        <div class="bg-gray-100 dark:bg-gray-700 p-2 rounded-lg">
+                            <i data-lucide="user" class="w-5 h-5 text-gray-500 dark:text-gray-300"></i>
+                        </div>
+                        <div class="flex flex-col">
+                            <span>{{ u[1] }}</span>
+                            <span class="text-[10px] text-blue-600 dark:text-blue-400 font-bold uppercase">{{ u[2] }}</span>
+                        </div>
+                    </span>
+                    <div class="flex items-center gap-1">
+                        {% if u[0] != 1 %}
+                            
+                            <!-- NOVO BOTÃO: COBRANÇAS / FINANCEIRO -->
+                            <button type="button" onclick="abrirCobrancas('{{ u[0] }}', '{{ u[1] }}', '{{ u[3] }}')" class="text-indigo-500 p-2 rounded-lg hover:bg-indigo-50 dark:hover:bg-indigo-900/20 transition-colors" title="Gerenciar Cobranças">
+                                <i data-lucide="dollar-sign" class="w-5 h-5"></i>
+                            </button>
+
+                            <!-- BOTÃO: TORNAR ADMIN -->
+                            <form action="/tornar_admin/{{ u[0] }}" method="POST" class="m-0" onsubmit="return confirm('ATENÇÃO: Tem certeza que deseja promover este usuário a Administrador? Ele terá acesso total ao sistema.');">
+                                <button type="submit" class="text-emerald-500 p-2 rounded-lg hover:bg-emerald-50 dark:hover:bg-emerald-900/20 transition-colors" title="Promover a Administrador">
+                                    <i data-lucide="shield" class="w-5 h-5"></i>
+                                </button>
+                            </form>
+                            
+                            <!-- BOTOES ORIGINAIS (EDITAR E EXCLUIR) -->
+                            <button type="button" onclick="abrirEdicao('{{ u[0] }}', '{{ u[1] }}', '{{ u[2] }}', '{{ u[3] }}', '{{ u[4] }}')" class="text-amber-500 p-2 rounded-lg hover:bg-amber-50 dark:hover:bg-amber-900/20 transition-colors" title="Editar Usuário">
+                                <i data-lucide="edit-3" class="w-5 h-5"></i>
+                            </button>
+                            
+                            <form action="/usuarios" method="POST" class="m-0" onsubmit="return confirm('Excluir?');">
+                                <input type="hidden" name="id_usuario" value="{{ u[0] }}">
+                                <button type="submit" name="excluir" class="text-red-500 p-2 rounded-lg hover:bg-red-50 transition-colors"><i data-lucide="trash-2" class="w-5 h-5"></i></button>
+                            </form>
+                        {% else %}
+                            <span class="text-xs text-gray-400 font-bold uppercase mr-2">Admin Master</span>
+                        {% endif %}
+                    </div>
+                </div> 
+                {% endfor %}
+            </div>
+
+            <!-- NOVA ABA: COBRANÇAS ATUALIZADA -->
+            <div id="div-cobrancas" class="hidden">
+                <div class="bg-indigo-50 dark:bg-indigo-900/10 border border-indigo-200 dark:border-indigo-800/30 p-6 rounded-xl">
+                    <h3 class="text-sm font-bold text-indigo-600 dark:text-indigo-500 uppercase tracking-wider mb-4 flex items-center gap-2">
+                        <i data-lucide="circle-dollar-sign" class="w-5 h-5"></i> Gestão de Cobranças 
+                        <span id="cobranca-nome-usuario" class="text-gray-800 dark:text-gray-200 ml-1 font-black bg-indigo-100 dark:bg-indigo-900/50 px-2 py-0.5 rounded text-xs">Selecione um usuário</span>
+                    </h3>
+                    
+                    <form action="/atualizar_cobranca" method="POST" class="space-y-4">
+                        <input type="hidden" name="id_usuario_cobranca" id="cobranca-id">
+
+                        <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Status de Pagamento</label>
+                                <select name="status_pagamento" id="cobranca-status" required class="w-full px-4 py-3 bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-xl text-gray-800 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-indigo-500 transition-all cursor-pointer">
+                                    <option value="Em Dia">Em Dia / Pago</option>
+                                    <option value="Pendente" selected>Pendente</option>
+                                    <option value="Atrasado">Atrasado</option>
+                                </select>
+                            </div>
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Data de Vencimento</label>
+                                <input type="date" name="data_vencimento" id="cobranca-vencimento" 
+                                       class="w-full px-4 py-3 bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-xl text-gray-800 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-indigo-500 transition-all">
+                            </div>
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1 flex items-center gap-1">
+                                    <i data-lucide="receipt" class="w-4 h-4"></i> Valor da Fatura (R$)
+                                </label>
+                                <input type="text" name="valor_fatura" id="cobranca-valor" placeholder="0,00" required
+                                       class="w-full px-4 py-3 bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-xl text-gray-800 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-indigo-500 transition-all">
+                            </div>
+                        </div>
+
+                        <div class="flex gap-3 mt-6">
+                            <button type="submit" name="salvar_cobranca" id="btn-salvar-cobranca" disabled class="flex-1 bg-indigo-600 text-white font-bold py-3.5 px-4 rounded-xl hover:bg-indigo-700 transition duration-200 shadow-md flex items-center justify-center gap-2 active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed">
+                                <i data-lucide="check-circle" class="w-5 h-5"></i> Atualizar Financeiro
+                            </button>
+                            <button type="button" onclick="showTab('usuarios')" class="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 text-gray-700 dark:text-gray-300 font-bold py-3.5 px-4 rounded-xl hover:bg-gray-50 dark:hover:bg-gray-700 transition duration-200 flex items-center justify-center gap-2 active:scale-95">
+                                <i data-lucide="x" class="w-5 h-5"></i> Cancelar
+                            </button>
+                        </div>
+                    </form>
+                    
+                    <div class="mt-6 pt-4 border-t border-indigo-100 dark:border-indigo-800/30 text-xs text-gray-500 dark:text-gray-400">
+                        <p><i data-lucide="info" class="w-3 h-3 inline-block mr-1"></i> Para habilitar o salvamento, selecione um usuário clicando no botão financeiro ($) na aba "Usuários".</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- NOVA ABA: SISTEMA (Layout Dinâmico) -->
+            <div id="div-sistema" class="hidden">
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
+                    <div class="p-5 bg-gray-50 dark:bg-gray-900 rounded-2xl border border-gray-100 dark:border-gray-700">
+                        <div class="flex items-center gap-2 mb-2"><i data-lucide="database" class="text-blue-500 w-5 h-5"></i> <span class="font-bold text-gray-800 dark:text-gray-200">Banco de Dados</span></div>
+                        <h3 class="text-2xl font-black text-gray-900 dark:text-white">{{ sys_info.db_size }} MB</h3>
+                        <p class="text-[10px] text-gray-400">SQLite 3 (financas.db)</p>
+                    </div>
+                    <div class="p-5 bg-gray-50 dark:bg-gray-900 rounded-2xl border border-gray-100 dark:border-gray-700">
+                        <div class="flex items-center gap-2 mb-2"><i data-lucide="folder" class="text-purple-500 w-5 h-5"></i> <span class="font-bold text-gray-800 dark:text-gray-200">Uploads</span></div>
+                        <h3 class="text-2xl font-black text-gray-900 dark:text-white">{{ sys_info.uploads_size }} MB</h3>
+                        <p class="text-[10px] text-gray-400">Arquivos em /static/uploads/</p>
+                    </div>
+                    <div class="p-5 bg-gray-50 dark:bg-gray-900 rounded-2xl border border-gray-100 dark:border-gray-700">
+                        <div class="flex items-center gap-2 mb-2"><i data-lucide="hard-drive" class="text-red-500 w-5 h-5"></i> <span class="font-bold text-gray-800 dark:text-gray-200">Disco Web</span></div>
+                        <h3 class="text-2xl font-black text-gray-900 dark:text-white">{{ sys_info.disk_percent }}% <span class="text-sm font-medium text-gray-400">usado</span></h3>
+                        <div class="w-full bg-gray-200 dark:bg-gray-700 h-1.5 rounded-full mt-2">
+                            <div class="bg-red-500 h-1.5 rounded-full" style="width: {{ sys_info.disk_percent }}%"></div>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="p-6 bg-white dark:bg-gray-800 border border-gray-100 dark:border-gray-700 rounded-2xl shadow-sm">
+                    <h3 class="font-bold mb-4 flex items-center gap-2 text-gray-800 dark:text-gray-200"><i data-lucide="server" class="w-4 h-4"></i> Informações do Servidor</h3>
+                    <div class="grid grid-cols-2 md:grid-cols-3 gap-4">
+                        <div class="p-3 bg-gray-50 dark:bg-gray-900/50 border border-gray-100 dark:border-gray-700/50 rounded-lg">
+                            <p class="text-[10px] uppercase font-bold text-gray-400 tracking-wide">Linguagem</p>
+                            <p class="font-black text-gray-800 dark:text-gray-200 text-sm">Python {{ sys_info.python_version }}</p>
+                        </div>
+                        <div class="p-3 bg-gray-50 dark:bg-gray-900/50 border border-gray-100 dark:border-gray-700/50 rounded-lg">
+                            <p class="text-[10px] uppercase font-bold text-gray-400 tracking-wide">Banco de Dados</p>
+                            <p class="font-black text-gray-800 dark:text-gray-200 text-sm">SQLite 3</p>
+                        </div>
+                        <div class="p-3 bg-gray-50 dark:bg-gray-900/50 border border-gray-100 dark:border-gray-700/50 rounded-lg">
+                            <p class="text-[10px] uppercase font-bold text-gray-400 tracking-wide">Versão Instalada</p>
+                            <p class="font-black text-gray-800 dark:text-gray-200 text-sm">{{ sys_info.app_version }}</p>
+                        </div>
+                        <div class="p-3 bg-gray-50 dark:bg-gray-900/50 border border-gray-100 dark:border-gray-700/50 rounded-lg">
+                            <p class="text-[10px] uppercase font-bold text-gray-400 tracking-wide">Upload Máx.</p>
+                            <p class="font-black text-gray-800 dark:text-gray-200 text-sm">16 MB</p>
+                        </div>
+                        <div class="p-3 bg-gray-50 dark:bg-gray-900/50 border border-gray-100 dark:border-gray-700/50 rounded-lg">
+                            <p class="text-[10px] uppercase font-bold text-gray-400 tracking-wide">Framework Base</p>
+                            <p class="font-black text-gray-800 dark:text-gray-200 text-sm">Flask {{ sys_info.flask_version }}</p>
+                        </div>
+                        <div class="p-3 bg-gray-50 dark:bg-gray-900/50 border border-gray-100 dark:border-gray-700/50 rounded-lg">
+                            <p class="text-[10px] uppercase font-bold text-gray-400 tracking-wide">Exec. Máxima</p>
+                            <p class="font-black text-gray-800 dark:text-gray-200 text-sm">300s</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- SEÇÃO DE EDITAR USUÁRIO -->
+            <div id="div-editar" class="hidden">
+                <div class="bg-amber-50 dark:bg-amber-900/10 border border-amber-200 dark:border-amber-800/30 p-6 rounded-xl">
+                    <h3 class="text-sm font-bold text-amber-600 dark:text-amber-500 uppercase tracking-wider mb-4 flex items-center gap-2">
+                        <i data-lucide="user-cog" class="w-5 h-5"></i> Editando Detalhes do Usuário
+                    </h3>
+                    
+                    <form action="/usuarios" method="POST" class="space-y-4">
+                        <input type="hidden" name="id_usuario_edit" id="edit-id">
+
+                        <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Nome de Usuário</label>
+                                <input type="text" name="novo_nome" id="edit-nome" required
+                                       class="w-full px-4 py-3 bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-xl text-gray-800 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-amber-500 transition-all">
+                            </div>
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Licença</label>
+                                <select name="nova_licenca" id="edit-licenca" required class="w-full px-4 py-3 bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-xl text-gray-800 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-amber-500 transition-all cursor-pointer">
+                                    <option value="Básica">Básica (Free)</option>
+                                    <option value="Premium">Premium</option>
+                                </select>
+                            </div>
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1 flex items-center gap-1"><i data-lucide="circle-dollar-sign" class="w-4 h-4"></i> Valor (R$)</label>
+                                <input type="text" name="novo_valor" id="edit-valor" placeholder="0,00"
+                                       class="w-full px-4 py-3 bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-xl text-gray-800 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-amber-500 transition-all">
+                            </div>
+                        </div>
+
+                        <!-- GRID DINÂMICA DE MÓDULOS -->
+                        <div class="mt-4">
+                            <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2 flex items-center gap-1">
+                                <i data-lucide="layout-grid" class="w-4 h-4"></i> Módulos Liberados (Permissões)
+                            </label>
+                            
+                            <input type="hidden" name="novos_modulos" id="edit-modulos">
+                            
+                            <div class="grid grid-cols-2 md:grid-cols-3 gap-3 bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-700 p-4 rounded-xl">
+                                
+                                <label class="flex items-center gap-2 cursor-pointer group">
+                                    <input type="checkbox" value="Dashboard" onchange="atualizarModulos()" class="check-modulo w-4 h-4 text-amber-500 border-gray-300 rounded focus:ring-amber-500 cursor-pointer">
+                                    <span class="text-sm text-gray-600 dark:text-gray-300 group-hover:text-amber-600 transition-colors">Dashboard</span>
+                                </label>
+                                
+                                <label class="flex items-center gap-2 cursor-pointer group">
+                                    <input type="checkbox" value="Novo Gasto" onchange="atualizarModulos()" class="check-modulo w-4 h-4 text-amber-500 border-gray-300 rounded focus:ring-amber-500 cursor-pointer">
+                                    <span class="text-sm text-gray-600 dark:text-gray-300 group-hover:text-amber-600 transition-colors">Novo Gasto</span>
+                                </label>
+                                
+                                <label class="flex items-center gap-2 cursor-pointer group">
+                                    <input type="checkbox" value="Ajustar Renda" onchange="atualizarModulos()" class="check-modulo w-4 h-4 text-amber-500 border-gray-300 rounded focus:ring-amber-500 cursor-pointer">
+                                    <span class="text-sm text-gray-600 dark:text-gray-300 group-hover:text-amber-600 transition-colors">Ajustar Renda</span>
+                                </label>
+                                
+                                <label class="flex items-center gap-2 cursor-pointer group">
+                                    <input type="checkbox" value="Dívidas" onchange="atualizarModulos()" class="check-modulo w-4 h-4 text-amber-500 border-gray-300 rounded focus:ring-amber-500 cursor-pointer">
+                                    <span class="text-sm text-gray-600 dark:text-gray-300 group-hover:text-amber-600 transition-colors">Dívidas</span>
+                                </label>
+                                
+                                <label class="flex items-center gap-2 cursor-pointer group">
+                                    <input type="checkbox" value="Metas" onchange="atualizarModulos()" class="check-modulo w-4 h-4 text-amber-500 border-gray-300 rounded focus:ring-amber-500 cursor-pointer">
+                                    <span class="text-sm text-gray-600 dark:text-gray-300 group-hover:text-amber-600 transition-colors">Metas</span>
+                                </label>
+                                
+                                <label class="flex items-center gap-2 cursor-pointer group">
+                                    <input type="checkbox" value="Lista de Compras" onchange="atualizarModulos()" class="check-modulo w-4 h-4 text-amber-500 border-gray-300 rounded focus:ring-amber-500 cursor-pointer">
+                                    <span class="text-sm text-gray-600 dark:text-gray-300 group-hover:text-amber-600 transition-colors">Lista de Compras</span>
+                                </label>
+
+                                <label class="flex items-center gap-2 cursor-pointer group">
+                                    <input type="checkbox" value="Xerox" onchange="atualizarModulos()" class="check-modulo w-4 h-4 text-amber-500 border-gray-300 rounded focus:ring-amber-500 cursor-pointer">
+                                    <span class="text-sm text-gray-600 dark:text-gray-300 group-hover:text-amber-600 transition-colors">Xerox (Sincronização)</span>
+                                </label>
+                                
+                            </div>
+                        </div>
+
+                        <div class="flex gap-3 mt-6">
+                            <button type="submit" name="editar" class="flex-1 bg-amber-500 text-white font-bold py-3.5 px-4 rounded-xl hover:bg-amber-600 transition duration-200 shadow-md flex items-center justify-center gap-2 active:scale-95">
+                                <i data-lucide="save" class="w-5 h-5"></i> Salvar Alterações
+                            </button>
+                            <button type="button" onclick="showTab('usuarios')" class="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 text-gray-700 dark:text-gray-300 font-bold py-3.5 px-4 rounded-xl hover:bg-gray-50 dark:hover:bg-gray-700 transition duration-200 flex items-center justify-center gap-2 active:scale-95">
+                                <i data-lucide="x" class="w-5 h-5"></i> Cancelar
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+
+            <!-- SEÇÃO DE LOGS -->
+            <div id="div-logs" class="hidden">
+                <div class="flex justify-between items-center mb-4">
+                    <h3 class="text-sm font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wider">Erros do Sistema</h3>
+                    <button onclick="window.location.reload()" class="text-xs text-blue-600 font-bold">Atualizar Logs</button>
+                </div>
+                
+                <div class="overflow-hidden rounded-xl border border-gray-200 dark:border-gray-700">
+                    <table class="w-full text-left text-sm">
+                        <tbody class="divide-y divide-gray-100 dark:divide-gray-700">
+                            {% for log in logs %}
+                            <tr class="hover:bg-gray-50 dark:hover:bg-gray-900">
+                                <td class="px-4 py-3">
+                                    <div class="text-red-500 font-mono text-xs mb-2 truncate" title="{{ log.erro_raw }}">{{ log.erro_raw }}</div>
+                                    
+                                    {% if log.diagnostico %}
+                                    <div class="bg-purple-50 dark:bg-purple-900/20 p-3 rounded-lg border border-purple-100 dark:border-purple-800">
+                                        <span class="text-[10px] font-bold text-purple-600 uppercase flex items-center gap-1">
+                                            <i data-lucide="brain-circuit" class="w-3 h-3"></i> Diagnóstico IA
+                                        </span>
+                                        <p class="text-xs text-purple-900 dark:text-purple-200 mt-1">{{ log.diagnostico }}</p>
+                                    </div>
+                                    {% else %}
+                                    <form action="/analisar_erro/{{ log.id }}" method="POST">
+                                        <button type="submit" class="text-[10px] bg-purple-600 text-white px-2 py-1 rounded hover:bg-purple-700 font-bold">
+                                            Analisar com IA
+                                        </button>
+                                    </form>
+                                    {% endif %}
+                                </td>
+                            </tr>
+                            {% else %}
+                            <tr><td class="px-4 py-8 text-center text-gray-400">Nenhum log registrado.</td></tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+        {% else %}
+            <!-- TELA DE ACESSO NEGADO INJETADA DIRETAMENTE NO ELSE -->
+            <div class="flex flex-col items-center justify-center py-12 px-4">
+                <div class="w-full max-w-md bg-white dark:bg-gray-800 p-8 rounded-3xl shadow-xl border border-gray-100 dark:border-gray-700 text-center relative overflow-hidden">
+                    
+                    <!-- Fundo decorativo vermelho -->
+                    <div class="absolute top-0 right-0 w-32 h-32 bg-red-500/5 rounded-bl-full -z-10"></div>
+                    <div class="absolute bottom-0 left-0 w-24 h-24 bg-red-500/5 rounded-tr-full -z-10"></div>
+
+                    <!-- Ícone de Cadeado/Alerta -->
+                    <div class="inline-flex items-center justify-center w-24 h-24 rounded-full bg-red-50 dark:bg-red-900/30 mb-6 shadow-inner border-4 border-white dark:border-gray-800">
+                        <i data-lucide="shield-alert" class="w-12 h-12 text-red-500 dark:text-red-400 animate-pulse"></i>
+                    </div>
+
+                    <h1 class="text-2xl font-black text-gray-800 dark:text-gray-100 mb-2">Acesso Restrito</h1>
+                    
+                    <p class="text-sm text-gray-500 dark:text-gray-400 mb-8 leading-relaxed">
+                        Esta área é exclusiva para <strong>Administradores</strong> do sistema. 
+                        Você não tem as permissões necessárias para visualizar ou alterar estas configurações.
+                    </p>
+
+                    <!-- Botão Voltar -->
+                    <a href="/" class="w-full bg-gradient-to-r from-gray-800 to-gray-900 hover:from-black hover:to-black dark:from-gray-700 dark:to-gray-600 dark:hover:from-gray-600 dark:hover:to-gray-500 text-white font-bold py-3.5 rounded-2xl transition-all shadow-lg flex justify-center items-center gap-2">
+                        <i data-lucide="arrow-left" class="w-4 h-4"></i> Voltar ao Início
+                    </a>
+                </div>
+            </div>
+        {% endif %}
+    </div>
+
+    <script>
+        function showTab(tab) {
+            const allTabs = ['div-usuarios', 'div-cobrancas', 'div-sistema', 'div-logs', 'div-editar'];
+            const allBtns = ['btn-usuarios', 'btn-cobrancas', 'btn-sistema', 'btn-logs', 'btn-editar'];
+
+            allTabs.forEach(t => {
+                const el = document.getElementById(t);
+                if (el) el.classList.add('hidden');
+            });
+            
+            allBtns.forEach(b => {
+                const btn = document.getElementById(b);
+                if (btn) {
+                    btn.className = "pb-2 border-b-2 border-transparent font-bold text-sm text-gray-500 hover:border-gray-300 transition-all whitespace-nowrap";
+                    if (b === 'btn-editar') {
+                        btn.classList.add('hidden');
+                    }
+                }
+            });
+            
+            const targetDiv = document.getElementById('div-' + tab);
+            if (targetDiv) targetDiv.classList.remove('hidden');
+
+            const targetBtn = document.getElementById('btn-' + tab);
+            if (targetBtn) {
+                targetBtn.classList.remove('hidden'); 
+                
+                if (tab === 'editar') {
+                    targetBtn.className = "pb-2 border-b-2 border-amber-500 font-bold text-sm text-amber-500 transition-all whitespace-nowrap";
+                } else if (tab === 'cobrancas') {
+                    targetBtn.className = "pb-2 border-b-2 border-indigo-500 font-bold text-sm text-indigo-600 dark:text-indigo-400 transition-all whitespace-nowrap";
+                } else {
+                    targetBtn.className = "pb-2 border-b-2 border-blue-500 font-bold text-sm text-blue-600 dark:text-blue-400 transition-all whitespace-nowrap";
+                }
+            }
+        }
+
+        // Nova função para a aba de cobranças
+        function abrirCobrancas(id, nome, valor) {
+            document.getElementById('cobranca-id').value = id;
+            document.getElementById('cobranca-nome-usuario').innerText = "- " + nome;
+            
+            // Puxa o valor da licença se houver, se não deixa 0.00
+            document.getElementById('cobranca-valor').value = (valor !== 'None' && valor) ? valor : '0.00';
+            
+            // Habilita o botão (pois agora um usuário foi selecionado)
+            const btnSalvar = document.getElementById('btn-salvar-cobranca');
+            btnSalvar.disabled = false;
+            
+            showTab('cobrancas');
+        }
+
+        function atualizarModulos() {
+            const checkboxes = document.querySelectorAll('.check-modulo');
+            const marcados = Array.from(checkboxes)
+                                  .filter(cb => cb.checked)
+                                  .map(cb => cb.value);
+            
+            if(marcados.length === checkboxes.length) {
+                document.getElementById('edit-modulos').value = 'Todos';
+            } else {
+                document.getElementById('edit-modulos').value = marcados.join(', ');
+            }
+        }
+
+        function abrirEdicao(id, nome, licenca, valor, modulos) {
+            document.getElementById('edit-id').value = id;
+            document.getElementById('edit-nome').value = nome;
+            document.getElementById('edit-licenca').value = licenca;
+            document.getElementById('edit-valor').value = (valor !== 'None' && valor) ? valor : '0.00';
+            
+            let modulosDB = (modulos !== 'None' && modulos) ? modulos : 'Todos';
+            let arrayDB = modulosDB.split(',').map(m => m.trim());
+            
+            const checkboxes = document.querySelectorAll('.check-modulo');
+            checkboxes.forEach(cb => {
+                if (arrayDB.includes('Todos') || arrayDB.includes(cb.value)) {
+                    cb.checked = true;
+                } else {
+                    cb.checked = false;
+                }
+            });
+            
+            atualizarModulos();
+            showTab('editar');
+        }
+
+        function toggleSenha() {
+            const senhaInput = document.getElementById('senha-input');
+            const icone = document.getElementById('olhinho-icone');
+            if (senhaInput.type === "password") {
+                senhaInput.type = "text";
+                icone.setAttribute('data-lucide', 'eye-off');
+            } else {
+                senhaInput.type = "password";
+                icone.setAttribute('data-lucide', 'eye');
+            }
+            lucide.createIcons();
+        }
+
+        window.addEventListener('DOMContentLoaded', () => {
+            lucide.createIcons();
+        });
+    </script>
+{% endblock %}
