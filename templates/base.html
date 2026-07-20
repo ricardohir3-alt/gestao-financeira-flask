@@ -50,7 +50,7 @@
                     <i data-lucide="target" class="w-5 h-5 flex-shrink-0 group-hover:scale-110 transition-transform"></i>
                     <span class="menu-texto hidden ml-4 font-medium whitespace-nowrap">Reservas e Objetivos</span>
                 </a>
-                
+
                 <a href="/compras" class="flex items-center h-12 px-4 hover:bg-gray-50 dark:hover:bg-gray-900 transition-colors text-gray-600 dark:text-gray-400 hover:text-blue-600 dark:hover:text-blue-400 group" title="Lista de Compras">
                     <i data-lucide="shopping-cart" class="w-5 h-5 flex-shrink-0 group-hover:scale-110 transition-transform"></i>
                     <span class="menu-texto hidden ml-4 font-medium whitespace-nowrap">Lista de Compras</span>
@@ -100,7 +100,7 @@
                             <button onclick="togglePerfil()" id="btn-perfil" class="flex items-center justify-center w-8 h-8 bg-gradient-to-r from-blue-600 to-indigo-600 text-white rounded-full font-bold text-xs shadow-md hover:ring-2 ring-blue-300 transition-all ml-1 cursor-pointer">
                                 {{ session.get('usuario', 'U')[:1].upper() }}
                             </button>
-                            
+
                             <!-- Adicionado ID 'menu-perfil' -->
                             <div id="menu-perfil" class="absolute right-0 mt-2 w-36 bg-white dark:bg-gray-900 rounded-lg shadow-xl border border-gray-100 dark:border-gray-800 hidden p-1.5 transition-all origin-top-right">
                                 <a href="/perfil" class="flex items-center gap-2 px-3 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-800 rounded-md transition-colors font-medium mb-1">
@@ -199,7 +199,7 @@
         document.addEventListener('click', function(event) {
             const btnPerfil = document.getElementById('btn-perfil');
             const menuPerfil = document.getElementById('menu-perfil');
-            
+
             if (btnPerfil && menuPerfil) {
                 if (!btnPerfil.contains(event.target) && !menuPerfil.contains(event.target)) {
                     menuPerfil.classList.add('hidden');
