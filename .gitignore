@@ -1,0 +1,10 @@
+# Ignorar arquivos de cache do Python
+__pycache__/
+*.pyc
+
+# Ignorar o banco de dados (SEGURANÇA MÁXIMA)
+financas.db
+
+# Ignorar ambientes virtuais e variáveis secretas
+venv/
+.env
