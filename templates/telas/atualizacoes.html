@@ -19,31 +19,67 @@
     <!-- Linha do Tempo -->
     <div class="relative border-l-2 border-gray-200 dark:border-gray-700 ml-3">
 
-        <!-- ================= VERSÃO 1.5.6 (ATUAL/DESTAQUE) ================= -->
+        <!-- ================= VERSÃO 1.5.8 (ATUAL/DESTAQUE) ================= -->
         <div class="mb-8 ml-6 relative">
             <span class="absolute flex items-center justify-center w-8 h-8 bg-purple-100 rounded-full -left-[41px] top-0 ring-4 ring-white dark:ring-gray-900 dark:bg-purple-900 shadow-sm">
-                <i data-lucide="sparkles" class="w-4 h-4 text-purple-600 dark:text-purple-400"></i>
+                <i data-lucide="rocket" class="w-4 h-4 text-purple-600 dark:text-purple-400"></i>
             </span>
             <div class="bg-white dark:bg-gray-800 p-5 rounded-xl border-2 border-purple-500/30 shadow-md relative overflow-hidden">
                 <div class="absolute top-0 right-0 w-16 h-16 bg-purple-500/10 rounded-bl-full -z-10"></div>
                 <div class="flex justify-between items-center mb-2">
-                    <span class="text-base font-black text-gray-800 dark:text-gray-100">Versão 1.5.6</span>
+                    <span class="text-base font-black text-gray-800 dark:text-gray-100">Versão 1.5.8</span>
                     <span class="px-2.5 py-1 text-[10px] uppercase tracking-wider font-bold bg-purple-600 text-white rounded-md shadow-sm">Recente</span>
                 </div>
                 <p class="text-xs font-medium text-purple-600 dark:text-purple-400 mb-3">Julho 2026</p>
                 <ul class="space-y-2 text-sm text-gray-600 dark:text-gray-300">
                     <li class="flex items-start gap-2">
                         <i data-lucide="check-circle-2" class="w-4 h-4 text-purple-500 mt-0.5 shrink-0"></i>
-                        <span><strong>Assistente de Vencimentos:</strong> Alertas inteligentes em formato carrossel no resumo gerencial para contas vencendo hoje, amanhã ou atrasadas.</span>
+                        <span><strong>Integração de Compras:</strong> A Lista de Compras agora conta com checkout automático, enviando o total consolidado diretamente para o Extrato do Mês com um clique.</span>
                     </li>
                     <li class="flex items-start gap-2">
                         <i data-lucide="check-circle-2" class="w-4 h-4 text-purple-500 mt-0.5 shrink-0"></i>
-                        <span><strong>Calculadora Embutida:</strong> Campos de preço e multiplicador agora resolvem equações matemáticas automaticamente (ex: =10+15).</span>
+                        <span><strong>Automação Inteligente:</strong> Ao lançar as compras, o sistema abate do saldo, notifica via IA Hir3 e esvazia a tela para o próximo ciclo de compras.</span>
                     </li>
                     <li class="flex items-start gap-2">
                         <i data-lucide="check-circle-2" class="w-4 h-4 text-purple-500 mt-0.5 shrink-0"></i>
-                        <span><strong>Personalização:</strong> Adicionada a função de upload de foto de avatar na tela de perfil do usuário.</span>
+                        <span><strong>Estabilidade (Bugfixes):</strong> Erradicação de Erros 500 globais causados por rotas legadas e ajuste na estrutura de tabelas do Banco de Dados.</span>
                     </li>
+                </ul>
+            </div>
+        </div>
+
+        <!-- ================= VERSÃO 1.5.7 ================= -->
+        <div class="mb-8 ml-6 relative">
+            <span class="absolute flex items-center justify-center w-8 h-8 bg-pink-100 rounded-full -left-[41px] top-0 ring-4 ring-white dark:ring-gray-900 dark:bg-pink-900 shadow-sm">
+                <i data-lucide="sparkles" class="w-4 h-4 text-pink-600 dark:text-pink-400"></i>
+            </span>
+            <div class="bg-white dark:bg-gray-800 p-5 rounded-xl border border-gray-200 dark:border-gray-700 shadow-sm">
+                <div class="flex justify-between items-center mb-2">
+                    <span class="text-base font-black text-gray-800 dark:text-gray-100">Versão 1.5.7</span>
+                </div>
+                <p class="text-xs font-medium text-pink-600 dark:text-pink-400 mb-3">Julho 2026</p>
+                <ul class="space-y-2 text-sm text-gray-600 dark:text-gray-300">
+                    <li><strong>Refatoração UI/UX:</strong> Limpeza visual do menu lateral, restrita à página inicial para uma navegação mais limpa.</li>
+                    <li><strong>Centralização de Perfil:</strong> O módulo "Ajustar Renda" foi totalmente migrado e integrado à tela "Meu Perfil".</li>
+                    <li><strong>Segurança Aprimorada:</strong> Atualização dos templates de Login e Recuperação de Senha.</li>
+                </ul>
+            </div>
+        </div>
+
+        <!-- ================= VERSÃO 1.5.6 ================= -->
+        <div class="mb-8 ml-6 relative">
+            <span class="absolute flex items-center justify-center w-8 h-8 bg-indigo-100 rounded-full -left-[41px] top-0 ring-4 ring-white dark:ring-gray-900 dark:bg-indigo-900 shadow-sm">
+                <i data-lucide="calendar-clock" class="w-4 h-4 text-indigo-600 dark:text-indigo-400"></i>
+            </span>
+            <div class="bg-white dark:bg-gray-800 p-5 rounded-xl border border-gray-200 dark:border-gray-700 shadow-sm">
+                <div class="flex justify-between items-center mb-2">
+                    <span class="text-base font-black text-gray-800 dark:text-gray-100">Versão 1.5.6</span>
+                </div>
+                <p class="text-xs font-medium text-indigo-600 dark:text-indigo-400 mb-3">Julho 2026</p>
+                <ul class="space-y-2 text-sm text-gray-600 dark:text-gray-300">
+                    <li><strong>Assistente de Vencimentos:</strong> Alertas inteligentes em formato carrossel no resumo gerencial.</li>
+                    <li><strong>Calculadora Embutida:</strong> Campos de preço e multiplicador agora resolvem equações.</li>
+                    <li><strong>Personalização:</strong> Adicionada a função de upload de foto de avatar na tela de perfil.</li>
                 </ul>
             </div>
         </div>
@@ -66,23 +102,6 @@
             </div>
         </div>
 
-        <!-- ================= VERSÃO 1.5.4 ================= -->
-        <div class="mb-8 ml-6 relative">
-            <span class="absolute flex items-center justify-center w-8 h-8 bg-blue-100 rounded-full -left-[41px] top-0 ring-4 ring-white dark:ring-gray-900 dark:bg-blue-900 shadow-sm">
-                <i data-lucide="layout-dashboard" class="w-4 h-4 text-blue-600 dark:text-blue-400"></i>
-            </span>
-            <div class="bg-white dark:bg-gray-800 p-5 rounded-xl border border-gray-200 dark:border-gray-700 shadow-sm">
-                <div class="flex justify-between items-center mb-2">
-                    <span class="text-base font-black text-gray-800 dark:text-gray-100">Versão 1.5.4</span>
-                </div>
-                <p class="text-xs font-medium text-blue-600 dark:text-blue-400 mb-3">Julho 2026</p>
-                <ul class="space-y-2 text-sm text-gray-600 dark:text-gray-300">
-                    <li><strong>Centro de Controle:</strong> Monitoramento dinâmico de Banco, Disco e Servidor.</li>
-                    <li><strong>Refatoração:</strong> Otimização da Gestão de Usuários e faturas.</li>
-                </ul>
-            </div>
-        </div>
-
         <!-- ================= ARQUIVO (VERSÕES ANTERIORES) ================= -->
         <details class="group cursor-pointer">
             <summary class="mb-4 ml-6 relative list-none flex items-center outline-none">
@@ -96,12 +115,20 @@
                     </div>
                     <div>
                         <h3 class="text-sm font-bold text-gray-800 dark:text-gray-200">Explorar Arquivo de Atualizações</h3>
-                        <p class="text-[10px] text-gray-500 dark:text-gray-400">Versões 1.0.0 até 1.5.3</p>
+                        <p class="text-[10px] text-gray-500 dark:text-gray-400">Versões 1.0.0 até 1.5.4</p>
                     </div>
                 </div>
             </summary>
 
             <div class="space-y-6 mt-6 pb-6">
+                <!-- 1.5.4 -->
+                <div class="ml-6 relative opacity-95">
+                    <span class="absolute flex items-center justify-center w-4 h-4 bg-cyan-300 rounded-full -left-[33px] top-1.5 ring-4 ring-white dark:ring-gray-900 dark:bg-cyan-600"></span>
+                    <div class="bg-white/80 dark:bg-gray-800/80 p-4 rounded-xl border border-gray-100 dark:border-gray-700/50 shadow-sm">
+                        <h4 class="text-sm font-bold text-gray-700 dark:text-gray-300">Versão 1.5.4</h4>
+                        <p class="text-xs text-gray-500 dark:text-gray-400 mt-1.5">Centro de Controle Dinâmico e Refatoração de Gestão.</p>
+                    </div>
+                </div>
                 <!-- 1.5.3 -->
                 <div class="ml-6 relative opacity-90">
                     <span class="absolute flex items-center justify-center w-4 h-4 bg-orange-300 rounded-full -left-[33px] top-1.5 ring-4 ring-white dark:ring-gray-900 dark:bg-orange-600"></span>

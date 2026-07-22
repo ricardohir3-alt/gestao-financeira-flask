@@ -604,7 +604,7 @@ def financeiro():
     # 1. Trava de Segurança
     if 'logado' not in session or not session.get('is_admin'):
         flash('Acesso restrito ao setor financeiro.', 'error')
-        return redirect(url_for('index'))
+        return redirect(url_for('home'))
 
     conexao = sqlite3.connect('financas.db')
     conexao.row_factory = sqlite3.Row
@@ -670,12 +670,11 @@ def financeiro():
 
     return render_template('financeiro.html', fin_data=fin_data, cobrancas_pendentes=cobrancas_pendentes)
 
-
 @app.route('/atualizar_cobranca', methods=['POST'])
 def atualizar_cobranca():
     # Rota ativada pelo botão "Atualizar Financeiro" na aba Gestão do Sistema
     if not session.get('is_admin'):
-        return redirect(url_for('index'))
+        return redirect(url_for('home'))
 
     id_usuario = request.form.get('id_usuario_cobranca')
     status = request.form.get('status_pagamento')
@@ -722,7 +721,7 @@ def atualizar_cobranca():
 def marcar_pago(id):
     # Rota ativada pelo botão verde de "Check" na tela do Painel Financeiro
     if not session.get('is_admin'):
-        return redirect(url_for('index'))
+        return redirect(url_for('home'))
 
     try:
         conexao = sqlite3.connect('financas.db')
@@ -744,7 +743,7 @@ from datetime import datetime, timedelta
 @app.route('/renovar_cobranca', methods=['POST'])
 def renovar_cobranca():
     if not session.get('is_admin'):
-        return redirect(url_for('index'))
+        return redirect(url_for('home'))
 
     cobranca_id = request.form.get('cobranca_id')
     periodo = request.form.get('periodo')
@@ -1070,7 +1069,6 @@ def novo_gasto():
             return redirect(url_for('home'))
 
     return render_template('telas/novo_gasto.html')
-
 
 @app.route('/editar_gasto/<int:id>', methods=['GET', 'POST'])
 def editar_gasto(id):
@@ -1489,16 +1487,6 @@ def atualizar_status(id_gasto):
     return redirect(url_for('home', mes=mes_filtro))
 
 # ==============================================================================
-# ROTA DA CALCULADORA
-# ==============================================================================
-
-@app.route('/calculadora')
-def calculadora():
-    if 'logado' not in session:
-        return redirect(url_for('login'))
-    return render_template('telas/calculadora.html')
-
-# ==============================================================================
 # ROTA DA LISTA DE COMPRAS (AGORA COM EDIÇÃO IN-LINE)
 # ==============================================================================
 
@@ -1713,6 +1701,68 @@ def excluir_compra(id):
     conexao.close()
     return redirect('/compras')
 
+@app.route('/lancar_compras_gastos', methods=['POST'])
+def lancar_compras_gastos():
+    if 'logado' not in session:
+        return redirect(url_for('login'))
+
+    user_id = session.get('user_id')
+
+    try:
+        # Caminho absoluto para evitar qualquer erro de localização
+        conexao = sqlite3.connect('/home/Hir3solutions/mysite/financas.db')
+        conexao.row_factory = sqlite3.Row
+        cursor = conexao.cursor()
+
+        # CORREÇÃO CRÍTICA AQUI: A tabela correta é 'lista_compras'
+        cursor.execute("SELECT SUM(quantidade * preco) as total FROM lista_compras WHERE usuario_id = ?", (user_id,))
+        resultado = cursor.fetchone()
+        total = resultado['total'] if resultado and resultado['total'] else 0
+
+        if total > 0:
+            hoje = datetime.now().strftime('%Y-%m-%d')
+            dia_atual = datetime.now().day
+            quinzena = 1 if dia_atual <= 15 else 2
+
+            # Insere na tabela de gastos do mês associado ao usuário
+            cursor.execute('''
+                INSERT INTO gastos (descricao, valor, data, categoria, status, quinzena, usuario_id)
+                VALUES (?, ?, ?, ?, ?, ?, ?)
+            ''', ('Supermercado do Mês', total, hoje, 'Alimentação', 'PAGO', quinzena, user_id))
+
+            # CORREÇÃO CRÍTICA AQUI: Limpa a tabela 'lista_compras'
+            cursor.execute("DELETE FROM lista_compras WHERE usuario_id = ?", (user_id,))
+
+            # Manda a notificação para o Sininho da Hir3
+            cursor.execute('''
+                INSERT INTO notificacoes (titulo, mensagem, icone, cor, usuario_id, lida)
+                VALUES (?, ?, ?, ?, ?, 0)
+            ''', ('Compras Lançadas!', f'O valor de R$ {total:.2f} foi adicionado aos seus gastos de Alimentação.', 'shopping-cart', 'green', user_id))
+
+            conexao.commit()
+            flash('Lista de compras finalizada e lançada com sucesso!', 'success')
+        else:
+            flash('Sua lista de compras está vazia ou o valor total é zero.', 'warning')
+
+        conexao.close()
+
+    except Exception as e:
+        print(f"Erro ao lançar compras: {e}")
+        flash(f"Erro ao lançar compras: {e}", 'danger')
+
+    # Redireciona diretamente para o painel principal
+    return redirect(url_for('home'))
+
+# ==============================================================================
+# ROTA DA CALCULADORA
+# ==============================================================================
+
+@app.route('/calculadora')
+def calculadora():
+    if 'logado' not in session:
+        return redirect(url_for('login'))
+    return render_template('telas/calculadora.html')
+
 # ==============================================================================
 # ROTA DE RELATÓRIOS (EXCLUSIVA PREMIUM)
 # ==============================================================================
@@ -1772,11 +1822,13 @@ def relatorios_avancados():
 
         lista_dividas_relatorio.append(divida)
 
-        # BUSCA DE RESERVAS PARA O RELATÓRIO
-        cursor.execute("SELECT * FROM reservas WHERE usuario_id = ?", (user_id,))
-        lista_reservas_relatorio = cursor.fetchall()
+    # ==========================================
+    # BUSCA DE RESERVAS PARA O RELATÓRIO (CORRIGIDO FORA DO LOOP)
+    # ==========================================
+    cursor.execute("SELECT * FROM reservas WHERE usuario_id = ?", (user_id,))
+    lista_reservas_relatorio = cursor.fetchall()
 
-    # Fechamos a conexão apenas após buscar as dívidas também
+    # Fechamos a conexão após buscar todos os dados necessários
     conexao.close()
 
     # Cálculos de Categoria (Donut)
@@ -2076,7 +2128,7 @@ def enviar_whatsapp(telefone_destino, texto_mensagem):
 @app.context_processor
 def inject_global_vars():
     # Defina aqui a versão centralizada
-    versao = "1.5.6"
+    versao = "1.5.8"
 
     # Gera a data automaticamente (ex: "Julho 2026")
     data_formatada = datetime.now().strftime('%B %Y').capitalize()
