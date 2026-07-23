@@ -16,6 +16,12 @@
         </div>
 
         <div class="flex items-center gap-2 w-full md:w-auto">
+            
+            <!-- NOVO: Botão Calculadora Flutuante -->
+            <button onclick="abrirCalculadora()" type="button" class="p-2 md:p-2.5 bg-orange-500 hover:bg-orange-600 text-white rounded-xl transition-colors shadow-sm" title="Calculadora Rápida">
+                <i data-lucide="calculator" class="w-4 h-4"></i>
+            </button>
+
             <!-- Botão Exportar -->
             <a href="/exportar_compras_csv" class="p-2 md:p-2.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl transition-colors shadow-sm" title="Exportar para Excel (CSV)">
                 <i data-lucide="download" class="w-4 h-4"></i>
@@ -33,7 +39,7 @@
             <form action="/compras" method="POST" class="flex items-center gap-2 bg-white dark:bg-gray-800 p-1.5 rounded-xl border border-gray-100 dark:border-gray-700 shadow-sm flex-1 md:flex-none">
                 <span class="text-[11px] md:text-xs font-bold text-gray-400 uppercase pl-2 whitespace-nowrap">Teto:</span>
                 <input type="number" step="0.01" name="valor_meta" placeholder="Ex: 500.00" value="{{ '%.2f'|format(meta_valor or 0) if meta_valor and meta_valor > 0 else '' }}" required
-                        class="w-full md:w-24 px-2 py-1.5 text-xs md:text-sm bg-gray-50 dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 font-bold text-gray-700 dark:border-gray-200">
+                       class="w-full md:w-24 px-2 py-1.5 text-xs md:text-sm bg-gray-50 dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 font-bold text-gray-700 dark:border-gray-200">
                 <button type="submit" class="p-2 md:p-1.5 bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition-colors shadow-sm" title="Salvar Meta">
                     <i data-lucide="check" class="w-4 h-4"></i>
                 </button>
@@ -76,14 +82,12 @@
     {% endif %}
 
     <!-- ======================================================= -->
-    <!-- NOVO: BOTÃO DE FINALIZAR COMPRAS E LANÇAR NOS GASTOS    -->
+    <!-- ATUALIZADO: SWEETALERT NO BOTÃO DE FINALIZAR COMPRAS    -->
     <!-- ======================================================= -->
     {% if total_lista and total_lista > 0 %}
     <div class="mb-4 md:mb-6">
-        <form action="/lancar_compras_gastos" method="POST" onsubmit="return confirm('Isso criará uma despesa de R$ {{ '%.2f'|format(total_lista) }} no seu resumo do mês. Deseja continuar?');">
-            <!-- Enviamos o valor escondido por segurança, embora o backend vá recalcular -->
+        <form action="/lancar_compras_gastos" method="POST" onsubmit="confirmarAcao(event, this, 'Finalizar e Lançar Despesa?', 'Isso criará automaticamente um gasto de R$ {{ '%.2f'|format(total_lista) }} no seu resumo do mês.', 'Sim, finalizar!')">
             <input type="hidden" name="total_compra" value="{{ total_lista }}">
-
             <button type="submit" class="w-full flex items-center justify-between p-4 md:p-5 rounded-2xl bg-gradient-to-r from-emerald-500 to-teal-600 text-white shadow-md hover:shadow-lg transition-all transform hover:-translate-y-0.5 group focus:outline-none">
                 <div class="flex items-center gap-3 md:gap-4">
                     <div class="bg-white/20 p-2 md:p-3 rounded-xl">
@@ -161,7 +165,6 @@
                 </thead>
                 <tbody class="divide-y divide-gray-100 dark:divide-gray-700/50 text-xs md:text-sm">
                     {% for item in itens %}
-                    <!-- Adicionado cursor-pointer, ondblclick e title na tr -->
                     <tr class="hover:bg-gray-50/50 dark:hover:bg-gray-900/20 transition-colors cursor-pointer" ondblclick="editarItem('{{ item.id }}', '{{ item.descricao }}', '{{ item.quantidade }}', '{{ item.preco }}')" title="Clique duplo para editar">
                         <td class="px-3 py-2 md:px-5 md:py-3.5 font-bold text-gray-800 dark:text-gray-200 truncate max-w-[120px] md:max-w-none" title="{{ item.descricao }}">{{ item.descricao }}</td>
                         <td class="px-3 py-2 md:px-5 md:py-3.5 text-center font-bold text-gray-500 dark:text-gray-400">× {{ item.quantidade or 1 }}</td>
@@ -169,7 +172,8 @@
                         <td class="px-3 py-2 md:px-5 md:py-3.5 text-right font-black text-gray-700 dark:text-gray-200">R$ {{ "%.2f"|format(item.total_item or 0) }}</td>
                         <td class="px-3 py-2 md:px-5 md:py-3.5">
                             <div class="flex items-center justify-center gap-1 md:gap-2">
-                                <form action="/excluir_compra/{{ item.id }}" method="POST" class="m-0" onsubmit="return confirm('Remover este item?');">
+                                <!-- ATUALIZADO: SWEETALERT NO BOTÃO DA LIXEIRA -->
+                                <form action="/excluir_compra/{{ item.id }}" method="POST" class="m-0" onsubmit="confirmarAcao(event, this, 'Remover Item?', 'Tem certeza que deseja tirar este item da sua lista?', 'Sim, remover')">
                                     <button type="submit" class="p-1 md:p-1.5 text-gray-400 hover:text-red-500 dark:hover:text-red-400 rounded transition-colors bg-gray-50 hover:bg-red-50 dark:bg-gray-800 dark:hover:bg-red-900/20" title="Remover">
                                         <i data-lucide="trash-2" class="w-3.5 h-3.5 md:w-4 md:h-4 mx-auto"></i>
                                     </button>
@@ -190,6 +194,54 @@
     </div>
 </div>
 
+<!-- ============================================================================== -->
+<!-- NOVO: MODAL DA CALCULADORA FLUTUANTE (BLINDADA) -->
+<!-- ============================================================================== -->
+<div id="modal-calculadora" class="fixed inset-0 bg-black/60 backdrop-blur-sm z-[80] hidden items-center justify-center p-4 transition-all duration-300 opacity-0 pointer-events-none">
+    <div class="bg-white dark:bg-gray-800 w-full max-w-xs rounded-3xl shadow-2xl border border-gray-200 dark:border-gray-700 overflow-hidden transform scale-95 transition-transform duration-300" id="calculadora-card">
+        
+        <!-- Header da Calculadora -->
+        <div class="p-4 bg-gray-50 dark:bg-gray-900 border-b border-gray-100 dark:border-gray-700 flex justify-between items-center">
+            <h3 class="font-bold text-gray-700 dark:text-gray-200 flex items-center gap-2">
+                <i data-lucide="calculator" class="w-4 h-4 text-orange-500"></i> Calculadora
+            </h3>
+            <button onclick="fecharCalculadora()" type="button" class="text-gray-400 hover:text-red-500 transition-colors focus:outline-none">
+                <i data-lucide="x" class="w-5 h-5"></i>
+            </button>
+        </div>
+        
+        <!-- Display de Resultados -->
+        <div class="p-5 bg-gray-100 dark:bg-gray-900/50 border-b border-gray-100 dark:border-gray-700">
+            <input type="text" id="calc-display" class="w-full bg-transparent text-right text-4xl font-black text-gray-800 dark:text-gray-100 focus:outline-none" value="" placeholder="0" readonly>
+        </div>
+        
+        <!-- Teclado Numérico -->
+        <div class="p-4 grid grid-cols-4 gap-2.5">
+            <button type="button" onclick="calcClear()" class="col-span-3 p-3.5 bg-red-100 dark:bg-red-900/30 text-red-600 dark:text-red-400 rounded-2xl font-bold hover:bg-red-200 dark:hover:bg-red-900/50 transition-colors shadow-sm active:scale-95">LIMPAR (C)</button>
+            <button type="button" onclick="calcAppend('/')" class="p-3.5 bg-orange-100 dark:bg-orange-900/30 text-orange-600 dark:text-orange-400 rounded-2xl font-bold text-xl hover:bg-orange-200 dark:hover:bg-orange-900/50 transition-colors shadow-sm active:scale-95">÷</button>
+            
+            <button type="button" onclick="calcAppend('7')" class="p-3.5 bg-gray-100 dark:bg-gray-700 text-gray-800 dark:text-gray-200 rounded-2xl font-bold text-xl hover:bg-gray-200 dark:hover:bg-gray-600 transition-colors shadow-sm active:scale-95">7</button>
+            <button type="button" onclick="calcAppend('8')" class="p-3.5 bg-gray-100 dark:bg-gray-700 text-gray-800 dark:text-gray-200 rounded-2xl font-bold text-xl hover:bg-gray-200 dark:hover:bg-gray-600 transition-colors shadow-sm active:scale-95">8</button>
+            <button type="button" onclick="calcAppend('9')" class="p-3.5 bg-gray-100 dark:bg-gray-700 text-gray-800 dark:text-gray-200 rounded-2xl font-bold text-xl hover:bg-gray-200 dark:hover:bg-gray-600 transition-colors shadow-sm active:scale-95">9</button>
+            <button type="button" onclick="calcAppend('*')" class="p-3.5 bg-orange-100 dark:bg-orange-900/30 text-orange-600 dark:text-orange-400 rounded-2xl font-bold text-xl hover:bg-orange-200 dark:hover:bg-orange-900/50 transition-colors shadow-sm active:scale-95">×</button>
+            
+            <button type="button" onclick="calcAppend('4')" class="p-3.5 bg-gray-100 dark:bg-gray-700 text-gray-800 dark:text-gray-200 rounded-2xl font-bold text-xl hover:bg-gray-200 dark:hover:bg-gray-600 transition-colors shadow-sm active:scale-95">4</button>
+            <button type="button" onclick="calcAppend('5')" class="p-3.5 bg-gray-100 dark:bg-gray-700 text-gray-800 dark:text-gray-200 rounded-2xl font-bold text-xl hover:bg-gray-200 dark:hover:bg-gray-600 transition-colors shadow-sm active:scale-95">5</button>
+            <button type="button" onclick="calcAppend('6')" class="p-3.5 bg-gray-100 dark:bg-gray-700 text-gray-800 dark:text-gray-200 rounded-2xl font-bold text-xl hover:bg-gray-200 dark:hover:bg-gray-600 transition-colors shadow-sm active:scale-95">6</button>
+            <button type="button" onclick="calcAppend('-')" class="p-3.5 bg-orange-100 dark:bg-orange-900/30 text-orange-600 dark:text-orange-400 rounded-2xl font-bold text-xl hover:bg-orange-200 dark:hover:bg-orange-900/50 transition-colors shadow-sm active:scale-95">-</button>
+            
+            <button type="button" onclick="calcAppend('1')" class="p-3.5 bg-gray-100 dark:bg-gray-700 text-gray-800 dark:text-gray-200 rounded-2xl font-bold text-xl hover:bg-gray-200 dark:hover:bg-gray-600 transition-colors shadow-sm active:scale-95">1</button>
+            <button type="button" onclick="calcAppend('2')" class="p-3.5 bg-gray-100 dark:bg-gray-700 text-gray-800 dark:text-gray-200 rounded-2xl font-bold text-xl hover:bg-gray-200 dark:hover:bg-gray-600 transition-colors shadow-sm active:scale-95">2</button>
+            <button type="button" onclick="calcAppend('3')" class="p-3.5 bg-gray-100 dark:bg-gray-700 text-gray-800 dark:text-gray-200 rounded-2xl font-bold text-xl hover:bg-gray-200 dark:hover:bg-gray-600 transition-colors shadow-sm active:scale-95">3</button>
+            <button type="button" onclick="calcAppend('+')" class="p-3.5 bg-orange-100 dark:bg-orange-900/30 text-orange-600 dark:text-orange-400 rounded-2xl font-bold text-xl hover:bg-orange-200 dark:hover:bg-orange-900/50 transition-colors shadow-sm active:scale-95">+</button>
+            
+            <button type="button" onclick="calcAppend('0')" class="col-span-2 p-3.5 bg-gray-100 dark:bg-gray-700 text-gray-800 dark:text-gray-200 rounded-2xl font-bold text-xl hover:bg-gray-200 dark:hover:bg-gray-600 transition-colors shadow-sm active:scale-95">0</button>
+            <button type="button" onclick="calcAppend('.')" class="p-3.5 bg-gray-100 dark:bg-gray-700 text-gray-800 dark:text-gray-200 rounded-2xl font-bold text-xl hover:bg-gray-200 dark:hover:bg-gray-600 transition-colors shadow-sm active:scale-95">.</button>
+            <button type="button" onclick="calcEval()" class="p-3.5 bg-blue-600 text-white rounded-2xl font-bold text-xl hover:bg-blue-700 transition-colors shadow-sm active:scale-95">=</button>
+        </div>
+    </div>
+</div>
+
 <script>
     lucide.createIcons();
 
@@ -198,7 +250,6 @@
         const precoInput = document.getElementById('input-preco').value;
         const previaSpan = document.getElementById('previa-total');
 
-        // Pega os valores, tratando pra não bugar caso o usuário esteja digitando "=5+"
         const qtd = floatParse(qtdInput) || 0;
         const preco = floatParse(precoInput) || 0;
         const total = qtd * preco;
@@ -208,31 +259,27 @@
 
     function floatParse(val) {
         if (!val) return 0;
-        // Tenta limpar e formatar para não dar erro se tiver =
         let texto = String(val).replace(',', '.');
         if (texto.startsWith('=')) {
-            return 0; // O subtotal fica zerado enquanto digita a fórmula
+            return 0; 
         }
         const num = parseFloat(texto);
         return isNaN(num) ? 0 : num;
     }
 
-    // NOVA FUNÇÃO DA CALCULADORA INTELIGENTE
     function avaliarCalculo(elemento) {
         let valor = elemento.value.trim();
         if (valor.startsWith('=')) {
             let expressao = valor.substring(1).replace(/,/g, '.');
-            // Trava de segurança permitindo apenas cálculos
             if (/^[0-9+\-*/.() ]+$/.test(expressao)) {
                 try {
                     let resultado = Function('"use strict";return (' + expressao + ')')();
-                    // O preço ganha sempre 2 casas, quantidade pode ser número quebrado ou inteiro
                     if (elemento.id === 'input-preco') {
                         elemento.value = resultado.toFixed(2).replace('.', ',');
                     } else {
                         elemento.value = resultado;
                     }
-                    calcularPrevia(); // Atualiza a caixinha do subtotal
+                    calcularPrevia(); 
                 } catch (e) {
                     console.error("Erro no cálculo da expressão:", e);
                 }
@@ -285,6 +332,71 @@
         btnSalvar.classList.add('from-blue-600', 'to-indigo-600', 'hover:from-blue-700', 'hover:to-indigo-700');
         document.getElementById('btn-cancelar').classList.add('hidden');
         lucide.createIcons();
+    }
+
+    // ==========================================
+    // LÓGICA DA CALCULADORA FLUTUANTE (BLINDADA)
+    // ==========================================
+    function abrirCalculadora() {
+        const modalCalc = document.getElementById('modal-calculadora');
+        const calcCard = document.getElementById('calculadora-card');
+        
+        // Remove o hidden e ADICIONA o flex para centralizar a tela
+        modalCalc.classList.remove('hidden');
+        modalCalc.classList.add('flex');
+        
+        // Delay minúsculo apenas para a transição suave funcionar
+        setTimeout(() => {
+            modalCalc.classList.remove('opacity-0', 'pointer-events-none');
+            calcCard.classList.remove('scale-95');
+        }, 10);
+    }
+
+    function fecharCalculadora() {
+        const modalCalc = document.getElementById('modal-calculadora');
+        const calcCard = document.getElementById('calculadora-card');
+        const displayCalc = document.getElementById('calc-display');
+        
+        modalCalc.classList.add('opacity-0', 'pointer-events-none');
+        calcCard.classList.add('scale-95');
+        
+        setTimeout(() => {
+            modalCalc.classList.add('hidden');
+            modalCalc.classList.remove('flex');
+            displayCalc.value = ''; // Limpa a tela ao fechar
+        }, 300);
+    }
+
+    // Fecha a calculadora se o usuário clicar fora do quadrado (no fundo escuro)
+    document.addEventListener('click', function(e) {
+        const modalCalc = document.getElementById('modal-calculadora');
+        if (e.target === modalCalc) {
+            fecharCalculadora();
+        }
+    });
+
+    function calcAppend(val) {
+        const displayCalc = document.getElementById('calc-display');
+        if (displayCalc.value === 'Erro') displayCalc.value = '';
+        displayCalc.value += val;
+    }
+
+    function calcClear() {
+        document.getElementById('calc-display').value = '';
+    }
+
+    function calcEval() {
+        const displayCalc = document.getElementById('calc-display');
+        try {
+            let conta = displayCalc.value;
+            if (!conta) return;
+            
+            let res = Function('"use strict";return (' + conta + ')')();
+            displayCalc.value = Number.isInteger(res) ? res : res.toFixed(2);
+        } catch(e) {
+            displayCalc.value = 'Erro';
+            setTimeout(calcClear, 1500);
+        }
     }
 </script>
 {% endblock %}

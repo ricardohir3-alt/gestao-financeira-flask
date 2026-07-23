@@ -1,183 +1,208 @@
 {% extends "base.html" %}
 
 {% block content %}
-<!-- Adicionado px-3 para não grudar nas bordas do celular -->
-<div class="max-w-3xl mx-auto mt-2 pb-10 px-3 md:px-0">
-    <a href="javascript:history.back()" class="flex items-center gap-1 text-gray-500 hover:text-blue-600 dark:text-gray-400 dark:hover:text-blue-400 mb-4 md:mb-6 transition-colors text-sm font-medium">
+<!-- Ampliado para max-w-5xl para permitir o layout em duas colunas (Sidebar) no desktop -->
+<div class="max-w-5xl mx-auto mt-2 pb-10 px-3 md:px-0">
+    <a href="javascript:history.back()" class="flex items-center gap-1 text-gray-500 hover:text-blue-600 dark:text-gray-400 dark:hover:text-blue-400 mb-4 md:mb-6 transition-colors text-sm font-medium w-fit">
         <i data-lucide="arrow-left" class="w-4 h-4"></i>
         <span>Voltar</span>
     </a>
 
-    <!-- ================= FORMULÁRIO MANUAL ================= -->
-    <!-- Reduzido de p-6 para p-4 no mobile -->
-    <div class="bg-white dark:bg-gray-800 p-4 md:p-6 rounded-2xl shadow-sm border border-gray-100 dark:border-gray-700">
-        <h2 class="text-lg md:text-2xl font-black mb-4 md:mb-6 text-gray-800 dark:text-gray-100 flex items-center gap-2">
-            {% if gasto %}
-                <i data-lucide="edit-3" class="w-5 h-5 md:w-6 md:h-6 text-blue-600 dark:text-blue-400"></i> Editar Gasto
-            {% else %}
-                <i data-lucide="plus-circle" class="w-5 h-5 md:w-6 md:h-6 text-blue-600 dark:text-blue-400"></i> Registrar Novo Gasto
-            {% endif %}
-        </h2>
+    <!-- GRID PRINCIPAL: 2 Colunas no Desktop, 1 Coluna no Mobile -->
+    <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
 
-        <form action="{{ '/editar_gasto/' ~ gasto.id if gasto else '/novo_gasto' }}" method="POST">
+        <!-- ================= COLUNA ESQUERDA: FORMULÁRIO MANUAL (Ocupa 2/3 da tela) ================= -->
+        <div class="lg:col-span-2">
+            <div class="bg-white dark:bg-gray-800 p-4 md:p-6 rounded-2xl shadow-sm border border-gray-100 dark:border-gray-700">
+                <h2 class="text-lg md:text-2xl font-black mb-4 md:mb-6 text-gray-800 dark:text-gray-100 flex items-center gap-2">
+                    {% if gasto %}
+                        <i data-lucide="edit-3" class="w-5 h-5 md:w-6 md:h-6 text-blue-600 dark:text-blue-400"></i> Editar Gasto
+                    {% else %}
+                        <i data-lucide="plus-circle" class="w-5 h-5 md:w-6 md:h-6 text-blue-600 dark:text-blue-400"></i> Registrar Novo Gasto
+                    {% endif %}
+                </h2>
 
-            <!-- Reduzido gap e margem inferior no mobile (gap-3 e mb-3) -->
-            <div class="grid grid-cols-1 md:grid-cols-2 gap-3 md:gap-5 mb-3 md:mb-5">
-                <div>
-                    <label class="block text-[11px] md:text-xs font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wider mb-1 md:mb-1.5 flex items-center gap-1">
-                        <i data-lucide="file-text" class="w-3 h-3"></i> Descrição
-                    </label>
-                    <input type="text" name="descricao" value="{{ gasto.descricao if gasto else '' }}" placeholder="Ex: Energia, Mercado..." required
-                           class="w-full px-3 py-2 md:px-4 md:py-3 text-sm md:text-base bg-gray-50 dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-xl text-gray-800 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-blue-500">
-                </div>
-                <div>
-                    <label class="block text-[11px] md:text-xs font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wider mb-1 md:mb-1.5 flex items-center gap-1">
-                        <i data-lucide="calendar" class="w-3 h-3"></i> Data do Gasto/Vencimento
-                    </label>
-                    <input type="date" name="data_gasto" value="{{ gasto.data if gasto else '' }}" required
-                           class="w-full px-3 py-2 md:px-4 md:py-3 text-sm md:text-base bg-gray-50 dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-xl text-gray-800 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-blue-500">
-                </div>
-            </div>
+                <form action="{{ '/editar_gasto/' ~ gasto.id if gasto else '/novo_gasto' }}" method="POST">
 
-            <div class="grid grid-cols-1 md:grid-cols-2 gap-3 md:gap-5 mb-4 md:mb-5">
-                <div>
-                    <label class="block text-[11px] md:text-xs font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wider mb-1 md:mb-1.5 flex items-center gap-1">
-                        <i data-lucide="dollar-sign" class="w-3 h-3"></i> Valor (R$)
-                    </label>
-                    <!-- ATUALIZADO: type="text" + inputmode="text" + onblur="avaliarCalculo(this)" -->
-                    <input type="text" inputmode="text" name="valor" value="{{ gasto.valor if gasto else '' }}" placeholder="Ex: =10+15.50 ou 150.00" required onblur="avaliarCalculo(this)"
-                           class="w-full px-3 py-2 md:px-4 md:py-3 text-sm md:text-base bg-gray-50 dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-xl text-gray-800 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-blue-500">
-                </div>
-                <div>
-                    <label class="block text-[11px] md:text-xs font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wider mb-1 md:mb-1.5 flex items-center gap-1">
-                        <i data-lucide="tag" class="w-3 h-3"></i> Categoria
-                    </label>
-                    <input type="text" list="lista-categorias" name="categoria" value="{{ gasto.categoria if gasto else '' }}" placeholder="Escolha ou digite uma nova..." required
-                           class="w-full px-3 py-2 md:px-4 md:py-3 text-sm md:text-base bg-gray-50 dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-xl text-gray-800 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-blue-500">
-                    <datalist id="lista-categorias">
-                        {% for cat in ['Habitação', 'Alimentação', 'Transporte', 'Saúde', 'Lazer', 'Outros'] %}
-                            <option value="{{ cat }}"></option>
-                        {% endfor %}
-                    </datalist>
-                </div>
-            </div>
-
-            <!-- CAIXA AZUL DE SELEÇÃO DE QUINZENA/INTEGRAL -->
-            <div class="bg-blue-50/50 dark:bg-blue-900/10 p-3.5 md:p-5 rounded-xl border border-blue-100 dark:border-blue-900/30 mb-4 md:mb-5">
-                <label class="block text-sm font-bold text-blue-800 dark:text-blue-300 mb-2 md:mb-3 flex items-center gap-1">
-                    <i data-lucide="layers" class="w-4 h-4"></i> Desconto do Gasto
-                </label>
-
-                <div class="flex bg-white dark:bg-gray-800 rounded-lg p-1 mb-3 md:mb-4 border border-gray-200 dark:border-gray-700 shadow-sm">
-                    <label class="flex-1 text-center cursor-pointer relative">
-                        <input type="radio" name="modalidade" value="quinzena" class="peer hidden" onchange="toggleModalidade()" {% if not gasto or gasto.quinzena|string != '0' %}checked{% endif %}>
-                        <div class="peer-checked:bg-blue-100 dark:peer-checked:bg-blue-900/50 peer-checked:text-blue-700 dark:peer-checked:text-blue-300 text-gray-500 dark:text-gray-400 text-[11px] md:text-xs font-bold py-2 md:py-2.5 rounded-md transition-all">
-                            Quinzena
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-3 md:gap-5 mb-3 md:mb-5">
+                        <div>
+                            <label class="block text-[11px] md:text-xs font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wider mb-1 md:mb-1.5 flex items-center gap-1">
+                                <i data-lucide="file-text" class="w-3 h-3"></i> Descrição
+                            </label>
+                            <input type="text" name="descricao" value="{{ gasto.descricao if gasto else '' }}" placeholder="Ex: Energia, Mercado..." required
+                                   class="w-full px-3 py-2 md:px-4 md:py-3 text-sm md:text-base bg-gray-50 dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-xl text-gray-800 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-blue-500 transition-colors">
                         </div>
-                    </label>
-                    <label class="flex-1 text-center cursor-pointer relative">
-                        <input type="radio" name="modalidade" value="integral" class="peer hidden" onchange="toggleModalidade()" {% if gasto and gasto.quinzena|string == '0' %}checked{% endif %}>
-                        <div class="peer-checked:bg-indigo-100 dark:peer-checked:bg-indigo-900/50 peer-checked:text-indigo-700 dark:peer-checked:text-indigo-300 text-gray-500 dark:text-gray-400 text-[11px] md:text-xs font-bold py-2 md:py-2.5 rounded-md transition-all">
-                            Mês Integral
+                        <div>
+                            <label class="block text-[11px] md:text-xs font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wider mb-1 md:mb-1.5 flex items-center gap-1">
+                                <i data-lucide="calendar" class="w-3 h-3"></i> Data / Vencimento
+                            </label>
+                            <input type="date" name="data_gasto" value="{{ gasto.data if gasto else '' }}" required
+                                   class="w-full px-3 py-2 md:px-4 md:py-3 text-sm md:text-base bg-gray-50 dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-xl text-gray-800 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-blue-500 transition-colors">
                         </div>
-                    </label>
-                </div>
+                    </div>
 
-                <div id="seletor-quinzena" class="grid grid-cols-2 gap-2 md:gap-3 transition-all">
-                    <label class="cursor-pointer">
-                        <input type="radio" name="quinzena_card" value="1" class="peer hidden" onchange="atualizarInstanciaQuinzena(1)" {% if not gasto or gasto.quinzena|string != '2' %}checked{% endif %}>
-                        <div class="p-2 md:p-3 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl flex flex-col items-center gap-1 text-center transition-all peer-checked:border-blue-500 peer-checked:ring-2 peer-checked:ring-blue-500/20">
-                            <span class="text-xs font-bold text-gray-800 dark:text-gray-200">1ª Quinzena</span>
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-3 md:gap-5 mb-4 md:mb-5">
+                        <div>
+                            <label class="block text-[11px] md:text-xs font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wider mb-1 md:mb-1.5 flex items-center gap-1">
+                                <i data-lucide="dollar-sign" class="w-3 h-3"></i> Valor (R$)
+                            </label>
+                            <input type="text" inputmode="text" name="valor" value="{{ gasto.valor if gasto else '' }}" placeholder="Ex: =10+15.50 ou 150.00" required onblur="avaliarCalculo(this)"
+                                   class="w-full px-3 py-2 md:px-4 md:py-3 text-sm md:text-base bg-gray-50 dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-xl text-gray-800 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-blue-500 transition-colors">
                         </div>
-                    </label>
-                    <label class="cursor-pointer">
-                        <input type="radio" name="quinzena_card" value="2" class="peer hidden" onchange="atualizarInstanciaQuinzena(2)" {% if gasto and gasto.quinzena|string == '2' %}checked{% endif %}>
-                        <div class="p-2 md:p-3 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl flex flex-col items-center gap-1 text-center transition-all peer-checked:border-blue-500 peer-checked:ring-2 peer-checked:ring-blue-500/20">
-                            <span class="text-xs font-bold text-gray-800 dark:text-gray-200">2ª Quinzena</span>
+                        <div>
+                            <label class="block text-[11px] md:text-xs font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wider mb-1 md:mb-1.5 flex items-center gap-1">
+                                <i data-lucide="tag" class="w-3 h-3"></i> Categoria
+                            </label>
+                            <input type="text" list="lista-categorias" name="categoria" value="{{ gasto.categoria if gasto else '' }}" placeholder="Escolha ou digite..." required
+                                   class="w-full px-3 py-2 md:px-4 md:py-3 text-sm md:text-base bg-gray-50 dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-xl text-gray-800 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-blue-500 transition-colors">
+                            <datalist id="lista-categorias">
+                                {% for cat in ['Habitação', 'Alimentação', 'Transporte', 'Saúde', 'Lazer', 'Outros'] %}
+                                    <option value="{{ cat }}"></option>
+                                {% endfor %}
+                            </datalist>
                         </div>
-                    </label>
-                </div>
+                    </div>
 
-                <div id="aviso-integral" class="hidden">
-                    <p class="text-[11px] text-indigo-600 dark:text-indigo-400 text-center font-medium mt-1">Deduzido do montante principal do mês.</p>
-                </div>
-                <!-- O input real que será enviado no POST para o banco de dados -->
-                <input type="hidden" name="quinzena" id="quinzena-real" value="{{ gasto.quinzena if gasto else '1' }}">
+                    <!-- CAIXA DE SELEÇÃO DE QUINZENA/INTEGRAL -->
+                    <div class="bg-blue-50/50 dark:bg-blue-900/10 p-3.5 md:p-5 rounded-xl border border-blue-100 dark:border-blue-900/30 mb-4 md:mb-5">
+                        <label class="block text-sm font-bold text-blue-800 dark:text-blue-300 mb-2 md:mb-3 flex items-center gap-1">
+                            <i data-lucide="layers" class="w-4 h-4"></i> Desconto do Gasto
+                        </label>
+
+                        <div class="flex bg-white dark:bg-gray-800 rounded-lg p-1 mb-3 border border-gray-200 dark:border-gray-700 shadow-sm">
+                            <label class="flex-1 text-center cursor-pointer relative">
+                                <input type="radio" name="modalidade" value="quinzena" class="peer hidden" onchange="toggleModalidade()" {% if not gasto or gasto.quinzena|string != '0' %}checked{% endif %}>
+                                <div class="peer-checked:bg-blue-100 dark:peer-checked:bg-blue-900/50 peer-checked:text-blue-700 dark:peer-checked:text-blue-300 text-gray-500 dark:text-gray-400 text-[11px] md:text-xs font-bold py-2 rounded-md transition-all">
+                                    Quinzena
+                                </div>
+                            </label>
+                            <label class="flex-1 text-center cursor-pointer relative">
+                                <input type="radio" name="modalidade" value="integral" class="peer hidden" onchange="toggleModalidade()" {% if gasto and gasto.quinzena|string == '0' %}checked{% endif %}>
+                                <div class="peer-checked:bg-indigo-100 dark:peer-checked:bg-indigo-900/50 peer-checked:text-indigo-700 dark:peer-checked:text-indigo-300 text-gray-500 dark:text-gray-400 text-[11px] md:text-xs font-bold py-2 rounded-md transition-all">
+                                    Mês Integral
+                                </div>
+                            </label>
+                        </div>
+
+                        <div id="seletor-quinzena" class="grid grid-cols-2 gap-2 transition-all">
+                            <label class="cursor-pointer">
+                                <input type="radio" name="quinzena_card" value="1" class="peer hidden" onchange="atualizarInstanciaQuinzena(1)" {% if not gasto or gasto.quinzena|string != '2' %}checked{% endif %}>
+                                <div class="p-2 md:p-3 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl flex flex-col items-center gap-1 text-center transition-all peer-checked:border-blue-500 peer-checked:ring-2 peer-checked:ring-blue-500/20">
+                                    <span class="text-xs font-bold text-gray-800 dark:text-gray-200">1ª Quinzena</span>
+                                </div>
+                            </label>
+                            <label class="cursor-pointer">
+                                <input type="radio" name="quinzena_card" value="2" class="peer hidden" onchange="atualizarInstanciaQuinzena(2)" {% if gasto and gasto.quinzena|string == '2' %}checked{% endif %}>
+                                <div class="p-2 md:p-3 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl flex flex-col items-center gap-1 text-center transition-all peer-checked:border-blue-500 peer-checked:ring-2 peer-checked:ring-blue-500/20">
+                                    <span class="text-xs font-bold text-gray-800 dark:text-gray-200">2ª Quinzena</span>
+                                </div>
+                            </label>
+                        </div>
+
+                        <div id="aviso-integral" class="hidden">
+                            <p class="text-[11px] text-indigo-600 dark:text-indigo-400 text-center font-medium mt-1">Deduzido do montante principal do mês.</p>
+                        </div>
+                        <input type="hidden" name="quinzena" id="quinzena-real" value="{{ gasto.quinzena if gasto else '1' }}">
+                    </div>
+
+                    <div class="mb-5 md:mb-6">
+                        <label class="block text-[11px] md:text-xs font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wider mb-1 md:mb-1.5 flex items-center gap-1">
+                            <i data-lucide="check-square" class="w-3 h-3"></i> Status
+                        </label>
+                        <select name="status" required class="w-full px-3 py-2 md:px-4 md:py-3 text-sm md:text-base bg-gray-50 dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-xl text-gray-800 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-blue-500 transition-colors">
+                            <option value="PENDENTE" {% if gasto and gasto.status == 'PENDENTE' %}selected{% endif %}>Pendente (A pagar)</option>
+                            <option value="PAGO" {% if gasto and gasto.status == 'PAGO' %}selected{% endif %}>Pago (Concluído)</option>
+                        </select>
+                    </div>
+
+                    <button type="submit" class="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 md:py-3.5 px-4 rounded-xl transition duration-200 shadow-md flex items-center justify-center gap-2 text-sm md:text-base">
+                        <i data-lucide="save" class="w-4 h-4 md:w-5 md:h-5"></i> {% if gasto %}Salvar Alterações{% else %}Guardar Gasto{% endif %}
+                    </button>
+                </form>
             </div>
-
-            <div class="mb-5 md:mb-6">
-                <label class="block text-[11px] md:text-xs font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wider mb-1 md:mb-1.5 flex items-center gap-1">
-                    <i data-lucide="check-square" class="w-3 h-3"></i> Status
-                </label>
-                <select name="status" required class="w-full px-3 py-2 md:px-4 md:py-3 text-sm md:text-base bg-gray-50 dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-xl text-gray-800 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-blue-500">
-                    <option value="PENDENTE" {% if gasto and gasto.status == 'PENDENTE' %}selected{% endif %}>Pendente (A pagar)</option>
-                    <option value="PAGO" {% if gasto and gasto.status == 'PAGO' %}selected{% endif %}>Pago (Concluído)</option>
-                </select>
-            </div>
-
-            <button type="submit" class="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-2.5 md:py-3.5 px-4 rounded-xl transition duration-200 shadow-md flex items-center justify-center gap-2 text-sm md:text-base">
-                <i data-lucide="save" class="w-4 h-4 md:w-5 md:h-5"></i> {% if gasto %}Salvar Alterações{% else %}Guardar Gasto{% endif %}
-            </button>
-        </form>
-    </div>
-
-    <!-- ================= SEÇÃO DE IMPORTAÇÃO INTELIGENTE ================= -->
-    {% if not gasto %}
-    <div class="mt-4 md:mt-6 bg-white dark:bg-gray-800 p-4 md:p-6 rounded-2xl shadow-sm border border-gray-100 dark:border-gray-700">
-
-        <div class="flex items-center gap-2 mb-2">
-            <div class="p-1.5 md:p-2 bg-purple-100 dark:bg-purple-900/50 rounded-lg">
-                <i data-lucide="sparkles" class="w-4 h-4 md:w-5 md:h-5 text-purple-600 dark:text-purple-400"></i>
-            </div>
-            <h3 class="text-base md:text-lg font-bold text-gray-800 dark:text-gray-200">Importação Inteligente</h3>
         </div>
 
-        <p class="text-[11px] md:text-sm text-gray-500 dark:text-gray-400 mb-4 md:mb-5 ml-1">
-            Escolha como deseja importar seus gastos. A Inteligência Artificial fará a leitura automática.
-        </p>
+        <!-- ================= COLUNA DIREITA: FERRAMENTAS E IMPORTAÇÃO (Ocupa 1/3 da tela) ================= -->
+        {% if not gasto %}
+        <div class="lg:col-span-1 space-y-4">
 
-        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <!-- CABEÇALHO DA BARRA LATERAL -->
+            <div class="flex items-center gap-2 px-1 lg:mt-2">
+                <div class="p-1.5 md:p-2 bg-purple-100 dark:bg-purple-900/50 rounded-lg">
+                    <i data-lucide="zap" class="w-4 h-4 md:w-5 md:h-5 text-purple-600 dark:text-purple-400"></i>
+                </div>
+                <h3 class="text-base md:text-lg font-bold text-gray-800 dark:text-gray-200">Automações</h3>
+            </div>
+
+            <!-- OPÇÃO 3: DUPLICAR MÊS (Agora no topo, em destaque) -->
+            <!-- NOTA: Verifique se o 'action' bate com a rota que você usava no menu lateral -->
+            <form action="/duplicar_gastos" method="POST" onsubmit="confirmarAcao(event, this, 'Duplicar Mês Anterior?', 'Isso vai copiar todas as contas do mês passado para o mês atual como PENDENTES.', 'Sim, Duplicar!')">
+                <button type="submit" class="w-full flex items-center justify-between p-4 border-2 border-dashed border-amber-300 dark:border-amber-700/50 rounded-xl cursor-pointer bg-amber-50/30 dark:bg-amber-900/10 hover:bg-amber-100 dark:hover:bg-amber-900/30 transition-colors group">
+                    <div class="flex items-center gap-3">
+                        <div class="p-2 bg-amber-200/50 dark:bg-amber-800/50 rounded-lg text-amber-600 dark:text-amber-400">
+                            <i data-lucide="copy" class="w-5 h-5"></i>
+                        </div>
+                        <div class="text-left">
+                            <p class="text-sm text-gray-800 dark:text-gray-200 font-bold">Duplicar Mês</p>
+                            <p class="text-[10px] text-gray-500 dark:text-gray-400">Copia as contas do mês anterior</p>
+                        </div>
+                    </div>
+                    <i data-lucide="chevron-right" class="w-4 h-4 text-gray-400 group-hover:translate-x-1 transition-transform"></i>
+                </button>
+            </form>
+
+            <div class="h-px w-full bg-gray-200 dark:bg-gray-700 my-4"></div>
 
             <!-- OPÇÃO 1: EXTRATO BANCÁRIO (PDF) -->
-            <form action="/upload_extrato" method="POST" enctype="multipart/form-data" class="w-full flex flex-col h-full">
-                <label for="extrato_pdf" class="flex-1 flex flex-col items-center justify-center w-full min-h-[120px] md:min-h-[144px] border-2 border-dashed border-gray-300 dark:border-gray-600 rounded-xl cursor-pointer bg-gray-50 dark:bg-gray-900 hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors group p-3 md:p-4">
-                    <i data-lucide="file-text" class="w-6 h-6 md:w-8 md:h-8 mb-2 text-gray-400 group-hover:text-purple-500 transition-colors"></i>
-                    <p class="mb-1 text-xs md:text-sm text-gray-600 dark:text-gray-300 text-center"><span class="font-bold">Extrato em PDF</span></p>
-                    <p class="text-[10px] md:text-xs text-gray-500 dark:text-gray-400 text-center">Nubank, Itaú, Caixa...</p>
+            <form action="/upload_extrato" method="POST" enctype="multipart/form-data" class="w-full">
+                <label for="extrato_pdf" class="flex items-center gap-3 p-3 md:p-4 border border-gray-200 dark:border-gray-700 rounded-xl cursor-pointer bg-white dark:bg-gray-800 hover:border-purple-300 dark:hover:border-purple-700 transition-colors group relative overflow-hidden">
+                    <div class="absolute left-0 top-0 bottom-0 w-1 bg-purple-500 opacity-0 group-hover:opacity-100 transition-opacity"></div>
+                    <div class="p-2 bg-gray-100 dark:bg-gray-700 rounded-lg text-gray-500 group-hover:text-purple-600 dark:group-hover:text-purple-400 transition-colors">
+                        <i data-lucide="file-text" class="w-5 h-5"></i>
+                    </div>
+                    <div class="flex-1 text-left">
+                        <p class="text-xs md:text-sm text-gray-800 dark:text-gray-200 font-bold">Extrato PDF</p>
+                        <p class="text-[10px] text-gray-500 dark:text-gray-400">Nubank, Itaú, Caixa...</p>
+                    </div>
                     <input id="extrato_pdf" name="extrato" type="file" accept="application/pdf" class="hidden" required onchange="mostrarNomeArquivo(this, 'nome_pdf')" />
                 </label>
 
-                <div id="nome_pdf" class="hidden mt-2 text-[11px] md:text-xs text-center text-green-600 dark:text-green-400 font-medium flex items-center justify-center gap-1">
-                    <i data-lucide="check-circle" class="w-3 h-3"></i> <span id="texto_nome_pdf" class="truncate max-w-[150px] md:max-w-[200px]"></span>
+                <div id="nome_pdf" class="hidden mt-2 text-[11px] text-center text-purple-600 dark:text-purple-400 font-medium flex items-center justify-center gap-1 bg-purple-50 dark:bg-purple-900/20 py-1.5 rounded-lg border border-purple-100 dark:border-purple-900/50">
+                    <i data-lucide="check-circle" class="w-3 h-3"></i> <span id="texto_nome_pdf" class="truncate max-w-[200px]"></span>
                 </div>
 
-                <button type="submit" class="mt-3 w-full bg-purple-600 hover:bg-purple-700 text-white font-bold py-2.5 px-4 rounded-xl transition-colors flex items-center justify-center gap-1.5 shadow-sm text-xs md:text-sm">
-                    <i data-lucide="upload-cloud" class="w-3.5 h-3.5 md:w-4 md:h-4"></i> Ler Extrato PDF
+                <button type="submit" class="mt-2 w-full bg-purple-600 hover:bg-purple-700 text-white font-bold py-2.5 px-4 rounded-xl transition-colors flex items-center justify-center gap-1.5 shadow-sm text-xs md:text-sm">
+                    Ler PDF com IA
                 </button>
             </form>
 
             <!-- OPÇÃO 2: COMPROVANTE PIX (IMAGEM) -->
-            <form action="/upload_comprovante" method="POST" enctype="multipart/form-data" class="w-full flex flex-col h-full">
-                <label for="comprovante_img" class="flex-1 flex flex-col items-center justify-center w-full min-h-[120px] md:min-h-[144px] border-2 border-dashed border-indigo-300 dark:border-indigo-700/50 rounded-xl cursor-pointer bg-indigo-50/30 dark:bg-indigo-900/10 hover:bg-indigo-50 dark:hover:bg-indigo-900/20 transition-colors group p-3 md:p-4">
-                    <i data-lucide="scan-line" class="w-6 h-6 md:w-8 md:h-8 mb-2 text-indigo-400 group-hover:text-indigo-600 transition-colors"></i>
-                    <p class="mb-1 text-xs md:text-sm text-gray-600 dark:text-gray-300 text-center"><span class="font-bold">Print de Comprovante</span></p>
-                    <p class="text-[10px] md:text-xs text-gray-500 dark:text-gray-400 text-center">Pix ou Boleto (PNG/JPG)</p>
+            <form action="/upload_comprovante" method="POST" enctype="multipart/form-data" class="w-full">
+                <label for="comprovante_img" class="flex items-center gap-3 p-3 md:p-4 border border-gray-200 dark:border-gray-700 rounded-xl cursor-pointer bg-white dark:bg-gray-800 hover:border-indigo-300 dark:hover:border-indigo-700 transition-colors group relative overflow-hidden">
+                    <div class="absolute left-0 top-0 bottom-0 w-1 bg-indigo-500 opacity-0 group-hover:opacity-100 transition-opacity"></div>
+                    <div class="p-2 bg-gray-100 dark:bg-gray-700 rounded-lg text-gray-500 group-hover:text-indigo-600 dark:group-hover:text-indigo-400 transition-colors">
+                        <i data-lucide="scan-line" class="w-5 h-5"></i>
+                    </div>
+                    <div class="flex-1 text-left">
+                        <p class="text-xs md:text-sm text-gray-800 dark:text-gray-200 font-bold">Comprovante</p>
+                        <p class="text-[10px] text-gray-500 dark:text-gray-400">Pix/Boleto (JPG, PNG)</p>
+                    </div>
                     <input id="comprovante_img" name="comprovante" type="file" accept="image/png, image/jpeg, image/jpg" class="hidden" required onchange="mostrarNomeArquivo(this, 'nome_img')" />
                 </label>
 
-                <div id="nome_img" class="hidden mt-2 text-[11px] md:text-xs text-center text-green-600 dark:text-green-400 font-medium flex items-center justify-center gap-1">
-                    <i data-lucide="check-circle" class="w-3 h-3"></i> <span id="texto_nome_img" class="truncate max-w-[150px] md:max-w-[200px]"></span>
+                <div id="nome_img" class="hidden mt-2 text-[11px] text-center text-indigo-600 dark:text-indigo-400 font-medium flex items-center justify-center gap-1 bg-indigo-50 dark:bg-indigo-900/20 py-1.5 rounded-lg border border-indigo-100 dark:border-indigo-900/50">
+                    <i data-lucide="check-circle" class="w-3 h-3"></i> <span id="texto_nome_img" class="truncate max-w-[200px]"></span>
                 </div>
 
-                <button type="submit" class="mt-3 w-full bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-2.5 px-4 rounded-xl transition-colors flex items-center justify-center gap-1.5 shadow-sm text-xs md:text-sm">
-                    <i data-lucide="camera" class="w-3.5 h-3.5 md:w-4 md:h-4"></i> Ler Imagem
+                <button type="submit" class="mt-2 w-full bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-2.5 px-4 rounded-xl transition-colors flex items-center justify-center gap-1.5 shadow-sm text-xs md:text-sm">
+                    Ler Imagem com IA
                 </button>
             </form>
 
         </div>
-    </div>
-    {% endif %}
+        {% endif %}
 
+    </div>
 </div>
 
 <script>
@@ -196,7 +221,7 @@
     }
 
     // =====================================
-    // LÓGICA DA QUINZENA
+    // LÓGICA DA QUINZENA E CALCULADORA
     // =====================================
     function toggleModalidade() {
         const modalidade = document.querySelector('input[name="modalidade"]:checked');
@@ -226,23 +251,13 @@
         }
     }
 
-    // =====================================
-    // NOVA LÓGICA: CALCULADORA INTELIGENTE (VALOR)
-    // =====================================
     function avaliarCalculo(elemento) {
         let valor = elemento.value.trim();
-        // Se o usuário digitou '=' no começo
         if (valor.startsWith('=')) {
-            // Troca vírgula por ponto para o JavaScript conseguir calcular
             let expressao = valor.substring(1).replace(/,/g, '.');
-
-            // Trava de segurança: só permite números e operadores matemáticos
             if (/^[0-9+\-*/.() ]+$/.test(expressao)) {
                 try {
-                    // Faz o cálculo matemático de forma segura
                     let resultado = Function('"use strict";return (' + expressao + ')')();
-
-                    // Devolve o valor formatado com 2 casas decimais (ex: 20.00)
                     elemento.value = resultado.toFixed(2);
                 } catch (e) {
                     console.error("Erro ao calcular a expressão:", e);
@@ -252,20 +267,14 @@
     }
 
     document.addEventListener('DOMContentLoaded', () => {
-        // Seleciona o campo de data
         const inputData = document.querySelector('input[name="data_gasto"]');
-
-        // Se o campo estiver vazio (ou seja, é um Novo Gasto), preenche com a data de hoje
         if (inputData && !inputData.value) {
             const hoje = new Date();
             const ano = hoje.getFullYear();
             const mes = String(hoje.getMonth() + 1).padStart(2, '0');
             const dia = String(hoje.getDate()).padStart(2, '0');
-
             inputData.value = `${ano}-${mes}-${dia}`;
         }
-
-        // Executa a verificação visual da quinzena ao carregar
         if (document.getElementById('seletor-quinzena')) {
             toggleModalidade();
         }

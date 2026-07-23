@@ -148,7 +148,7 @@
             </div>
         </div>
 
-        <!-- NOVO BLOCO: Ajustar Renda -->
+        <!-- NOVO BLOCO: Ajustar Renda com Opção de Renda Variável -->
         <div class="bg-white dark:bg-gray-800 rounded-2xl shadow-sm border border-gray-100 dark:border-gray-700 overflow-hidden">
             <div class="px-5 py-4 border-b border-gray-100 dark:border-gray-700 bg-gray-50/50 dark:bg-gray-900/50">
                 <h4 class="text-sm font-bold text-gray-700 dark:text-gray-200 flex items-center gap-2">
@@ -156,7 +156,6 @@
                 </h4>
             </div>
             <div class="p-5">
-                <!-- Aponte o 'action' para a rota correta do Flask que irá processar essa atualização -->
                 <form action="/renda" method="POST" class="space-y-4">
                     <div>
                         <label class="block text-xs font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wide mb-1.5">Renda Mensal (R$)</label>
@@ -167,6 +166,26 @@
                         </div>
                         <p class="text-[10px] text-gray-400 mt-1.5">O valor informado será utilizado como base para cálculos e relatórios de desempenho financeiro.</p>
                     </div>
+
+                    <!-- Nova Pergunta: Renda Variável -->
+                    <div class="pt-3 border-t border-gray-100 dark:border-gray-700/50">
+                        <label class="block text-xs font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wide mb-2">Sua renda é variável?</label>
+                        <div class="flex gap-4">
+                            <label class="flex items-center gap-2 cursor-pointer group">
+                                <input type="radio" name="renda_variavel" value="sim" {% if renda_variavel == 'sim' %}checked{% endif %} 
+                                       class="w-4 h-4 text-green-600 bg-gray-100 border-gray-300 focus:ring-green-500 dark:focus:ring-green-600 dark:ring-offset-gray-800 focus:ring-2 dark:bg-gray-700 dark:border-gray-600 transition-all">
+                                <span class="text-sm font-medium text-gray-700 dark:text-gray-300 group-hover:text-green-600 dark:group-hover:text-green-400 transition-colors">Sim</span>
+                            </label>
+                            <label class="flex items-center gap-2 cursor-pointer group">
+                                <!-- Se não houver valor salvo ou for diferente de 'sim', o 'Não' virá marcado por padrão -->
+                                <input type="radio" name="renda_variavel" value="nao" {% if renda_variavel != 'sim' %}checked{% endif %} 
+                                       class="w-4 h-4 text-green-600 bg-gray-100 border-gray-300 focus:ring-green-500 dark:focus:ring-green-600 dark:ring-offset-gray-800 focus:ring-2 dark:bg-gray-700 dark:border-gray-600 transition-all">
+                                <span class="text-sm font-medium text-gray-700 dark:text-gray-300 group-hover:text-green-600 dark:group-hover:text-green-400 transition-colors">Não</span>
+                            </label>
+                        </div>
+                        <p class="text-[10px] text-gray-400 mt-1.5">Se "Sim", a renda será zerada no início de todo mês. Se "Não", o valor será mantido fixo.</p>
+                    </div>
+
                     <button type="submit" class="w-full bg-green-600 hover:bg-green-700 text-white font-bold py-2.5 rounded-lg text-sm transition-all shadow-sm mt-2 flex justify-center items-center gap-2">
                         Salvar Nova Renda
                     </button>

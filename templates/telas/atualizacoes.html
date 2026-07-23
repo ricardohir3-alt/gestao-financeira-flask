@@ -19,7 +19,7 @@
     <!-- Linha do Tempo -->
     <div class="relative border-l-2 border-gray-200 dark:border-gray-700 ml-3">
 
-        <!-- ================= VERSÃO 1.5.8 (ATUAL/DESTAQUE) ================= -->
+        <!-- ================= VERSÃO 1.5.9 (ATUAL/DESTAQUE) ================= -->
         <div class="mb-8 ml-6 relative">
             <span class="absolute flex items-center justify-center w-8 h-8 bg-purple-100 rounded-full -left-[41px] top-0 ring-4 ring-white dark:ring-gray-900 dark:bg-purple-900 shadow-sm">
                 <i data-lucide="rocket" class="w-4 h-4 text-purple-600 dark:text-purple-400"></i>
@@ -27,23 +27,41 @@
             <div class="bg-white dark:bg-gray-800 p-5 rounded-xl border-2 border-purple-500/30 shadow-md relative overflow-hidden">
                 <div class="absolute top-0 right-0 w-16 h-16 bg-purple-500/10 rounded-bl-full -z-10"></div>
                 <div class="flex justify-between items-center mb-2">
-                    <span class="text-base font-black text-gray-800 dark:text-gray-100">Versão 1.5.8</span>
+                    <span class="text-base font-black text-gray-800 dark:text-gray-100">Versão 1.5.9</span>
                     <span class="px-2.5 py-1 text-[10px] uppercase tracking-wider font-bold bg-purple-600 text-white rounded-md shadow-sm">Recente</span>
                 </div>
                 <p class="text-xs font-medium text-purple-600 dark:text-purple-400 mb-3">Julho 2026</p>
                 <ul class="space-y-2 text-sm text-gray-600 dark:text-gray-300">
                     <li class="flex items-start gap-2">
                         <i data-lucide="check-circle-2" class="w-4 h-4 text-purple-500 mt-0.5 shrink-0"></i>
-                        <span><strong>Integração de Compras:</strong> A Lista de Compras agora conta com checkout automático, enviando o total consolidado diretamente para o Extrato do Mês com um clique.</span>
+                        <span><strong>Centro de Planejamento:</strong> Fusão inteligente das telas de Caixinhas e Contratos com navegação em Super Abas.</span>
                     </li>
                     <li class="flex items-start gap-2">
                         <i data-lucide="check-circle-2" class="w-4 h-4 text-purple-500 mt-0.5 shrink-0"></i>
-                        <span><strong>Automação Inteligente:</strong> Ao lançar as compras, o sistema abate do saldo, notifica via IA Hir3 e esvazia a tela para o próximo ciclo de compras.</span>
+                        <span><strong>Experiência SPA & Modais Nativos:</strong> Edição de despesas, metas e contratos agora ocorrem em janelas flutuantes super rápidas, sem recarregar a tela inicial.</span>
                     </li>
                     <li class="flex items-start gap-2">
                         <i data-lucide="check-circle-2" class="w-4 h-4 text-purple-500 mt-0.5 shrink-0"></i>
-                        <span><strong>Estabilidade (Bugfixes):</strong> Erradicação de Erros 500 globais causados por rotas legadas e ajuste na estrutura de tabelas do Banco de Dados.</span>
+                        <span><strong>SweetAlert2 Integrado:</strong> Alertas do painel, limpeza de notificações e confirmações de exclusão modernizados para pop-ups blindados e elegantes.</span>
                     </li>
+                </ul>
+            </div>
+        </div>
+
+        <!-- ================= VERSÃO 1.5.8 ================= -->
+        <div class="mb-8 ml-6 relative">
+            <span class="absolute flex items-center justify-center w-8 h-8 bg-blue-100 rounded-full -left-[41px] top-0 ring-4 ring-white dark:ring-gray-900 dark:bg-blue-900 shadow-sm">
+                <i data-lucide="shopping-bag" class="w-4 h-4 text-blue-600 dark:text-blue-400"></i>
+            </span>
+            <div class="bg-white dark:bg-gray-800 p-5 rounded-xl border border-gray-200 dark:border-gray-700 shadow-sm">
+                <div class="flex justify-between items-center mb-2">
+                    <span class="text-base font-black text-gray-800 dark:text-gray-100">Versão 1.5.8</span>
+                </div>
+                <p class="text-xs font-medium text-blue-600 dark:text-blue-400 mb-3">Julho 2026</p>
+                <ul class="space-y-2 text-sm text-gray-600 dark:text-gray-300">
+                    <li><strong>Integração de Compras:</strong> Checkout automático enviando o total diretamente para o Extrato do Mês.</li>
+                    <li><strong>Automação Inteligente:</strong> Ao lançar as compras, abate saldo, notifica IA Hir3 e esvazia tela.</li>
+                    <li><strong>Estabilidade (Bugfixes):</strong> Erradicação de Erros 500 globais causados por rotas legadas.</li>
                 </ul>
             </div>
         </div>
@@ -59,9 +77,9 @@
                 </div>
                 <p class="text-xs font-medium text-pink-600 dark:text-pink-400 mb-3">Julho 2026</p>
                 <ul class="space-y-2 text-sm text-gray-600 dark:text-gray-300">
-                    <li><strong>Refatoração UI/UX:</strong> Limpeza visual do menu lateral, restrita à página inicial para uma navegação mais limpa.</li>
-                    <li><strong>Centralização de Perfil:</strong> O módulo "Ajustar Renda" foi totalmente migrado e integrado à tela "Meu Perfil".</li>
-                    <li><strong>Segurança Aprimorada:</strong> Atualização dos templates de Login e Recuperação de Senha.</li>
+                    <li><strong>Refatoração UI/UX:</strong> Limpeza visual do menu lateral restrita à página inicial.</li>
+                    <li><strong>Centralização de Perfil:</strong> O módulo de Renda foi migrado e integrado ao Meu Perfil.</li>
+                    <li><strong>Segurança Aprimorada:</strong> Atualização dos templates de Login e Recuperação.</li>
                 </ul>
             </div>
         </div>
@@ -77,27 +95,9 @@
                 </div>
                 <p class="text-xs font-medium text-indigo-600 dark:text-indigo-400 mb-3">Julho 2026</p>
                 <ul class="space-y-2 text-sm text-gray-600 dark:text-gray-300">
-                    <li><strong>Assistente de Vencimentos:</strong> Alertas inteligentes em formato carrossel no resumo gerencial.</li>
-                    <li><strong>Calculadora Embutida:</strong> Campos de preço e multiplicador agora resolvem equações.</li>
-                    <li><strong>Personalização:</strong> Adicionada a função de upload de foto de avatar na tela de perfil.</li>
-                </ul>
-            </div>
-        </div>
-
-        <!-- ================= VERSÃO 1.5.5 ================= -->
-        <div class="mb-8 ml-6 relative">
-            <span class="absolute flex items-center justify-center w-8 h-8 bg-emerald-100 rounded-full -left-[41px] top-0 ring-4 ring-white dark:ring-gray-900 dark:bg-emerald-900 shadow-sm">
-                <i data-lucide="brain-circuit" class="w-4 h-4 text-emerald-600 dark:text-emerald-400"></i>
-            </span>
-            <div class="bg-white dark:bg-gray-800 p-5 rounded-xl border border-gray-200 dark:border-gray-700 shadow-sm">
-                <div class="flex justify-between items-center mb-2">
-                    <span class="text-base font-black text-gray-800 dark:text-gray-100">Versão 1.5.5</span>
-                </div>
-                <p class="text-xs font-medium text-emerald-600 dark:text-emerald-400 mb-3">Julho 2026</p>
-                <ul class="space-y-2 text-sm text-gray-600 dark:text-gray-300">
-                    <li><strong>IA Hir3:</strong> Motor de aprendizado contínuo (registra padrões de comportamento).</li>
-                    <li><strong>Filtros Dinâmicos:</strong> Abas de "Pagos" e "Pendentes" no histórico.</li>
-                    <li><strong>Quinzena Persistente:</strong> Agora salva sua escolha diretamente no Banco.</li>
+                    <li><strong>Assistente de Vencimentos:</strong> Alertas inteligentes em carrossel no resumo.</li>
+                    <li><strong>Calculadora Embutida:</strong> Campos de preço agora resolvem equações diretas.</li>
+                    <li><strong>Personalização:</strong> Upload de avatar ativado na tela de perfil.</li>
                 </ul>
             </div>
         </div>
@@ -115,14 +115,22 @@
                     </div>
                     <div>
                         <h3 class="text-sm font-bold text-gray-800 dark:text-gray-200">Explorar Arquivo de Atualizações</h3>
-                        <p class="text-[10px] text-gray-500 dark:text-gray-400">Versões 1.0.0 até 1.5.4</p>
+                        <p class="text-[10px] text-gray-500 dark:text-gray-400">Versões 1.0.0 até 1.5.5</p>
                     </div>
                 </div>
             </summary>
 
             <div class="space-y-6 mt-6 pb-6">
+                <!-- 1.5.5 -->
+                <div class="ml-6 relative opacity-100">
+                    <span class="absolute flex items-center justify-center w-4 h-4 bg-emerald-300 rounded-full -left-[33px] top-1.5 ring-4 ring-white dark:ring-gray-900 dark:bg-emerald-600"></span>
+                    <div class="bg-white/90 dark:bg-gray-800/90 p-4 rounded-xl border border-gray-100 dark:border-gray-700/50 shadow-sm">
+                        <h4 class="text-sm font-bold text-gray-700 dark:text-gray-300">Versão 1.5.5</h4>
+                        <p class="text-xs text-gray-500 dark:text-gray-400 mt-1.5">Motor de aprendizado contínuo (IA Hir3) e Quinzena Persistente.</p>
+                    </div>
+                </div>
                 <!-- 1.5.4 -->
-                <div class="ml-6 relative opacity-95">
+                <div class="ml-6 relative opacity-90">
                     <span class="absolute flex items-center justify-center w-4 h-4 bg-cyan-300 rounded-full -left-[33px] top-1.5 ring-4 ring-white dark:ring-gray-900 dark:bg-cyan-600"></span>
                     <div class="bg-white/80 dark:bg-gray-800/80 p-4 rounded-xl border border-gray-100 dark:border-gray-700/50 shadow-sm">
                         <h4 class="text-sm font-bold text-gray-700 dark:text-gray-300">Versão 1.5.4</h4>
@@ -130,7 +138,7 @@
                     </div>
                 </div>
                 <!-- 1.5.3 -->
-                <div class="ml-6 relative opacity-90">
+                <div class="ml-6 relative opacity-80">
                     <span class="absolute flex items-center justify-center w-4 h-4 bg-orange-300 rounded-full -left-[33px] top-1.5 ring-4 ring-white dark:ring-gray-900 dark:bg-orange-600"></span>
                     <div class="bg-white/70 dark:bg-gray-800/70 p-4 rounded-xl border border-gray-100 dark:border-gray-700/50 shadow-sm">
                         <h4 class="text-sm font-bold text-gray-700 dark:text-gray-300">Versão 1.5.3</h4>
@@ -138,7 +146,7 @@
                     </div>
                 </div>
                 <!-- 1.5.2 -->
-                <div class="ml-6 relative opacity-80">
+                <div class="ml-6 relative opacity-70">
                     <span class="absolute flex items-center justify-center w-4 h-4 bg-teal-300 rounded-full -left-[33px] top-1.5 ring-4 ring-white dark:ring-gray-900 dark:bg-teal-600"></span>
                     <div class="bg-white/60 dark:bg-gray-800/60 p-4 rounded-xl border border-gray-100 dark:border-gray-700/50 shadow-sm">
                         <h4 class="text-sm font-bold text-gray-700 dark:text-gray-300">Versão 1.5.2</h4>
@@ -146,7 +154,7 @@
                     </div>
                 </div>
                 <!-- 1.5.1 -->
-                <div class="ml-6 relative opacity-70">
+                <div class="ml-6 relative opacity-60">
                     <span class="absolute flex items-center justify-center w-4 h-4 bg-indigo-300 rounded-full -left-[33px] top-1.5 ring-4 ring-white dark:ring-gray-900 dark:bg-indigo-600"></span>
                     <div class="bg-white/50 dark:bg-gray-800/50 p-4 rounded-xl border border-gray-100 dark:border-gray-700/50 shadow-sm">
                         <h4 class="text-sm font-bold text-gray-700 dark:text-gray-300">Versão 1.5.1</h4>
@@ -154,7 +162,7 @@
                     </div>
                 </div>
                 <!-- 1.5.0 -->
-                <div class="ml-6 relative opacity-60">
+                <div class="ml-6 relative opacity-50">
                     <span class="absolute flex items-center justify-center w-4 h-4 bg-blue-300 rounded-full -left-[33px] top-1.5 ring-4 ring-white dark:ring-gray-900 dark:bg-blue-600"></span>
                     <div class="bg-white/40 dark:bg-gray-800/40 p-4 rounded-xl border border-gray-100 dark:border-gray-700/50 shadow-sm">
                         <h4 class="text-sm font-bold text-gray-700 dark:text-gray-300">Versão 1.5.0</h4>

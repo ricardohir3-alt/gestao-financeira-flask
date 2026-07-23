@@ -285,6 +285,37 @@ def recuperar():
 # ==============================================================================
 # DASHBOARD
 # ==============================================================================
+
+# --- FUNÇÃO DO PORTEIRO (Cole acima da rota / ) ---
+def verificar_virada_de_mes(user_id):
+    # Usa o padrão Ano-Mês (Ex: 2026-07) para manter consistência com seu sistema
+    mes_atual = datetime.now().strftime('%Y-%m')
+
+    conexao = get_db_connection()
+    cursor = conexao.cursor()
+
+    cursor.execute("SELECT ultimo_mes_acesso, renda_variavel FROM usuarios WHERE id = ?", (user_id,))
+    resultado = cursor.fetchone()
+
+    if resultado:
+        ultimo_mes = resultado['ultimo_mes_acesso']
+        renda_variavel = resultado['renda_variavel']
+
+        # Se o mês salvo for diferente do mês de hoje (O MÊS VIROU!)
+        if ultimo_mes != mes_atual:
+            if renda_variavel == 'sim':
+                # Zera a renda e atualiza o mês de acesso
+                cursor.execute("UPDATE usuarios SET renda = 0.00, ultimo_mes_acesso = ? WHERE id = ?", (mes_atual, user_id))
+            else:
+                # Se não for variável, APENAS atualiza o mês de acesso
+                cursor.execute("UPDATE usuarios SET ultimo_mes_acesso = ? WHERE id = ?", (mes_atual, user_id))
+
+            conexao.commit()
+
+    conexao.close()
+
+# ---------------------------------------------------
+
 @app.route('/', methods=['GET'])
 def home():
     if 'logado' not in session:
@@ -292,27 +323,37 @@ def home():
 
     user_id = session['user_id'] # Captura o usuário logado
 
+    # ====================================================================
+    # O PORTEIRO AGE AQUI! Antes de carregar os dados do painel,
+    # ele garante que a virada de mês foi processada.
+    verificar_virada_de_mes(user_id)
+    # ====================================================================
+
     # Abrimos a conexão com o banco mais cedo para poder buscar a renda do usuário
-    conexao = sqlite3.connect('financas.db')
-    conexao.row_factory = sqlite3.Row
+    conexao = get_db_connection() # Usando sua função padronizada aqui
     cursor = conexao.cursor()
 
-    # --- ATUALIZAÇÃO CRÍTICA AQUI: Busca a renda fixa e individual no banco de dados ---
-    cursor.execute("SELECT renda FROM usuarios WHERE id = ?", (user_id,))
+    # --- ATUALIZAÇÃO CRÍTICA AQUI: Busca a renda fixa, individual e a flag no banco de dados ---
+    cursor.execute("SELECT renda, renda_variavel FROM usuarios WHERE id = ?", (user_id,))
     resultado_usuario = cursor.fetchone()
 
-    # Garante que a renda seja tratada como NÚMERO (float), vinda do banco, e não mais da sessão temporária
+    # Pega o mês atual real do servidor e o mês que o usuário selecionou no filtro
+    mes_atual_real = datetime.now().strftime('%Y-%m')
+    mes_filtro = request.args.get('mes', mes_atual_real)
+
+    # TRUQUE VISUAL DE UX: Garante que a renda seja tratada corretamente dependendo do filtro
     try:
-        if resultado_usuario and resultado_usuario['renda'] is not None:
+        # Se o usuário está olhando para um mês no FUTURO e a renda é variável
+        if mes_filtro > mes_atual_real and resultado_usuario and resultado_usuario['renda_variavel'] == 'sim':
+            renda_atual = 0.00 # Zera APENAS visualmente na tela, não apaga do banco!
+
+        elif resultado_usuario and resultado_usuario['renda'] is not None:
             renda_atual = float(resultado_usuario['renda'])
         else:
             renda_atual = 0.00
     except (ValueError, TypeError):
         renda_atual = 0.00
     # -----------------------------------------------------------------------------------
-
-    mes_atual = datetime.now().strftime('%Y-%m')
-    mes_filtro = request.args.get('mes', mes_atual)
 
     cursor.execute('SELECT * FROM gastos WHERE data LIKE ? AND usuario_id = ? ORDER BY data DESC',
                    (mes_filtro + '%', user_id))
@@ -716,7 +757,6 @@ def atualizar_cobranca():
 
     return redirect(url_for('usuarios'))
 
-
 @app.route('/marcar_pago/<int:id>', methods=['POST'])
 def marcar_pago(id):
     # Rota ativada pelo botão verde de "Check" na tela do Painel Financeiro
@@ -844,6 +884,16 @@ def atualizacoes():
         return redirect(url_for('login'))
     return render_template('telas/atualizacoes.html')
 
+# ==============================================================================
+# RENDA
+# ==============================================================================
+
+# --- AJUSTE NA FUNÇÃO DE CONEXÃO (CASO AINDA NÃO ESTEJA NO TOPO DO ARQUIVO) ---
+def get_db_connection():
+    conn = sqlite3.connect('/home/Hir3solutions/mysite/financas.db')
+    conn.row_factory = sqlite3.Row  # <--- ESSENCIAL
+    return conn
+
 @app.route('/renda', methods=['GET', 'POST'])
 def renda():
     if 'logado' not in session:
@@ -851,12 +901,12 @@ def renda():
 
     user_id = session.get('user_id') # Pega o ID de quem está logado
 
-    conexao = sqlite3.connect('financas.db')
-    conexao.row_factory = sqlite3.Row
+    conexao = get_db_connection()
     cursor = conexao.cursor()
 
     if request.method == 'POST':
         valor_raw = request.form.get('renda', '0')
+        renda_variavel = request.form.get('renda_variavel', 'nao') # Captura o novo radio button
 
         try:
             # Trata o valor substituindo vírgula por ponto para não dar erro
@@ -864,31 +914,29 @@ def renda():
         except ValueError:
             nova_renda = 0.00
 
-        # MUDANÇA PRINCIPAL: Salva o valor no banco de dados APENAS para este usuário
-        cursor.execute("UPDATE usuarios SET renda = ? WHERE id = ?", (nova_renda, user_id))
+        # MUDANÇA PRINCIPAL: Salva o valor e a flag no banco de dados para este usuário
+        cursor.execute("UPDATE usuarios SET renda = ?, renda_variavel = ? WHERE id = ?", (nova_renda, renda_variavel, user_id))
         conexao.commit()
         conexao.close()
 
         # Limpa qualquer valor antigo que estivesse na memória temporária do navegador
         session.pop('renda', None)
 
+        # Como você centralizou no perfil, redirecionamos para o home (ou mude para 'perfil' se preferir)
         return redirect(url_for('home'))
 
-    # Se for apenas para abrir a tela (GET), busca o valor real no banco
-    cursor.execute("SELECT renda FROM usuarios WHERE id = ?", (user_id,))
+    # Se for apenas para abrir a tela (GET), busca o valor real e a flag no banco
+    cursor.execute("SELECT renda, renda_variavel FROM usuarios WHERE id = ?", (user_id,))
     resultado = cursor.fetchone()
     conexao.close()
 
-    # Verifica se tem valor salvo, caso contrário exibe 0.00
+    # Verifica se tem valor salvo, caso contrário exibe 0.00 e 'nao'
     renda_atual = resultado['renda'] if resultado and resultado['renda'] is not None else 0.00
+    renda_variavel_atual = resultado['renda_variavel'] if resultado and resultado['renda_variavel'] is not None else 'nao'
 
-    return render_template('telas/renda.html', renda_bruta=renda_atual)
-
-# --- AJUSTE NA FUNÇÃO DE CONEXÃO (ADICIONE ISSO NO SEU ARQUIVO) ---
-def get_db_connection():
-    conn = sqlite3.connect('/home/Hir3solutions/mysite/financas.db')
-    conn.row_factory = sqlite3.Row  # <--- ESSENCIAL PARA O g.descricao funcionar
-    return conn
+    # DICA: Verifique a rota da sua página de perfil para garantir que ela também
+    # esteja enviando as variáveis 'renda_atual' e 'renda_variavel' no render_template.
+    return render_template('telas/renda.html', renda_bruta=renda_atual, renda_variavel=renda_variavel_atual)
 
 # ==============================================================================
 # UPLOAD DE ARQUIVOS
@@ -930,7 +978,6 @@ def processar_extrato_pdf():
     # 5. Manda o resultado processado de volta para a sua tela HTML
     return jsonify({"status": "sucesso", "dados_extraidos": texto_completo})
 
-
 @app.route('/upload_comprovante', methods=['POST'])
 def processar_comprovante_imagem():
     # 1. Recebe a imagem (print/foto) enviada pela nova tela do sistema
@@ -962,11 +1009,13 @@ def processar_comprovante_imagem():
     return jsonify({"status": "sucesso", "dados_extraidos": texto_completo})
 
 # ==============================================================================
-# NOVO GASTO
+# NOVO GASTO & AUTOMAÇÕES
 # ==============================================================================
 
 import sqlite3
 import json # <- Essencial para a IA funcionar
+import calendar
+from datetime import datetime, timedelta # <- Necessário para o cálculo automático de meses
 
 # ==============================================================================
 # MOTOR DE APRENDIZADO DA IA (hir3) - BLINDADO
@@ -1002,7 +1051,6 @@ def registrar_aprendizado_ia(user_id, modulo, acao, dados):
         print(f"[AVISO IA] Erro silencioso no motor de aprendizado: {e}")
     finally:
         conexao.close()
-
 
 # ==============================================================================
 # ROTAS DE GASTOS - BLINDADAS CONTRA ERRO 500
@@ -1179,47 +1227,73 @@ def excluir_gasto(id):
 
     return redirect(url_for('home'))
 
-@app.route('/duplicar', methods=['GET', 'POST'])
-def duplicar():
+# ==============================================================================
+# NOVA AUTOMAÇÃO: DUPLICAR MÊS ANTERIOR (1-Click)
+# ==============================================================================
+@app.route('/duplicar_gastos', methods=['POST'])
+def duplicar_gastos():
+    """
+    Copia os gastos do mês passado para o mês atual automaticamente.
+    Mantive a estrutura para aceitar inputs manuais caso você precise no futuro,
+    mas se não receber nada (como é o caso do novo botão), ele calcula sozinho.
+    """
     if 'logado' not in session:
         return redirect(url_for('login'))
 
-    user_id = session['user_id'] # Captura o usuário logado
+    user_id = session['user_id']
 
-    if request.method == 'POST':
-        mes_origem = request.form.get('mes_origem')
-        mes_destino = request.form.get('mes_destino')
+    mes_origem = request.form.get('mes_origem')
+    mes_destino = request.form.get('mes_destino')
 
-        if mes_origem and mes_destino:
-            conexao = sqlite3.connect('financas.db')
-            conexao.row_factory = sqlite3.Row
-            cursor = conexao.cursor()
+    # INTELIGÊNCIA DE UX: Se não foi enviado nenhum mês pelo botão (1-Click)...
+    if not mes_origem or not mes_destino:
+        hoje = datetime.now()
 
-            # CORREÇÃO: Filtramos apenas gastos do usuário logado
-            cursor.execute('SELECT * FROM gastos WHERE data LIKE ? AND usuario_id = ?',
-                           (mes_origem + '%', user_id))
-            gastos_origem = cursor.fetchall()
+        # Mês Destino = Hoje
+        ano_dest = hoje.year
+        mes_dest = hoje.month
+        mes_destino = f"{ano_dest:04d}-{mes_dest:02d}"
 
-            ano_dest, mes_dest = map(int, mes_destino.split('-'))
+        # Mês Origem = Mês Passado
+        primeiro_dia_atual = hoje.replace(day=1)
+        data_mes_passado = primeiro_dia_atual - timedelta(days=1)
+        mes_origem = data_mes_passado.strftime('%Y-%m')
+    else:
+        # Se veio preenchido, usa o manual
+        ano_dest, mes_dest = map(int, mes_destino.split('-'))
 
-            for gasto in gastos_origem:
-                dia_origem = int(gasto['data'][8:10])
-                ultimo_dia_mes_dest = calendar.monthrange(ano_dest, mes_dest)[1]
-                dia_dest = min(dia_origem, ultimo_dia_mes_dest)
-                nova_data = f"{ano_dest:04d}-{mes_dest:02d}-{dia_dest:02d}"
+    conexao = sqlite3.connect('financas.db')
+    conexao.row_factory = sqlite3.Row
+    cursor = conexao.cursor()
 
-                # CORREÇÃO: Incluímos o usuario_id no novo insert
-                cursor.execute('''
-                    INSERT INTO gastos (descricao, categoria, valor, quinzena, status, data, usuario_id)
-                    VALUES (?, ?, ?, ?, ?, ?, ?)
-                ''', (gasto['descricao'], gasto['categoria'], gasto['valor'],
-                      gasto['quinzena'], 'PENDENTE', nova_data, user_id))
+    # Busca todos os gastos do usuário no mês de origem
+    cursor.execute('SELECT * FROM gastos WHERE data LIKE ? AND usuario_id = ?',
+                   (mes_origem + '%', user_id))
+    gastos_origem = cursor.fetchall()
 
-            conexao.commit()
-            conexao.close()
-            return redirect(url_for('home', mes=mes_destino))
+    # Insere as contas duplicadas no mês de destino
+    for gasto in gastos_origem:
+        try:
+            dia_origem = int(gasto['data'][8:10])
+        except (ValueError, IndexError):
+            dia_origem = 1 # Proteção contra datas mal formatadas
 
-    return render_template('telas/duplicar.html')
+        ultimo_dia_mes_dest = calendar.monthrange(ano_dest, mes_dest)[1]
+        dia_dest = min(dia_origem, ultimo_dia_mes_dest)
+        nova_data = f"{ano_dest:04d}-{mes_dest:02d}-{dia_dest:02d}"
+
+        # Sempre insere a duplicata como 'PENDENTE'
+        cursor.execute('''
+            INSERT INTO gastos (descricao, categoria, valor, quinzena, status, data, usuario_id)
+            VALUES (?, ?, ?, ?, ?, ?, ?)
+        ''', (gasto['descricao'], gasto['categoria'], gasto['valor'],
+              gasto['quinzena'], 'PENDENTE', nova_data, user_id))
+
+    conexao.commit()
+    conexao.close()
+
+    # Redireciona para o painel principal exibindo o mês que acabou de receber os dados
+    return redirect(url_for('home', mes=mes_destino))
 
 # ==============================================================================
 # ROTA DE DIVIDAS
@@ -1241,7 +1315,7 @@ def dividas():
     conexao.close()
 
     # Renderiza a nova tela única enviando a lista de contratos
-    return render_template('telas/gestao_dividas.html', dividas=lista_dividas)
+    return render_template('telas/dividas_planejamento.html', dividas=lista_dividas)
 
 
 @app.route('/nova_divida', methods=['GET', 'POST'])
@@ -1278,7 +1352,6 @@ def nova_divida():
     # Se acessar por GET direto, redireciona para a tela principal
     return redirect('/dividas')
 
-
 @app.route('/editar_divida/<int:id>', methods=['GET', 'POST'])
 def editar_divida(id):
     user_id = session.get('user_id')
@@ -1311,8 +1384,7 @@ def editar_divida(id):
     divida = cursor.fetchone()
     conexao.close()
 
-    return render_template('telas/gestao_dividas.html', divida=divida)
-
+    return render_template('telas/dividas_planejamento.html', divida=divida)
 
 @app.route('/pagar_parcela/<int:id>', methods=['POST'])
 def pagar_parcela(id):
@@ -1340,7 +1412,6 @@ def pagar_parcela(id):
     conexao.close()
     return redirect('/dividas')
 
-
 @app.route('/quitar_divida/<int:id>', methods=['POST'])
 def quitar_divida(id):
     user_id = session.get('user_id')
@@ -1352,7 +1423,6 @@ def quitar_divida(id):
     conexao.commit()
     conexao.close()
     return redirect('/dividas')
-
 
 @app.route('/excluir_divida/<int:id>', methods=['POST'])
 def excluir_divida(id):
@@ -1410,7 +1480,7 @@ def reservas():
     lista_reservas = cursor.fetchall()
     conexao.close()
 
-    return render_template('telas/reservas.html', reservas=lista_reservas)
+    return render_template('telas/dividas_planejamento.html', reservas=lista_reservas)
 
 @app.route('/editar_reserva/<int:id>', methods=['POST'])
 def editar_reserva(id):
@@ -1487,8 +1557,11 @@ def atualizar_status(id_gasto):
     return redirect(url_for('home', mes=mes_filtro))
 
 # ==============================================================================
-# ROTA DA LISTA DE COMPRAS (AGORA COM EDIÇÃO IN-LINE)
+# ROTA DA LISTA DE COMPRAS (AGORA COM EDIÇÃO IN-LINE E INTEGRAÇÃO DE GASTOS)
 # ==============================================================================
+import io
+import csv
+from flask import Response
 
 def parse_valor(texto, padrao=0.0):
     """Converte string de valor BR para float com segurança."""
@@ -1616,6 +1689,7 @@ def compras():
                            saldo_meta=saldo_meta,
                            porcentagem_meta=porcentagem_meta)
 
+
 @app.route('/exportar_compras_csv')
 def exportar_compras_csv():
     user_id = session.get('user_id')
@@ -1659,6 +1733,7 @@ def exportar_compras_csv():
     return Response(output.getvalue(), mimetype="text/csv; charset=utf-8",
                     headers={"Content-Disposition": f"attachment;filename=lista_compras_{mes_atual}.csv"})
 
+
 @app.route('/importar_compras_csv', methods=['POST'])
 def importar_compras_csv():
     user_id = session.get('user_id')
@@ -1690,6 +1765,7 @@ def importar_compras_csv():
         conexao.close()
     return redirect('/compras')
 
+
 @app.route('/excluir_compra/<int:id>', methods=['POST'])
 def excluir_compra(id):
     user_id = session.get('user_id')
@@ -1701,67 +1777,49 @@ def excluir_compra(id):
     conexao.close()
     return redirect('/compras')
 
+# ==============================================================================
+# NOVA ROTA: FINALIZAR COMPRA E LANÇAR DIRETAMENTE NOS GASTOS
+# ==============================================================================
 @app.route('/lancar_compras_gastos', methods=['POST'])
 def lancar_compras_gastos():
-    if 'logado' not in session:
+    user_id = session.get('user_id')
+    if not user_id:
         return redirect(url_for('login'))
 
-    user_id = session.get('user_id')
+    total_compra = request.form.get('total_compra', 0)
 
     try:
-        # Caminho absoluto para evitar qualquer erro de localização
-        conexao = sqlite3.connect('/home/Hir3solutions/mysite/financas.db')
-        conexao.row_factory = sqlite3.Row
+        valor_gasto = float(total_compra)
+    except ValueError:
+        valor_gasto = 0.0
+
+    if valor_gasto > 0:
+        data_atual = datetime.now().strftime('%Y-%m-%d')
+
+        conexao = sqlite3.connect('financas.db')
         cursor = conexao.cursor()
 
-        # CORREÇÃO CRÍTICA AQUI: A tabela correta é 'lista_compras'
-        cursor.execute("SELECT SUM(quantidade * preco) as total FROM lista_compras WHERE usuario_id = ?", (user_id,))
-        resultado = cursor.fetchone()
-        total = resultado['total'] if resultado and resultado['total'] else 0
-
-        if total > 0:
-            hoje = datetime.now().strftime('%Y-%m-%d')
-            dia_atual = datetime.now().day
-            quinzena = 1 if dia_atual <= 15 else 2
-
-            # Insere na tabela de gastos do mês associado ao usuário
-            cursor.execute('''
-                INSERT INTO gastos (descricao, valor, data, categoria, status, quinzena, usuario_id)
-                VALUES (?, ?, ?, ?, ?, ?, ?)
-            ''', ('Supermercado do Mês', total, hoje, 'Alimentação', 'PAGO', quinzena, user_id))
-
-            # CORREÇÃO CRÍTICA AQUI: Limpa a tabela 'lista_compras'
-            cursor.execute("DELETE FROM lista_compras WHERE usuario_id = ?", (user_id,))
-
-            # Manda a notificação para o Sininho da Hir3
-            cursor.execute('''
-                INSERT INTO notificacoes (titulo, mensagem, icone, cor, usuario_id, lida)
-                VALUES (?, ?, ?, ?, ?, 0)
-            ''', ('Compras Lançadas!', f'O valor de R$ {total:.2f} foi adicionado aos seus gastos de Alimentação.', 'shopping-cart', 'green', user_id))
-
+        # Garante que a coluna quinzena existe
+        try:
+            cursor.execute("ALTER TABLE gastos ADD COLUMN quinzena INTEGER DEFAULT 0")
             conexao.commit()
-            flash('Lista de compras finalizada e lançada com sucesso!', 'success')
-        else:
-            flash('Sua lista de compras está vazia ou o valor total é zero.', 'warning')
+        except sqlite3.OperationalError:
+            pass
 
+        # Insere a compra como gasto concluído
+        cursor.execute('''
+            INSERT INTO gastos (usuario_id, descricao, valor, categoria, data, quinzena, status)
+            VALUES (?, ?, ?, ?, ?, ?, ?)
+        ''', (user_id, 'Supermercado (Lista de Compras)', valor_gasto, 'Alimentação', data_atual, 0, 'PAGO'))
+
+        # Opcional: Se você quiser que a lista esvazie ao finalizar a compra, ative o código abaixo:
+        # cursor.execute("DELETE FROM lista_compras WHERE usuario_id = ? AND mes = ?", (user_id, datetime.now().strftime('%Y-%m')))
+
+        conexao.commit()
         conexao.close()
 
-    except Exception as e:
-        print(f"Erro ao lançar compras: {e}")
-        flash(f"Erro ao lançar compras: {e}", 'danger')
-
-    # Redireciona diretamente para o painel principal
+    # Redireciona para o painel principal para ver o saldo já atualizado
     return redirect(url_for('home'))
-
-# ==============================================================================
-# ROTA DA CALCULADORA
-# ==============================================================================
-
-@app.route('/calculadora')
-def calculadora():
-    if 'logado' not in session:
-        return redirect(url_for('login'))
-    return render_template('telas/calculadora.html')
 
 # ==============================================================================
 # ROTA DE RELATÓRIOS (EXCLUSIVA PREMIUM)
@@ -2128,7 +2186,7 @@ def enviar_whatsapp(telefone_destino, texto_mensagem):
 @app.context_processor
 def inject_global_vars():
     # Defina aqui a versão centralizada
-    versao = "1.5.8"
+    versao = "1.5.9"
 
     # Gera a data automaticamente (ex: "Julho 2026")
     data_formatada = datetime.now().strftime('%B %Y').capitalize()

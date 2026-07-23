@@ -2,7 +2,8 @@
 
 {% block content %}
 
-    <div class="flex flex-col md:flex-row justify-between items-center mb-4 md:mb-6 gap-3 md:gap-4 relative">
+    <!-- CORREÇÃO 1: Adicionado z-[70] aqui para garantir que o menu fique sempre na frente dos gráficos -->
+    <div class="flex flex-col md:flex-row justify-between items-center mb-4 md:mb-6 gap-3 md:gap-4 relative z-[70]">
         <h2 class="text-base md:text-lg font-bold text-gray-800 dark:text-gray-200 flex items-center gap-2">
             <i data-lucide="pie-chart" class="w-4 md:w-5 h-4 md:h-5 text-blue-500"></i> Resumo Gerencial
             <!-- Botão de Ocultar/Mostrar Valores -->
@@ -37,8 +38,8 @@
                     {% endif %}
                 </button>
 
-                <!-- Painel Flutuante de Notificações -->
-                <div id="painel-notificacoes" class="hidden absolute right-0 mt-2 w-72 md:w-80 bg-white dark:bg-gray-800 rounded-xl shadow-xl border border-gray-200 dark:border-gray-700 z-50 overflow-hidden transform origin-top-right transition-all">
+                <!-- CORREÇÃO 2: Substituído o 'hidden' pelo sistema de opacity/scale igual dos Modais, e aumentado z-index para 100 -->
+                <div id="painel-notificacoes" class="opacity-0 pointer-events-none scale-95 absolute right-0 mt-2 w-72 md:w-80 bg-white dark:bg-gray-800 rounded-xl shadow-xl border border-gray-200 dark:border-gray-700 z-[100] overflow-hidden transform origin-top-right transition-all duration-200">
                     <div class="bg-gray-50 dark:bg-gray-900 px-4 py-3 border-b border-gray-200 dark:border-gray-700 flex justify-between items-center">
                         <h3 class="text-xs md:text-sm font-bold text-gray-800 dark:text-gray-200 flex items-center gap-2">
                             <i data-lucide="sparkles" class="w-4 h-4 text-blue-500"></i> IA Hir3
@@ -88,8 +89,18 @@
                         {% endif %}
                     </div>
                     
-                    <div class="bg-gray-50 dark:bg-gray-900/50 px-4 py-2 border-t border-gray-200 dark:border-gray-700 text-center">
-                        <a href="#" class="text-[10px] md:text-xs text-blue-500 hover:text-blue-700 dark:text-blue-400 font-bold">Ver histórico completo</a>
+                    <!-- CORREÇÃO 3: NOVO RODAPÉ COM SWEET ALERT -->
+                    <div class="bg-gray-50 dark:bg-gray-900/50 px-4 py-2 border-t border-gray-200 dark:border-gray-700 flex justify-between items-center">
+                        <a href="/historico_notificacoes" class="text-[10px] md:text-xs text-blue-500 hover:text-blue-700 dark:text-blue-400 font-bold">Ver histórico</a>
+                        
+                        {% if notificacoes %}
+                        <!-- SweetAlert no botão Limpar Tudo -->
+                        <form action="/limpar_notificacoes" method="POST" class="m-0" onsubmit="confirmarAcao(event, this, 'Limpar Painel?', 'Deseja apagar todas as notificações deste painel?', 'Sim, limpar!')">
+                            <button type="submit" class="text-[10px] md:text-xs text-red-500 hover:text-red-700 dark:text-red-400 font-bold flex items-center gap-1 transition-colors">
+                                <i data-lucide="trash-2" class="w-3 h-3"></i> Limpar
+                            </button>
+                        </form>
+                        {% endif %}
                     </div>
                 </div>
             </div>
@@ -168,43 +179,9 @@
         
         <!-- Barra de Progresso -->
         <div class="w-full bg-gray-100 dark:bg-gray-700 rounded-full h-2.5 md:h-3 overflow-hidden flex">
-            <!-- A largura dessa div será definida dinamicamente pelo JS ao carregar a tela -->
             <div id="barra-fluxo-mes" class="bg-gradient-to-r from-green-400 via-yellow-400 to-red-500 h-2.5 md:h-3 rounded-full transition-all duration-1000 w-0"></div>
         </div>
     </div>
-
-    <!-- MODAL DE PROJEÇÃO (Pop-up Invisível por padrão) -->
-    <div id="modal-projecao" class="hidden fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4 opacity-0 transition-opacity duration-300">
-        <div class="bg-white dark:bg-gray-800 rounded-2xl shadow-2xl w-full max-w-sm overflow-hidden transform scale-95 transition-transform duration-300">
-            <div class="p-4 md:p-5 border-b border-gray-100 dark:border-gray-700 flex justify-between items-center bg-gray-50 dark:bg-gray-900">
-                <h3 class="font-bold text-gray-800 dark:text-gray-200 flex items-center gap-2">
-                    <i data-lucide="trending-up" class="w-4 h-4 text-blue-500"></i> Projeção Fim do Mês
-                </h3>
-                <button onclick="fecharModalProjecao()" class="text-gray-400 hover:text-red-500 transition-colors focus:outline-none">
-                    <i data-lucide="x" class="w-5 h-5"></i>
-                </button>
-            </div>
-            <div class="p-4 md:p-5 space-y-4">
-                <div class="flex justify-between items-center">
-                    <span class="text-xs text-gray-500 dark:text-gray-400 font-medium">Gasto Atual (<span id="mod-dia-atual">Hoje</span>)</span>
-                    <span id="mod-gasto-atual" class="font-bold text-gray-800 dark:text-gray-200 valor-sensivel">R$ 0,00</span>
-                </div>
-                <div class="flex justify-between items-center">
-                    <span class="text-xs text-gray-500 dark:text-gray-400 font-medium flex items-center gap-1"><i data-lucide="activity" class="w-3 h-3"></i> Ritmo Diário</span>
-                    <span id="mod-media-diaria" class="font-bold text-gray-800 dark:text-gray-200 valor-sensivel">R$ 0,00</span>
-                </div>
-                <div class="flex justify-between items-center pt-3 border-t border-dashed border-gray-200 dark:border-gray-700">
-                    <span class="text-xs text-gray-500 dark:text-gray-400 font-medium">Estimativa Gasto Total</span>
-                    <span id="mod-gasto-projetado" class="font-bold text-orange-500 valor-sensivel">R$ 0,00</span>
-                </div>
-                <div class="flex justify-between items-center bg-gray-50 dark:bg-gray-900 p-3 rounded-xl border border-gray-100 dark:border-gray-700 mt-2">
-                    <span class="text-xs font-bold text-gray-700 dark:text-gray-300">Saldo Projetado</span>
-                    <span id="mod-saldo-projetado" class="font-black text-lg valor-sensivel">R$ 0,00</span>
-                </div>
-            </div>
-        </div>
-    </div>
-
 
     <div class="grid grid-cols-1 lg:grid-cols-3 gap-4 md:gap-6 mb-6 md:mb-8 w-full">
 
@@ -319,7 +296,8 @@
         {% if gastos %}
             <div class="space-y-2 md:space-y-3 max-h-[500px] overflow-y-auto pr-2 md:pr-3 pb-4 md:pb-6 sidebar-scroll w-full">
                 {% for gasto in gastos %}
-                    <div ondblclick="window.location.href='/editar_gasto/{{ gasto.id }}'"
+                    <!-- ATUALIZAÇÃO: Em vez de redirecionar a tela, chama o Modal de Edição no Duplo Clique -->
+                    <div ondblclick="abrirModalEditarGasto('{{ gasto.id }}', '{{ gasto.descricao }}', '{{ gasto.valor }}', '{{ gasto.data }}', '{{ gasto.categoria }}', '{{ gasto.quinzena }}')"
                          data-id="{{ gasto.id }}"
                          data-status="{{ gasto.status }}"
                          data-data="{{ gasto.data }}"
@@ -369,7 +347,7 @@
                             </form>
 
                             <div class="flex items-center gap-1.5 md:gap-2" onclick="event.stopPropagation();">
-                                <form action="{{ url_for('excluir_gasto', id=gasto.id) }}" method="POST" class="m-0 inline-block" onsubmit="return confirm('Tem certeza que deseja excluir este gasto?')">
+                                <form action="{{ url_for('excluir_gasto', id=gasto.id) }}" method="POST" class="m-0 inline-block" onsubmit="confirmarAcao(event, this, 'Excluir Despesa?', 'Tem certeza que deseja apagar este registro? O valor será restaurado no seu saldo.', 'Sim, excluir!')">
                                     <input type="hidden" name="mes_filtro" value="{{ mes_filtro }}">
                                     <button type="submit" class="text-gray-400 hover:text-red-500 bg-gray-50 dark:bg-gray-900 p-1.5 md:p-2 rounded-lg border border-gray-100 dark:border-gray-800 transition-colors" title="Excluir">
                                         <i data-lucide="trash-2" class="w-3.5 md:w-4 h-3.5 md:h-4"></i>
@@ -394,13 +372,164 @@
         {% endif %}
     </div>
 
-    <!-- CONTEÚDO: ABA CATEGORIAS (Gerado via JS) -->
+    <!-- CONTEÚDO: ABA CATEGORIAS -->
     <div id="conteudo-extrato-categorias" class="w-full hidden space-y-2 md:space-y-3 max-h-[500px] overflow-y-auto pr-2 md:pr-3 pb-4 md:pb-6 sidebar-scroll">
-        <!-- O JavaScript vai injetar os cards de categorias aqui dentro automaticamente -->
     </div>
+
+    <!-- ============================================================================== -->
+    <!-- NOVO MODAL: EDITAR GASTO (Mesmo visual de "Nova Despesa") -->
+    <!-- ============================================================================== -->
+    <div id="modal-editar-gasto" class="fixed inset-0 bg-black/60 backdrop-blur-sm z-[80] hidden flex-col items-center justify-center p-4 transition-all duration-300 opacity-0 pointer-events-none">
+        <div class="bg-white dark:bg-gray-800 w-full max-w-md rounded-3xl shadow-2xl border border-gray-200 dark:border-gray-700 overflow-hidden transform scale-95 transition-transform duration-300" id="card-editar-gasto">
+            
+            <!-- Header do Modal -->
+            <div class="p-4 bg-gray-50 dark:bg-gray-900 border-b border-gray-100 dark:border-gray-700 flex justify-between items-center">
+                <h3 class="font-bold text-gray-800 dark:text-gray-200 flex items-center gap-2">
+                    <i data-lucide="edit-3" class="w-5 h-5 text-blue-500"></i> Editar Despesa
+                </h3>
+                <button onclick="fecharModalEditarGasto()" type="button" class="text-gray-400 hover:text-red-500 transition-colors focus:outline-none">
+                    <i data-lucide="x" class="w-5 h-5"></i>
+                </button>
+            </div>
+            
+            <!-- Formulário Interno -->
+            <div class="p-5">
+                <form id="form-editar-gasto" method="POST">
+                    
+                    <div class="mb-4">
+                        <label class="block text-xs font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wider mb-1">Descrição</label>
+                        <input type="text" name="descricao" id="edit-gasto-desc" required
+                               class="w-full px-3 py-2 bg-gray-50 dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-xl text-sm font-bold text-gray-800 dark:text-gray-100 focus:ring-2 focus:ring-blue-500">
+                    </div>
+
+                    <div class="grid grid-cols-2 gap-3 mb-4">
+                        <div>
+                            <label class="block text-xs font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wider mb-1">Valor (R$)</label>
+                            <input type="number" step="0.01" name="valor" id="edit-gasto-valor" required
+                                   class="w-full px-3 py-2 bg-gray-50 dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-xl text-sm font-black text-gray-800 dark:text-gray-100 focus:ring-2 focus:ring-blue-500 text-left">
+                        </div>
+                        <div>
+                            <label class="block text-xs font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wider mb-1">Data</label>
+                            <input type="date" name="data" id="edit-gasto-data" required
+                                   class="w-full px-3 py-2 bg-gray-50 dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-xl text-sm font-bold text-gray-800 dark:text-gray-100 focus:ring-2 focus:ring-blue-500">
+                        </div>
+                    </div>
+
+                    <div class="grid grid-cols-2 gap-3 mb-6">
+                        <div>
+                            <label class="block text-xs font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wider mb-1">Categoria</label>
+                            <input list="lista-categorias-edit" name="categoria" id="edit-gasto-categoria" required
+                                   class="w-full px-3 py-2 bg-gray-50 dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-xl text-sm font-bold text-gray-800 dark:text-gray-100 focus:ring-2 focus:ring-blue-500">
+                            <datalist id="lista-categorias-edit">
+                                <option value="Alimentação">
+                                <option value="Transporte">
+                                <option value="Lazer">
+                                <option value="Moradia">
+                                <option value="Saúde">
+                                <option value="Educação">
+                                <option value="Compras">
+                                <option value="Cartão de Crédito">
+                            </datalist>
+                        </div>
+                        <div>
+                            <label class="block text-xs font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wider mb-1">Quinzena</label>
+                            <select name="quinzena" id="edit-gasto-quinzena"
+                                    class="w-full px-3 py-2 bg-gray-50 dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-xl text-sm font-bold text-gray-800 dark:text-gray-100 focus:ring-2 focus:ring-blue-500">
+                                <option value="1">1ª Quinzena</option>
+                                <option value="2">2ª Quinzena</option>
+                                <option value="0">Mês Integral</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <div class="flex gap-3">
+                        <button type="button" onclick="fecharModalEditarGasto()" class="flex-1 px-4 py-3 bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 font-bold rounded-xl hover:bg-gray-200 dark:hover:bg-gray-600 transition-colors">
+                            Cancelar
+                        </button>
+                        <button type="submit" class="flex-1 px-4 py-3 bg-gradient-to-r from-blue-600 to-indigo-600 text-white font-bold rounded-xl hover:from-blue-700 hover:to-indigo-700 shadow-md transition-all">
+                            Salvar Alterações
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- MODAL DE PROJEÇÃO -->
+    <div id="modal-projecao" class="hidden fixed inset-0 z-[80] flex items-center justify-center bg-black/60 backdrop-blur-sm p-4 opacity-0 transition-opacity duration-300">
+        <div class="bg-white dark:bg-gray-800 rounded-2xl shadow-2xl w-full max-w-sm overflow-hidden transform scale-95 transition-transform duration-300">
+            <div class="p-4 md:p-5 border-b border-gray-100 dark:border-gray-700 flex justify-between items-center bg-gray-50 dark:bg-gray-900">
+                <h3 class="font-bold text-gray-800 dark:text-gray-200 flex items-center gap-2">
+                    <i data-lucide="trending-up" class="w-4 h-4 text-blue-500"></i> Projeção Fim do Mês
+                </h3>
+                <button onclick="fecharModalProjecao()" class="text-gray-400 hover:text-red-500 transition-colors focus:outline-none">
+                    <i data-lucide="x" class="w-5 h-5"></i>
+                </button>
+            </div>
+            <div class="p-4 md:p-5 space-y-4">
+                <div class="flex justify-between items-center">
+                    <span class="text-xs text-gray-500 dark:text-gray-400 font-medium">Gasto Atual (<span id="mod-dia-atual">Hoje</span>)</span>
+                    <span id="mod-gasto-atual" class="font-bold text-gray-800 dark:text-gray-200 valor-sensivel">R$ 0,00</span>
+                </div>
+                <div class="flex justify-between items-center">
+                    <span class="text-xs text-gray-500 dark:text-gray-400 font-medium flex items-center gap-1"><i data-lucide="activity" class="w-3 h-3"></i> Ritmo Diário</span>
+                    <span id="mod-media-diaria" class="font-bold text-gray-800 dark:text-gray-200 valor-sensivel">R$ 0,00</span>
+                </div>
+                <div class="flex justify-between items-center pt-3 border-t border-dashed border-gray-200 dark:border-gray-700">
+                    <span class="text-xs text-gray-500 dark:text-gray-400 font-medium">Estimativa Gasto Total</span>
+                    <span id="mod-gasto-projetado" class="font-bold text-orange-500 valor-sensivel">R$ 0,00</span>
+                </div>
+                <div class="flex justify-between items-center bg-gray-50 dark:bg-gray-900 p-3 rounded-xl border border-gray-100 dark:border-gray-700 mt-2">
+                    <span class="text-xs font-bold text-gray-700 dark:text-gray-300">Saldo Projetado</span>
+                    <span id="mod-saldo-projetado" class="font-black text-lg valor-sensivel">R$ 0,00</span>
+                </div>
+            </div>
+        </div>
+    </div>
+
 
     <script src="https://cdn.jsdelivr.net/npm/apexcharts"></script>
     <script>
+        // ==========================================
+        // LÓGICA: MODAL DE EDIÇÃO DE GASTO
+        // ==========================================
+        function abrirModalEditarGasto(id, descricao, valor, data, categoria, quinzena) {
+            // Se o drag do carrossel (swipe no celular) estiver ativo, não abre o modal
+            if(window.isDraggingAlert) return;
+
+            document.getElementById('edit-gasto-desc').value = descricao;
+            document.getElementById('edit-gasto-valor').value = parseFloat(valor).toFixed(2);
+            document.getElementById('edit-gasto-data').value = data;
+            document.getElementById('edit-gasto-categoria').value = categoria;
+            document.getElementById('edit-gasto-quinzena').value = quinzena;
+
+            document.getElementById('form-editar-gasto').action = '/editar_gasto/' + id + '?origem=index';
+
+            const modal = document.getElementById('modal-editar-gasto');
+            const card = document.getElementById('card-editar-gasto');
+            
+            modal.classList.remove('hidden');
+            modal.classList.add('flex');
+            
+            setTimeout(() => {
+                modal.classList.remove('opacity-0', 'pointer-events-none');
+                card.classList.remove('scale-95');
+            }, 10);
+        }
+
+        function fecharModalEditarGasto() {
+            const modal = document.getElementById('modal-editar-gasto');
+            const card = document.getElementById('card-editar-gasto');
+            
+            modal.classList.add('opacity-0', 'pointer-events-none');
+            card.classList.add('scale-95');
+            
+            setTimeout(() => {
+                modal.classList.add('hidden');
+                modal.classList.remove('flex');
+            }, 300);
+        }
+
         // ==========================================
         // LÓGICA: MODAL DE PROJEÇÃO DE GASTOS
         // ==========================================
@@ -429,14 +558,15 @@
 
         function toggleNotificacoes() {
             const painel = document.getElementById('painel-notificacoes');
-            if (painel.classList.contains('hidden')) {
-                painel.classList.remove('hidden');
+            if (painel.classList.contains('opacity-0')) {
+                painel.classList.remove('opacity-0', 'pointer-events-none', 'scale-95');
+                painel.classList.add('opacity-100', 'scale-100');
             } else {
-                painel.classList.add('hidden');
+                painel.classList.add('opacity-0', 'pointer-events-none', 'scale-95');
+                painel.classList.remove('opacity-100', 'scale-100');
             }
         }
 
-        // Função que se comunica com o Flask silenciosamente
         function marcarNotificacaoLida(id) {
             fetch('/notificacao/lida/' + id, { method: 'POST' })
                 .then(response => response.json())
@@ -444,7 +574,6 @@
                     if(data.sucesso) {
                         const notifEl = document.getElementById('notif-' + id);
                         if(notifEl) {
-                            // Deixa a notificação com visual "lido" (apagadinha e sem a barra azul)
                             notifEl.classList.add('opacity-60');
                             notifEl.classList.remove('cursor-pointer');
                             notifEl.removeAttribute('onclick'); 
@@ -453,14 +582,12 @@
                             if(indicador) indicador.remove();
                         }
                         
-                        // Reduz o contador geral
                         contagemNotificacoes--;
                         const badge = document.getElementById('badge-contador');
                         if(badge) {
                             badge.innerText = contagemNotificacoes > 0 ? contagemNotificacoes + " Nova(s)" : "Nenhuma";
                         }
                         
-                        // Se zerou as pendências, remove o ping de bolinha vermelha do sininho
                         if(contagemNotificacoes <= 0) {
                             const ping = document.getElementById('ping-notificacoes');
                             if(ping) ping.style.display = 'none';
@@ -470,18 +597,24 @@
                 .catch(error => console.error('Erro ao marcar notificação:', error));
         }
 
-        // Fecha modais/painéis se clicar fora deles
         document.addEventListener('click', function(event) {
             const painelNotif = document.getElementById('painel-notificacoes');
             const botaoNotif = event.target.closest('button[onclick="toggleNotificacoes()"]');
             
             if (!botaoNotif && !painelNotif.contains(event.target)) {
-                painelNotif.classList.add('hidden');
+                painelNotif.classList.add('opacity-0', 'pointer-events-none', 'scale-95');
+                painelNotif.classList.remove('opacity-100', 'scale-100');
             }
 
             const modalProj = document.getElementById('modal-projecao');
             if (event.target === modalProj) {
                 fecharModalProjecao();
+            }
+
+            const modalEditar = document.getElementById('modal-editar-gasto');
+            const cardEditar = document.getElementById('card-editar-gasto');
+            if (event.target === modalEditar && !cardEditar.contains(event.target)) {
+                fecharModalEditarGasto();
             }
         });
 
@@ -510,7 +643,6 @@
             atualizarVisibilidade();
         }
 
-        // Função para as setas passarem o carrossel na Web
         function scrollAlertas(direcao) {
             const container = document.getElementById('alertas-vencimento');
             const scrollAmount = 240; 
@@ -527,7 +659,6 @@
             const renda = parseFloat(strRenda) || 0;
             const gastos = parseFloat(strGastos) || 0;
             
-            // 1. Termômetro Visual
             let perc = 0;
             if (renda > 0) {
                 perc = (gastos / renda) * 100;
@@ -551,7 +682,6 @@
                 if (barraEl) barraEl.style.width = barraPerc + '%';
             }, 100);
 
-            // 2. Cálculo da Projeção para o Modal
             const mesFiltroStr = "{{ mes_filtro }}"; 
             const anoFiltro = parseInt(mesFiltroStr.substring(0, 4));
             const mesFiltro = parseInt(mesFiltroStr.substring(5, 7)) - 1;
@@ -562,11 +692,9 @@
             let diaCalculo = hoje.getDate();
             let diasNoMes = new Date(anoFiltro, mesFiltro + 1, 0).getDate();
             
-            // Se for mês passado/futuro, considera o mês todo fechado
             if (!eMesAtual) {
                 diaCalculo = diasNoMes; 
             }
-            // Evita divisão por zero no dia 1 do mês se não houver gastos ainda
             if (diaCalculo === 0) diaCalculo = 1;
 
             const mediaDiaria = gastos / diaCalculo;
@@ -621,15 +749,18 @@
                 const descricao = item.getAttribute('data-descricao');
                 const valor = item.getAttribute('data-valor');
                 const id = item.getAttribute('data-id');
+                const categoria = item.getAttribute('data-categoria') || 'Gasto';
+                const quinzena = item.getAttribute('data-quinzena') || '0';
 
+                // Modificado: O alerta também abre o Modal Flutuante em vez de redirecionar a tela
                 if (diffDias === 1) {
-                    adicionarAlerta(descricao, valor, 'Vence Amanhã!', 'text-yellow-800 bg-yellow-50 dark:bg-yellow-900/30 border-yellow-200 dark:border-yellow-800', 'alert-triangle', id);
+                    adicionarAlerta(descricao, valor, dataGastoStr, categoria, quinzena, 'Vence Amanhã!', 'text-yellow-800 bg-yellow-50 dark:bg-yellow-900/30 border-yellow-200 dark:border-yellow-800', 'alert-triangle', id);
                     temAlerta = true;
                 } else if (diffDias === 0) {
-                    adicionarAlerta(descricao, valor, 'Vence HOJE!', 'text-orange-800 bg-orange-50 dark:bg-orange-900/30 border-orange-200 dark:border-orange-800', 'bell', id);
+                    adicionarAlerta(descricao, valor, dataGastoStr, categoria, quinzena, 'Vence HOJE!', 'text-orange-800 bg-orange-50 dark:bg-orange-900/30 border-orange-200 dark:border-orange-800', 'bell', id);
                     temAlerta = true;
                 } else if (diffDias < 0) {
-                    adicionarAlerta(descricao, valor, `Atrasado há ${Math.abs(diffDias)} dia(s)`, 'text-red-800 bg-red-50 dark:bg-red-900/30 border-red-200 dark:border-red-800', 'alert-octagon', id);
+                    adicionarAlerta(descricao, valor, dataGastoStr, categoria, quinzena, `Atrasado há ${Math.abs(diffDias)} dia(s)`, 'text-red-800 bg-red-50 dark:bg-red-900/30 border-red-200 dark:border-red-800', 'alert-octagon', id);
                     temAlerta = true;
                 }
             });
@@ -643,10 +774,10 @@
 
         window.isDraggingAlert = false; 
 
-        function adicionarAlerta(descricao, valor, mensagem, classes, icone, id) {
+        function adicionarAlerta(descricao, valor, data, categoria, quinzena, mensagem, classes, icone, id) {
             const container = document.getElementById('alertas-vencimento');
             const alertHtml = `
-                <div onclick="if(!window.isDraggingAlert) window.location.href='/editar_gasto/${id}'" class="flex-none w-56 border rounded-xl p-3 flex items-center gap-3 transition-colors shadow-sm hover:shadow-md ${classes}">
+                <div onclick="abrirModalEditarGasto('${id}', '${descricao}', '${valor.replace('R$ ', '').replace('.','').replace(',', '.')}', '${data}', '${categoria}', '${quinzena}')" class="flex-none w-56 border rounded-xl p-3 flex items-center gap-3 transition-colors shadow-sm hover:shadow-md cursor-pointer ${classes}">
                     <div class="bg-white/50 dark:bg-black/20 p-2 rounded-lg shrink-0 pointer-events-none">
                         <i data-lucide="${icone}" class="w-4 h-4"></i>
                     </div>
