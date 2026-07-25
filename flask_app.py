@@ -8,6 +8,7 @@ import csv
 import io
 import calendar
 from datetime import datetime, timedelta
+from datetime import date
 
 # 2. Bibliotecas Externas (Instaladas via pip)
 import flask  # <--- ESSENCIAL para mostrar a versão na tela de sistema!
@@ -210,11 +211,34 @@ def login():
 
         if usuario_banco and check_password_hash(usuario_banco['senha'], senha_digitada):
 
-            # --- NOVA REGRA DE BLOQUEIO AQUI ---
-            if usuario_banco['licenca'] in ['Bloqueada', 'Inativa', 'Vencida'] and usuario_banco[0] != 1:
-                erro = "Acesso Negado: Sua licença está inativa ou bloqueada. Contate o administrador."
-                return render_template('login.html', erro=erro, sucesso=sucesso)
-            # -----------------------------------
+            # Convertendo para dicionário para usarmos o .get() de forma super segura
+            dict_usuario = dict(usuario_banco)
+
+            # =================================================================
+            # TRAVAS DE ACESSO (O Admin Master ID 1 nunca é bloqueado)
+            # =================================================================
+            if usuario_banco[0] != 1:
+
+                # 1. Trava Antiga (Status da Licença em texto)
+                if dict_usuario.get('licenca') in ['Bloqueada', 'Inativa', 'Vencida']:
+                    erro = "Acesso Negado: Sua licença está inativa ou bloqueada. Contate o administrador."
+                    return render_template('login.html', erro=erro, sucesso=sucesso)
+
+                # 2. Trava de Soft Delete (Lixeira Inteligente)
+                if dict_usuario.get('ativo') == 0:
+                    erro = "Acesso Negado: Seu usuário foi desativado. Contate o administrador."
+                    return render_template('login.html', erro=erro, sucesso=sucesso)
+
+                # 3. Trava B2B (Vencimento da Data da Licença)
+                from datetime import date
+                hoje = date.today().strftime('%Y-%m-%d')
+                validade = dict_usuario.get('validade_licenca')
+
+                if validade and validade != 'None' and validade != '':
+                    if hoje > validade:
+                        # Redireciona para a tela do bloqueio com botão do WhatsApp!
+                        return redirect(url_for('assinatura_vencida'))
+            # =================================================================
 
             session['logado'] = True
             session['user_id'] = usuario_banco[0]
@@ -223,9 +247,7 @@ def login():
             # =================================================================
             # A MÁGICA DO ADMIN ACONTECE AQUI
             # =================================================================
-            dict_usuario = dict(usuario_banco)
             is_admin_db = dict_usuario.get('is_admin', 0)
-
             session['is_admin'] = (usuario_banco[0] == 1 or is_admin_db == 1)
             # =================================================================
 
@@ -443,19 +465,15 @@ def usuarios():
         return redirect(url_for('login'))
 
     # 3. TRAVA DE SEGURANÇA CORRIGIDA
-    # Agora a trava verifica se a flag 'is_admin' está verdadeira na sessão.
-    # O "Admin Master" (ID 1) e qualquer usuário promovido a admin passarão por aqui.
     if not session.get('is_admin'):
-        # Renderiza a tela correta (gestao_usuarios) sem precisar consultar o banco de dados.
-        # O HTML vai ver que 'is_admin' é falso e vai exibir a tela linda de Acesso Restrito!
         return render_template('telas/gestao_usuarios.html')
 
     conexao = sqlite3.connect('financas.db')
-    conexao.row_factory = sqlite3.Row # Permite acessar colunas por nome
+    conexao.row_factory = sqlite3.Row
     cursor = conexao.cursor()
 
     if request.method == 'POST':
-        # Cadastrar novo usuário
+        # Cadastrar novo usuário (Mantido intacto)
         if 'cadastrar' in request.form:
             novo_user = request.form.get('usuario')
             nova_senha = generate_password_hash(request.form.get('senha'))
@@ -468,7 +486,7 @@ def usuarios():
             except sqlite3.IntegrityError:
                 pass
 
-        # Editar usuário (ATUALIZADO COM VALOR E MÓDULOS)
+        # Editar usuário via Form tradicional (Fallback mantido)
         elif 'editar' in request.form:
             id_edit = request.form.get('id_usuario_edit')
             novo_nome = request.form.get('novo_nome')
@@ -476,14 +494,12 @@ def usuarios():
             novo_valor_raw = request.form.get('novo_valor', '0')
             novos_modulos = request.form.get('novos_modulos', 'Todos')
 
-            # Converte a vírgula do valor em ponto para salvar no banco
             try:
                 novo_valor = float(str(novo_valor_raw).replace(',', '.'))
             except ValueError:
                 novo_valor = 0.00
 
             try:
-                # Atualiza nome, licença, valor e módulos
                 cursor.execute("""
                     UPDATE usuarios
                     SET usuario = ?, licenca = ?, valor_licencas = ?, modulos_liberados = ?
@@ -491,27 +507,37 @@ def usuarios():
                 """, (novo_nome, nova_licenca, novo_valor, novos_modulos, id_edit))
                 conexao.commit()
             except sqlite3.OperationalError:
-                # Se a coluna modulos_liberados ainda não existir, atualiza sem ela para não travar
                 cursor.execute("UPDATE usuarios SET usuario = ?, licenca = ?, valor_licencas = ? WHERE id = ?",
                                (novo_nome, nova_licenca, novo_valor, id_edit))
                 conexao.commit()
             except sqlite3.Error as e:
                 print(f"Erro ao atualizar usuário: {e}")
 
-        # Excluir usuário
+        # Excluir usuário tradicional (Agora Inativa - Soft Delete)
         elif 'excluir' in request.form:
             id_del = request.form.get('id_usuario')
-            cursor.execute("DELETE FROM usuarios WHERE id = ? AND id != 1", (id_del,))
-            conexao.commit()
+            try:
+                cursor.execute("UPDATE usuarios SET ativo = 0 WHERE id = ? AND id != 1", (id_del,))
+                conexao.commit()
+            except sqlite3.OperationalError:
+                # Fallback caso a coluna ativo ainda não exista
+                cursor.execute("DELETE FROM usuarios WHERE id = ? AND id != 1", (id_del,))
+                conexao.commit()
 
-    # LEITURA DE USUÁRIOS (COM TRATAMENTO DE SEGURANÇA)
+    # LEITURA DE USUÁRIOS (Filtrando apenas os ATIVOS)
     try:
-        cursor.execute("SELECT id, usuario, licenca, valor_licencas, modulos_liberados FROM usuarios")
+        # Tenta buscar considerando a nova coluna 'ativo'
+        cursor.execute("SELECT id, usuario, licenca, valor_licencas, modulos_liberados FROM usuarios WHERE ativo = 1 OR ativo IS NULL")
         lista_users = cursor.fetchall()
     except sqlite3.OperationalError:
-        # Se a coluna de módulos ainda não existir no banco, cria uma estrutura falsa temporária
-        cursor.execute("SELECT id, usuario, licenca, valor_licencas, 'Todos' as modulos_liberados FROM usuarios")
-        lista_users = cursor.fetchall()
+        # Fallback 1: se não tiver 'ativo' mas tiver módulos
+        try:
+            cursor.execute("SELECT id, usuario, licenca, valor_licencas, modulos_liberados FROM usuarios")
+            lista_users = cursor.fetchall()
+        except sqlite3.OperationalError:
+            # Fallback 2: se não tiver nenhuma das colunas novas
+            cursor.execute("SELECT id, usuario, licenca, valor_licencas, 'Todos' as modulos_liberados FROM usuarios")
+            lista_users = cursor.fetchall()
 
     # LEITURA DE LOGS
     logs = []
@@ -524,17 +550,14 @@ def usuarios():
     conexao.close()
 
     # ==========================================
-    # DADOS DINÂMICOS DO SISTEMA (NOVO)
+    # DADOS DINÂMICOS DO SISTEMA (Mantido intacto)
     # ==========================================
-
-    # 1. Tamanho do Banco de Dados
     db_size_mb = 0.0
     if os.path.exists('financas.db'):
         db_size_mb = round(os.path.getsize('financas.db') / (1024 * 1024), 2)
 
-    # 2. Tamanho da Pasta de Uploads
     uploads_size_mb = 0.0
-    uploads_path = 'static/uploads' # Ajuste se sua pasta for diferente
+    uploads_path = 'static/uploads'
     if os.path.exists(uploads_path):
         total_size = 0
         for dirpath, _, filenames in os.walk(uploads_path):
@@ -544,25 +567,88 @@ def usuarios():
                     total_size += os.path.getsize(fp)
         uploads_size_mb = round(total_size / (1024 * 1024), 2)
 
-    # 3. Uso do Disco Rígido do Servidor
     try:
         total_disk, used_disk, free_disk = shutil.disk_usage("/")
         disk_percent = int((used_disk / total_disk) * 100)
     except:
         disk_percent = 0
 
-    # 4. Agrupando as métricas para enviar ao HTML
     sys_info = {
         'db_size': str(db_size_mb).replace('.', ','),
         'uploads_size': str(uploads_size_mb).replace('.', ','),
         'disk_percent': disk_percent,
         'python_version': platform.python_version(),
         'flask_version': flask.__version__,
-        'app_version': 'v1.5.4'
+        'app_version': 'v1.5.9'
     }
 
-    # Enviamos 'usuarios', 'logs' e 'sys_info' para o template
     return render_template('telas/gestao_usuarios.html', usuarios=lista_users, logs=logs, sys_info=sys_info)
+
+# ==============================================================================
+# NOVAS ROTAS SPA (API) PARA SWEETALERT2
+# ==============================================================================
+
+@app.route('/api/inativar_usuario/<int:id_usuario>', methods=['POST'])
+def api_inativar_usuario(id_usuario):
+    if not session.get('is_admin'):
+        return jsonify({'status': 'erro', 'mensagem': 'Acesso negado.'}), 403
+
+    try:
+        conn = sqlite3.connect('financas.db')
+        cursor = conn.cursor()
+        cursor.execute('UPDATE usuarios SET ativo = 0 WHERE id = ? AND id != 1', (id_usuario,))
+        conn.commit()
+        conn.close()
+        return jsonify({'status': 'sucesso', 'mensagem': 'Usuário inativado com sucesso!'})
+    except Exception as e:
+        return jsonify({'status': 'erro', 'mensagem': str(e)})
+
+@app.route('/api/editar_usuario/<int:id_usuario>', methods=['POST'])
+def api_editar_usuario(id_usuario):
+    if not session.get('is_admin'):
+        return jsonify({'status': 'erro', 'mensagem': 'Acesso negado.'}), 403
+
+    dados = request.json
+    try:
+        # Pega o valor_diario enviado pelo SweetAlert. Se não vier, tenta 'valor', senão 0.
+        novo_valor = float(str(dados.get('valor_diario', dados.get('valor', '0'))).replace(',', '.'))
+    except ValueError:
+        novo_valor = 0.00
+
+    # Pega a nova data do JS, se não existir coloca uma data limite longa (2099)
+    nova_validade = dados.get('nova_validade', '2099-12-31')
+
+    try:
+        conn = sqlite3.connect('financas.db')
+        cursor = conn.cursor()
+
+        try:
+            # Tenta atualizar INCLUINDO a validade_licenca (Novo formato B2B)
+            cursor.execute("""
+                UPDATE usuarios
+                SET usuario = ?,
+                    licenca = ?,
+                    valor_licencas = ?,
+                    modulos_liberados = ?,
+                    validade_licenca = ?
+                WHERE id = ?
+            """, (dados['nome'], dados['licenca'], novo_valor, dados['modulos'], nova_validade, id_usuario))
+        except sqlite3.OperationalError:
+            # FALLBACK: Se você ainda não rodou o ALTER TABLE, ele salva sem a validade e não quebra o app
+            cursor.execute("""
+                UPDATE usuarios
+                SET usuario = ?,
+                    licenca = ?,
+                    valor_licencas = ?,
+                    modulos_liberados = ?
+                WHERE id = ?
+            """, (dados['nome'], dados['licenca'], novo_valor, dados['modulos'], id_usuario))
+
+        conn.commit()
+        conn.close()
+        return jsonify({'status': 'sucesso', 'mensagem': 'Contrato e permissões atualizados!'})
+    except Exception as e:
+        return jsonify({'status': 'erro', 'mensagem': str(e)})
 
 # ==============================================================================
 # ROTA DE GESTÃO DE LICENÇAS (ADMIN)
@@ -592,10 +678,11 @@ def licencas():
         conexao.close()
         return redirect(url_for('licencas'))
 
-    cursor.execute("SELECT COUNT(*) as total FROM usuarios")
+    # Só conta e lista usuários ATIVOS
+    cursor.execute("SELECT COUNT(*) as total FROM usuarios WHERE ativo = 1 OR ativo IS NULL")
     total_usuarios = cursor.fetchone()['total']
 
-    cursor.execute("SELECT id, usuario, licenca, valor_licencas FROM usuarios WHERE id != 1")
+    cursor.execute("SELECT id, usuario, licenca, valor_licencas FROM usuarios WHERE id != 1 AND (ativo = 1 OR ativo IS NULL)")
     lista_usuarios = cursor.fetchall()
 
     conexao.close()
@@ -604,41 +691,35 @@ def licencas():
                            total_usuarios=total_usuarios,
                            usuarios=lista_usuarios)
 
+@app.route('/assinatura_vencida')
+def assinatura_vencida():
+    session.clear() # Limpa a sessão para ele não tentar burlar
+    return render_template('telas/licencas_vencidas.html')
+
 @app.route('/tornar_admin/<int:id>', methods=['POST'])
 def tornar_admin(id):
-    # 1. TRAVA DE SEGURANÇA: Verifica se quem clicou é o Admin Master (ID 1)
     if session.get('user_id') != 1:
         flash('Acesso negado. Apenas o administrador master pode promover usuários.', 'error')
         return redirect(url_for('usuarios'))
 
     try:
-        # 2. Conecta ao banco de dados SQLite
-        conn = sqlite3.connect('/home/Hir3solutions/mysite/financas.db')
+        conn = sqlite3.connect('financas.db')
         cursor = conn.cursor()
-
-        # 3. Atualiza o nível de acesso do usuário no banco.
-        # ATENÇÃO: Esta linha VAI FALHAR se a coluna 'is_admin' não existir na sua tabela 'usuarios'
         cursor.execute("UPDATE usuarios SET is_admin = 1 WHERE id = ?", (id,))
-
-        # 4. Salva a alteração e fecha a conexão
         conn.commit()
         conn.close()
-
         flash('Usuário promovido a Administrador com sucesso!', 'success')
-
     except sqlite3.OperationalError as e:
         flash('Erro de banco de dados: Você precisa criar a coluna "is_admin" na tabela "usuarios"!', 'error')
-        print(f"Erro SQLite: {e}")
     except Exception as e:
         flash(f'Erro ao promover usuário: {str(e)}', 'error')
-        print(f"Erro: {e}")
 
-    # 5. ATUALIZADO: Agora redireciona corretamente para a função 'def usuarios():'
     return redirect(url_for('usuarios'))
 
 # ==============================================================================
-# ROTAS DO PAINEL FINANCEIRO E COBRANÇAS
+# ROTAS DO PAINEL FINANCEIRO E COBRANÇAS (ATUALIZADO B2B)
 # ==============================================================================
+from datetime import datetime, timedelta, date
 
 @app.route('/financeiro')
 def financeiro():
@@ -647,36 +728,56 @@ def financeiro():
         flash('Acesso restrito ao setor financeiro.', 'error')
         return redirect(url_for('home'))
 
-    conexao = sqlite3.connect('financas.db')
+    # NOVO: Verifica se estamos vendo o Extrato de um cliente específico
+    id_cliente_extrato = request.args.get('id_usuario')
+
+    conexao = sqlite3.connect('/home/Hir3solutions/mysite/financas.db') # Caminho absoluto por segurança
     conexao.row_factory = sqlite3.Row
     cursor = conexao.cursor()
 
-    # 2. Dicionário padrão para os cards (evita erros se o banco estiver vazio)
+    # 2. Dicionário padrão para os cards
     fin_data = {
         'receita_prevista': 0.0,
         'cobrancas_ativas': 0,
         'recebido_mes': 0.0,
         'taxa_recebimento': 0,
         'valor_atrasado': 0.0,
-        'qtd_atrasados': 0
+        'qtd_atrasados': 0,
+        'modo_extrato': bool(id_cliente_extrato), # Sinaliza para o HTML se é global ou individual
+        'nome_cliente': ''
     }
-    cobrancas_pendentes = []
+    todas_cobrancas = []
 
     try:
-        # 3. Busca faturas pendentes ou atrasadas juntando com o nome do usuário
-        cursor.execute('''
-            SELECT c.id, u.usuario, u.licenca, c.data_vencimento, c.valor_fatura, c.status_pagamento
-            FROM cobrancas c
-            JOIN usuarios u ON c.usuario_id = u.id
-            WHERE c.status_pagamento != 'Em Dia'
-            ORDER BY c.data_vencimento ASC
-        ''')
-        cobrancas_pendentes = [dict(row) for row in cursor.fetchall()]
+        # 3. Busca faturas baseada no modo (Global ou Extrato)
+        if id_cliente_extrato:
+            # MODO EXTRATO INDIVIDUAL
+            cursor.execute('''
+                SELECT c.*, u.usuario as nome_usuario
+                FROM cobrancas c
+                JOIN usuarios u ON c.usuario_id = u.id
+                WHERE c.usuario_id = ?
+                ORDER BY c.status_pagamento DESC, c.data_vencimento ASC
+            ''', (id_cliente_extrato,))
 
-        # 4. Calcula os totais para o Resumo Geral
-        cursor.execute("SELECT status_pagamento, valor_fatura FROM cobrancas")
-        todas_cobrancas = cursor.fetchall()
+            # Pega o nome do cliente para mostrar no topo do Extrato
+            cursor.execute("SELECT usuario FROM usuarios WHERE id = ?", (id_cliente_extrato,))
+            cliente_db = cursor.fetchone()
+            if cliente_db:
+                fin_data['nome_cliente'] = cliente_db['usuario']
 
+        else:
+            # MODO CONTAS A RECEBER GLOBAL
+            cursor.execute('''
+                SELECT c.*, u.usuario as nome_usuario
+                FROM cobrancas c
+                JOIN usuarios u ON c.usuario_id = u.id
+                ORDER BY c.status_pagamento DESC, c.data_vencimento ASC
+            ''')
+
+        todas_cobrancas = [dict(row) for row in cursor.fetchall()]
+
+        # 4. Calcula os totais do Painel Baseado na Busca (Global ou Individual)
         for cob in todas_cobrancas:
             valor = float(cob['valor_fatura']) if cob['valor_fatura'] else 0.0
             status = cob['status_pagamento']
@@ -686,7 +787,7 @@ def financeiro():
 
             if status == 'Em Dia':
                 fin_data['recebido_mes'] += valor
-            elif status == 'Atrasado':
+            elif status in ['Atrasado', 'Pendente']:
                 fin_data['valor_atrasado'] += valor
                 fin_data['qtd_atrasados'] += 1
 
@@ -695,13 +796,14 @@ def financeiro():
             fin_data['taxa_recebimento'] = int((fin_data['recebido_mes'] / fin_data['receita_prevista']) * 100)
 
     except sqlite3.OperationalError:
-        # ATENÇÃO: Se a tabela não existir, o sistema cria automaticamente!
+        # ATENÇÃO: Criamos com a coluna 'data_pagamento' para uso futuro!
         cursor.execute('''
             CREATE TABLE IF NOT EXISTS cobrancas (
                 id INTEGER PRIMARY KEY AUTOINCREMENT,
                 usuario_id INTEGER,
                 valor_fatura REAL,
                 data_vencimento TEXT,
+                data_pagamento TEXT,
                 status_pagamento TEXT
             )
         ''')
@@ -709,76 +811,74 @@ def financeiro():
 
     conexao.close()
 
-    return render_template('financeiro.html', fin_data=fin_data, cobrancas_pendentes=cobrancas_pendentes)
+    # Passamos todas_cobrancas para o HTML (agora ela exibe pendentes e pagas no histórico)
+    return render_template('telas/financeiro.html', fin_data=fin_data, lista_faturas=todas_cobrancas)
 
 @app.route('/atualizar_cobranca', methods=['POST'])
 def atualizar_cobranca():
-    # Rota ativada pelo botão "Atualizar Financeiro" na aba Gestão do Sistema
     if not session.get('is_admin'):
         return redirect(url_for('home'))
 
     id_usuario = request.form.get('id_usuario_cobranca')
-    status = request.form.get('status_pagamento')
+    status = request.form.get('status_pagamento') # Ex: Pendente, Atrasado
     vencimento = request.form.get('data_vencimento')
     valor_raw = request.form.get('valor_fatura', '0')
 
-    # Trata o valor (troca vírgula por ponto)
     try:
         valor = float(str(valor_raw).replace(',', '.'))
     except ValueError:
         valor = 0.00
 
     try:
-        conexao = sqlite3.connect('financas.db')
+        conexao = sqlite3.connect('/home/Hir3solutions/mysite/financas.db')
         cursor = conexao.cursor()
 
-        # Verifica se o usuário já tem uma cobrança registrada
-        cursor.execute("SELECT id FROM cobrancas WHERE usuario_id = ?", (id_usuario,))
-        existe = cursor.fetchone()
-
-        if existe:
-            cursor.execute('''
-                UPDATE cobrancas
-                SET status_pagamento = ?, data_vencimento = ?, valor_fatura = ?
-                WHERE usuario_id = ?
-            ''', (status, vencimento, valor, id_usuario))
-        else:
-            cursor.execute('''
-                INSERT INTO cobrancas (usuario_id, status_pagamento, data_vencimento, valor_fatura)
-                VALUES (?, ?, ?, ?)
-            ''', (id_usuario, status, vencimento, valor))
+        # NOVO: Removemos o UPDATE. Agora sempre fazemos INSERT para gerar o HISTÓRICO!
+        cursor.execute('''
+            INSERT INTO cobrancas (usuario_id, status_pagamento, data_vencimento, valor_fatura)
+            VALUES (?, ?, ?, ?)
+        ''', (id_usuario, status, vencimento, valor))
 
         conexao.commit()
-        flash('Financeiro atualizado com sucesso!', 'success')
+        flash('Nova fatura adicionada ao histórico com sucesso!', 'success')
     except Exception as e:
         flash(f'Erro ao salvar cobrança: {e}', 'error')
     finally:
         conexao.close()
 
-    return redirect(url_for('usuarios'))
+    return redirect(url_for('financeiro', id_usuario=id_usuario)) # Redireciona para ver o extrato do cliente!
 
 @app.route('/marcar_pago/<int:id>', methods=['POST'])
 def marcar_pago(id):
-    # Rota ativada pelo botão verde de "Check" na tela do Painel Financeiro
     if not session.get('is_admin'):
         return redirect(url_for('home'))
 
+    # Se a requisição veio da tela de extrato, tentamos capturar o ID do usuário para voltar pra lá
+    voltar_para_extrato_id = request.form.get('id_usuario_retorno')
+
+    hoje = date.today().strftime('%Y-%m-%d')
+
     try:
-        conexao = sqlite3.connect('financas.db')
+        conexao = sqlite3.connect('/home/Hir3solutions/mysite/financas.db')
         cursor = conexao.cursor()
 
-        cursor.execute("UPDATE cobrancas SET status_pagamento = 'Em Dia' WHERE id = ?", (id,))
-        conexao.commit()
+        # Além de Em Dia, podemos salvar a data de pagamento se a coluna existir
+        try:
+            cursor.execute("UPDATE cobrancas SET status_pagamento = 'Em Dia', data_pagamento = ? WHERE id = ?", (hoje, id))
+        except sqlite3.OperationalError:
+            # Fallback caso a coluna data_pagamento não exista ainda no seu banco
+            cursor.execute("UPDATE cobrancas SET status_pagamento = 'Em Dia' WHERE id = ?", (id,))
 
+        conexao.commit()
         flash('Fatura marcada como PAGA com sucesso!', 'success')
     except Exception as e:
         flash(f'Erro ao dar baixa na fatura: {e}', 'error')
     finally:
         conexao.close()
 
+    if voltar_para_extrato_id:
+        return redirect(url_for('financeiro', id_usuario=voltar_para_extrato_id))
     return redirect(url_for('financeiro'))
-
-from datetime import datetime, timedelta
 
 @app.route('/renovar_cobranca', methods=['POST'])
 def renovar_cobranca():
@@ -789,20 +889,16 @@ def renovar_cobranca():
     periodo = request.form.get('periodo')
 
     try:
-        conexao = sqlite3.connect('financas.db')
+        conexao = sqlite3.connect('/home/Hir3solutions/mysite/financas.db')
         cursor = conexao.cursor()
 
         if periodo == 'indeterminado':
             novo_vencimento = 'Vitalício'
         else:
-            # Calcula a data atual + os dias selecionados
             dias = int(periodo)
             data_futura = datetime.now() + timedelta(days=dias)
-
-            # Formato YYYY-MM-DD para visualização limpa
             novo_vencimento = data_futura.strftime('%Y-%m-%d')
 
-        # Atualiza a data e já marca como "Em Dia"
         cursor.execute('''
             UPDATE cobrancas
             SET data_vencimento = ?, status_pagamento = 'Em Dia'
@@ -2186,7 +2282,7 @@ def enviar_whatsapp(telefone_destino, texto_mensagem):
 @app.context_processor
 def inject_global_vars():
     # Defina aqui a versão centralizada
-    versao = "1.5.9"
+    versao = "1.6.0"
 
     # Gera a data automaticamente (ex: "Julho 2026")
     data_formatada = datetime.now().strftime('%B %Y').capitalize()

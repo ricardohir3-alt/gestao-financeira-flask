@@ -1,0 +1,52 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Licença Vencida - Acesso Suspenso</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://unpkg.com/lucide@latest"></script>
+</head>
+<body class="bg-gray-50 dark:bg-gray-900 flex items-center justify-center min-h-screen p-4">
+
+    <div class="max-w-md w-full bg-white dark:bg-gray-800 rounded-3xl shadow-2xl border border-gray-100 dark:border-gray-700 p-8 text-center relative overflow-hidden">
+        
+        <!-- Elementos de Design -->
+        <div class="absolute top-0 right-0 w-32 h-32 bg-red-500/10 rounded-bl-full -z-10"></div>
+        <div class="absolute bottom-0 left-0 w-24 h-24 bg-red-500/10 rounded-tr-full -z-10"></div>
+
+        <!-- Ícone de Alerta Animado -->
+        <div class="inline-flex items-center justify-center w-24 h-24 rounded-full bg-red-50 dark:bg-red-900/30 mb-6 shadow-inner border-4 border-white dark:border-gray-800">
+            <i data-lucide="clock-4" class="w-12 h-12 text-red-500 dark:text-red-400 animate-pulse"></i>
+        </div>
+
+        <h1 class="text-3xl font-black text-gray-800 dark:text-white mb-2">Poxa, seu tempo acabou!</h1>
+        <p class="text-sm font-bold text-red-500 dark:text-red-400 uppercase tracking-widest mb-4">Assinatura Expirada</p>
+        
+        <p class="text-gray-600 dark:text-gray-300 mb-8 leading-relaxed text-sm">
+            O período da sua licença chegou ao fim e seu acesso foi temporariamente suspenso. <br><br>
+            Não se preocupe! <strong>Todos os seus dados estão salvos e seguros.</strong> Para voltar a usar o sistema imediatamente, basta renovar seu contrato.
+        </p>
+
+        <div class="space-y-3">
+            <!-- Botão do WhatsApp (Substitua os zeros pelo resto do seu número) -->
+            <a href="https://wa.me/5586900007237?text=Ol%C3%A1%21%20Minha%20assinatura%20do%20sistema%20venceu%20e%20gostaria%20de%20renovar." target="_blank" 
+               class="w-full bg-emerald-500 hover:bg-emerald-600 text-white font-bold py-4 rounded-xl transition duration-200 shadow-lg shadow-emerald-500/30 flex items-center justify-center gap-2 active:scale-95">
+                <i data-lucide="message-circle" class="w-5 h-5"></i>
+                Renovar via WhatsApp
+            </a>
+            
+            <!-- Botão Voltar ao Login -->
+            <a href="/login" class="w-full bg-gray-100 hover:bg-gray-200 dark:bg-gray-700 dark:hover:bg-gray-600 text-gray-700 dark:text-gray-200 font-bold py-4 rounded-xl transition duration-200 flex items-center justify-center gap-2 active:scale-95">
+                <i data-lucide="arrow-left" class="w-5 h-5"></i>
+                Voltar ao Login
+            </a>
+        </div>
+    </div>
+
+    <script>
+        // Inicializa os ícones da tela
+        lucide.createIcons();
+    </script>
+</body>
+</html>

@@ -7,15 +7,22 @@
     </a>
 
     <div class="w-full bg-white dark:bg-gray-800 p-6 rounded-xl shadow-sm border border-gray-100 dark:border-gray-700">
+        
+        <!-- TÍTULO DINÂMICO (Global vs Extrato) -->
         <h2 class="text-xl font-bold mb-6 text-gray-800 dark:text-gray-200 flex items-center gap-2">
-            <i data-lucide="receipt" class="w-6 h-6 text-indigo-600 dark:text-indigo-400"></i> Painel Financeiro
+            <i data-lucide="receipt" class="w-6 h-6 text-indigo-600 dark:text-indigo-400"></i> 
+            {% if fin_data.modo_extrato %}
+                Extrato Financeiro: <span class="text-indigo-500">{{ fin_data.nome_cliente }}</span>
+            {% else %}
+                Painel Financeiro Global
+            {% endif %}
         </h2>
 
         <!-- TABS DE NAVEGAÇÃO FINANCEIRA -->
         <div class="flex gap-4 border-b border-gray-200 dark:border-gray-700 mb-6 overflow-x-auto pb-1">
-            <button onclick="showFinTab('resumo')" id="btn-resumo" class="pb-2 border-b-2 border-indigo-500 font-bold text-sm text-indigo-600 dark:text-indigo-400 transition-all whitespace-nowrap">Resumo Geral</button>
+            <button onclick="showFinTab('resumo')" id="btn-resumo" class="pb-2 border-b-2 border-indigo-500 font-bold text-sm text-indigo-600 dark:text-indigo-400 transition-all whitespace-nowrap">Resumo</button>
             <button onclick="showFinTab('faturas')" id="btn-faturas" class="pb-2 border-b-2 border-transparent hover:border-gray-300 font-bold text-sm text-gray-500 transition-all whitespace-nowrap">Faturas Pendentes</button>
-            <button onclick="showFinTab('historico')" id="btn-historico" class="pb-2 border-b-2 border-transparent hover:border-gray-300 font-bold text-sm text-gray-500 transition-all whitespace-nowrap">Histórico de Pagamentos</button>
+            <button onclick="showFinTab('historico')" id="btn-historico" class="pb-2 border-b-2 border-transparent hover:border-gray-300 font-bold text-sm text-gray-500 transition-all whitespace-nowrap">Histórico (Pagas)</button>
         </div>
 
         {% if session.get('is_admin') %}
@@ -28,14 +35,14 @@
                         <div class="absolute top-0 right-0 w-24 h-24 bg-indigo-500/10 rounded-bl-full -z-10"></div>
                         <div class="flex justify-between items-start mb-2">
                             <div>
-                                <p class="text-[10px] uppercase font-bold text-indigo-500 dark:text-indigo-400 tracking-wider">Receita Prevista (Mês)</p>
+                                <p class="text-[10px] uppercase font-bold text-indigo-500 dark:text-indigo-400 tracking-wider">Receita Prevista</p>
                                 <h3 class="text-2xl font-black text-gray-800 dark:text-gray-100 mt-1">R$ {{ "%.2f"|format(fin_data.receita_prevista|default(0)) }}</h3>
                             </div>
                             <div class="p-2 bg-indigo-100 dark:bg-indigo-900/50 rounded-lg">
                                 <i data-lucide="trending-up" class="w-5 h-5 text-indigo-600 dark:text-indigo-400"></i>
                             </div>
                         </div>
-                        <p class="text-xs text-gray-500 mt-2"><span class="text-indigo-500 font-medium">+{{ fin_data.cobrancas_ativas|default(0) }}</span> faturas ativas no sistema</p>
+                        <p class="text-xs text-gray-500 mt-2"><span class="text-indigo-500 font-medium">+{{ fin_data.cobrancas_ativas|default(0) }}</span> faturas ativas</p>
                     </div>
 
                     <!-- Card Recebido -->
@@ -50,7 +57,7 @@
                                 <i data-lucide="check-circle" class="w-5 h-5 text-emerald-600 dark:text-emerald-400"></i>
                             </div>
                         </div>
-                        <p class="text-xs text-gray-500 mt-2"><span class="text-emerald-500 font-medium">{{ fin_data.taxa_recebimento|default(0) }}%</span> da previsão mensal</p>
+                        <p class="text-xs text-gray-500 mt-2"><span class="text-emerald-500 font-medium">{{ fin_data.taxa_recebimento|default(0) }}%</span> da previsão</p>
                     </div>
 
                     <!-- Card Inadimplência -->
@@ -65,7 +72,7 @@
                                 <i data-lucide="alert-triangle" class="w-5 h-5 text-rose-600 dark:text-rose-400"></i>
                             </div>
                         </div>
-                        <p class="text-xs text-gray-500 mt-2"><span class="text-rose-500 font-medium">{{ fin_data.qtd_atrasados|default(0) }} usuários</span> com pendências</p>
+                        <p class="text-xs text-gray-500 mt-2"><span class="text-rose-500 font-medium">{{ fin_data.qtd_atrasados|default(0) }}</span> com pendências</p>
                     </div>
                 </div>
 
@@ -73,7 +80,13 @@
                     <i data-lucide="info" class="w-5 h-5 text-blue-500 mt-0.5"></i>
                     <div>
                         <h4 class="font-bold text-blue-700 dark:text-blue-400 text-sm">Resumo da Carteira</h4>
-                        <p class="text-sm text-blue-600 dark:text-blue-300 mt-1">Este painel exibe a saúde financeira do seu sistema SaaS. Para visualizar cobranças detalhadas por usuário, vá até a aba "Gestão do Sistema > Usuários" e clique no ícone de cifrão.</p>
+                        <p class="text-sm text-blue-600 dark:text-blue-300 mt-1">
+                            {% if fin_data.modo_extrato %}
+                                Você está visualizando o extrato financeiro exclusivo de <strong>{{ fin_data.nome_cliente }}</strong>. Para voltar ao painel global, acesse pelo menu principal.
+                            {% else %}
+                                Este painel exibe a saúde financeira global do seu sistema. Para visualizar o extrato individual, vá em Usuários e clique no ícone de cifrão ($).
+                            {% endif %}
+                        </p>
                     </div>
                 </div>
             </div>
@@ -82,17 +95,13 @@
             <div id="div-faturas" class="hidden">
                 <div class="flex justify-between items-center mb-4">
                     <h3 class="text-sm font-bold text-gray-600 dark:text-gray-300 uppercase tracking-wider">Próximos Vencimentos & Atrasos</h3>
-                    <div class="relative">
-                        <input type="text" placeholder="Buscar usuário..." class="pl-8 pr-4 py-2 bg-gray-50 dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-lg text-sm focus:ring-2 focus:ring-indigo-500 w-48 transition-all">
-                        <i data-lucide="search" class="w-4 h-4 text-gray-400 absolute left-2.5 top-2.5"></i>
-                    </div>
                 </div>
 
                 <div class="overflow-x-auto rounded-xl border border-gray-200 dark:border-gray-700 shadow-sm">
                     <table class="w-full text-left text-sm whitespace-nowrap">
                         <thead class="bg-gray-50 dark:bg-gray-800 text-gray-500 dark:text-gray-400 text-xs uppercase font-bold tracking-wider">
                             <tr>
-                                <th class="px-6 py-4">Usuário / Plano</th>
+                                <th class="px-6 py-4">Usuário</th>
                                 <th class="px-6 py-4">Vencimento</th>
                                 <th class="px-6 py-4">Valor</th>
                                 <th class="px-6 py-4">Status</th>
@@ -100,80 +109,127 @@
                             </tr>
                         </thead>
                         <tbody class="divide-y divide-gray-100 dark:divide-gray-700 bg-white dark:bg-gray-900">
-                            {% for cob in cobrancas_pendentes %}
-                            <tr class="hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors">
-                                <td class="px-6 py-4">
-                                    <div class="flex items-center gap-3">
-                                        <div class="w-8 h-8 rounded-full bg-indigo-100 dark:bg-indigo-900/50 flex items-center justify-center text-indigo-600 font-bold uppercase text-xs">
-                                            {{ cob.usuario[0] if cob.usuario else 'U' }}
+                            {% set tem_pendente = false %}
+                            {% for cob in lista_faturas if cob.status_pagamento != 'Em Dia' %}
+                                {% set tem_pendente = true %}
+                                <tr class="hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors">
+                                    <td class="px-6 py-4">
+                                        <div class="flex items-center gap-3">
+                                            <div class="w-8 h-8 rounded-full bg-indigo-100 dark:bg-indigo-900/50 flex items-center justify-center text-indigo-600 font-bold uppercase text-xs">
+                                                {{ cob.nome_usuario[0] if cob.nome_usuario else 'U' }}
+                                            </div>
+                                            <div>
+                                                <p class="font-bold text-gray-800 dark:text-gray-200">{{ cob.nome_usuario }}</p>
+                                            </div>
                                         </div>
-                                        <div>
-                                            <p class="font-bold text-gray-800 dark:text-gray-200">{{ cob.usuario }}</p>
-                                            <p class="text-[10px] text-gray-500">{{ cob.licenca }}</p>
-                                        </div>
-                                    </div>
-                                </td>
-                                <td class="px-6 py-4 text-gray-600 dark:text-gray-300 font-medium">
-                                    {{ cob.data_vencimento }}
-                                </td>
-                                <td class="px-6 py-4 font-black text-gray-800 dark:text-gray-200">
-                                    R$ {{ "%.2f"|format(cob.valor_fatura) }}
-                                </td>
-                                <td class="px-6 py-4">
-                                    {% if cob.status_pagamento == 'Atrasado' %}
-                                        <span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md text-xs font-bold bg-rose-100 text-rose-700 dark:bg-rose-900/30 dark:text-rose-400 border border-rose-200 dark:border-rose-800/50">
-                                            <div class="w-1.5 h-1.5 rounded-full bg-rose-500 animate-pulse"></div> Atrasado
-                                        </span>
-                                    {% else %}
-                                        <span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md text-xs font-bold bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400 border border-amber-200 dark:border-amber-800/50">
-                                            <div class="w-1.5 h-1.5 rounded-full bg-amber-500"></div> Pendente
-                                        </span>
-                                    {% endif %}
-                                </td>
-                                <td class="px-6 py-4 text-right">
-                                    
-                                    <!-- NOVO BOTÃO DE RENOVAR -->
-                                    <button type="button" onclick="abrirModalRenovacao('{{ cob.id }}', '{{ cob.usuario }}')" title="Renovar Assinatura" class="p-2 inline-block text-indigo-500 bg-indigo-50 hover:bg-indigo-100 dark:bg-indigo-900/20 dark:hover:bg-indigo-900/40 rounded-lg transition-colors border border-transparent mr-1">
-                                        <i data-lucide="refresh-cw" class="w-4 h-4"></i>
-                                    </button>
-
-                                    <!-- BOTÃO MARCAR PAGO -->
-                                    <form action="/marcar_pago/{{ cob.id }}" method="POST" class="inline-block">
-                                        <button type="submit" title="Baixa Rápida (Pago)" class="p-2 text-emerald-600 bg-emerald-50 hover:bg-emerald-100 dark:bg-emerald-900/20 dark:hover:bg-emerald-900/40 rounded-lg transition-colors border border-emerald-100 dark:border-emerald-800">
-                                            <i data-lucide="check" class="w-4 h-4"></i>
+                                    </td>
+                                    <td class="px-6 py-4 text-gray-600 dark:text-gray-300 font-medium">{{ cob.data_vencimento }}</td>
+                                    <td class="px-6 py-4 font-black text-gray-800 dark:text-gray-200">R$ {{ "%.2f"|format(cob.valor_fatura) }}</td>
+                                    <td class="px-6 py-4">
+                                        {% if cob.status_pagamento == 'Atrasado' %}
+                                            <span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md text-xs font-bold bg-rose-100 text-rose-700 border border-rose-200">
+                                                <div class="w-1.5 h-1.5 rounded-full bg-rose-500 animate-pulse"></div> Atrasado
+                                            </span>
+                                        {% else %}
+                                            <span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md text-xs font-bold bg-amber-100 text-amber-700 border border-amber-200">
+                                                <div class="w-1.5 h-1.5 rounded-full bg-amber-500"></div> Pendente
+                                            </span>
+                                        {% endif %}
+                                    </td>
+                                    <td class="px-6 py-4 text-right">
+                                        <!-- BOTÃO RENOVAR -->
+                                        <button type="button" onclick="abrirModalRenovacao('{{ cob.id }}', '{{ cob.nome_usuario }}')" title="Renovar Assinatura" class="p-2 inline-block text-indigo-500 bg-indigo-50 hover:bg-indigo-100 rounded-lg transition-colors border border-transparent mr-1">
+                                            <i data-lucide="refresh-cw" class="w-4 h-4"></i>
                                         </button>
-                                    </form>
-                                    
-                                    <!-- BOTÃO WHATSAPP -->
-                                    <a href="https://api.whatsapp.com/send?phone=SEUNUMERO&text=Olá, {{ cob.usuario }}. Notamos que sua fatura de R$ {{ '%.2f'|format(cob.valor_fatura) }} está pendente." target="_blank" title="Cobrar no WhatsApp" class="p-2 inline-block text-emerald-500 bg-emerald-50 hover:bg-emerald-100 dark:bg-emerald-900/10 dark:hover:bg-emerald-900/30 rounded-lg transition-colors ml-1 border border-transparent">
-                                        <i data-lucide="message-circle" class="w-4 h-4"></i>
-                                    </a>
-                                </td>
-                            </tr>
-                            {% else %}
-                            <tr>
-                                <td colspan="5" class="px-6 py-12 text-center">
-                                    <div class="flex flex-col items-center justify-center text-gray-400">
-                                        <i data-lucide="inbox" class="w-12 h-12 mb-3 text-gray-300 dark:text-gray-600"></i>
-                                        <p class="font-medium text-gray-500 dark:text-gray-400">Nenhuma fatura pendente ou atrasada.</p>
-                                        <p class="text-xs mt-1">Todos os usuários estão em dia!</p>
-                                    </div>
-                                </td>
-                            </tr>
+
+                                        <!-- BOTÃO MARCAR PAGO (AGORA ENVIA DE VOLTA PARA O EXTRATO SE ESTIVER NELE) -->
+                                        <form action="/marcar_pago/{{ cob.id }}" method="POST" class="inline-block">
+                                            {% if fin_data.modo_extrato %}
+                                                <input type="hidden" name="id_usuario_retorno" value="{{ cob.usuario_id }}">
+                                            {% endif %}
+                                            <button type="submit" title="Baixa Rápida (Pago)" class="p-2 text-emerald-600 bg-emerald-50 hover:bg-emerald-100 rounded-lg transition-colors border border-emerald-100">
+                                                <i data-lucide="check" class="w-4 h-4"></i>
+                                            </button>
+                                        </form>
+                                        
+                                        <!-- BOTÃO WHATSAPP -->
+                                        <a href="https://api.whatsapp.com/send?phone=SEUNUMERO&text=Olá, {{ cob.nome_usuario }}. Notamos que sua fatura de R$ {{ '%.2f'|format(cob.valor_fatura) }} está pendente." target="_blank" title="Cobrar no WhatsApp" class="p-2 inline-block text-emerald-500 bg-emerald-50 hover:bg-emerald-100 rounded-lg transition-colors ml-1 border border-transparent">
+                                            <i data-lucide="message-circle" class="w-4 h-4"></i>
+                                        </a>
+                                    </td>
+                                </tr>
                             {% endfor %}
+
+                            {% if not tem_pendente %}
+                                <tr>
+                                    <td colspan="5" class="px-6 py-12 text-center">
+                                        <div class="flex flex-col items-center justify-center text-gray-400">
+                                            <i data-lucide="inbox" class="w-12 h-12 mb-3 text-gray-300 dark:text-gray-600"></i>
+                                            <p class="font-medium text-gray-500 dark:text-gray-400">Nenhuma fatura pendente ou atrasada.</p>
+                                        </div>
+                                    </td>
+                                </tr>
+                            {% endif %}
                         </tbody>
                     </table>
                 </div>
             </div>
 
-            <!-- ABA: HISTÓRICO DE PAGAMENTOS -->
+            <!-- ABA: HISTÓRICO DE PAGAMENTOS (AGORA É REAL!) -->
             <div id="div-historico" class="hidden">
-                <div class="bg-gray-50 dark:bg-gray-900 rounded-xl border border-gray-200 dark:border-gray-700 p-6 text-center">
-                    <i data-lucide="history" class="w-10 h-10 text-gray-400 mx-auto mb-3"></i>
-                    <h3 class="font-bold text-gray-700 dark:text-gray-300 mb-2">Histórico Completo</h3>
-                    <p class="text-sm text-gray-500 dark:text-gray-400 max-w-md mx-auto">
-                        Aqui você poderá visualizar o registro de todos os pagamentos já realizados, exportar relatórios em PDF ou Excel e filtrar por período. Em construção.
-                    </p>
+                <div class="flex justify-between items-center mb-4">
+                    <h3 class="text-sm font-bold text-gray-600 dark:text-gray-300 uppercase tracking-wider">Faturas Pagas</h3>
+                </div>
+
+                <div class="overflow-x-auto rounded-xl border border-gray-200 dark:border-gray-700 shadow-sm">
+                    <table class="w-full text-left text-sm whitespace-nowrap">
+                        <thead class="bg-gray-50 dark:bg-gray-800 text-gray-500 dark:text-gray-400 text-xs uppercase font-bold tracking-wider">
+                            <tr>
+                                <th class="px-6 py-4">Usuário</th>
+                                <th class="px-6 py-4">Data Pagamento</th>
+                                <th class="px-6 py-4">Valor</th>
+                                <th class="px-6 py-4">Status</th>
+                            </tr>
+                        </thead>
+                        <tbody class="divide-y divide-gray-100 dark:divide-gray-700 bg-white dark:bg-gray-900">
+                            {% set tem_pago = false %}
+                            {% for cob in lista_faturas if cob.status_pagamento == 'Em Dia' %}
+                                {% set tem_pago = true %}
+                                <tr class="hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors opacity-80">
+                                    <td class="px-6 py-4">
+                                        <div class="flex items-center gap-3">
+                                            <div class="w-8 h-8 rounded-full bg-emerald-100 flex items-center justify-center text-emerald-600 font-bold uppercase text-xs">
+                                                <i data-lucide="check" class="w-4 h-4"></i>
+                                            </div>
+                                            <div>
+                                                <p class="font-bold text-gray-800 dark:text-gray-200">{{ cob.nome_usuario }}</p>
+                                            </div>
+                                        </div>
+                                    </td>
+                                    <td class="px-6 py-4 text-gray-600 dark:text-gray-300 font-medium">
+                                        {{ cob.data_pagamento if cob.data_pagamento else cob.data_vencimento }}
+                                    </td>
+                                    <td class="px-6 py-4 font-black text-gray-800 dark:text-gray-200">R$ {{ "%.2f"|format(cob.valor_fatura) }}</td>
+                                    <td class="px-6 py-4">
+                                        <span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md text-xs font-bold bg-emerald-100 text-emerald-700 border border-emerald-200">
+                                            Pago
+                                        </span>
+                                    </td>
+                                </tr>
+                            {% endfor %}
+
+                            {% if not tem_pago %}
+                                <tr>
+                                    <td colspan="4" class="px-6 py-12 text-center">
+                                        <div class="flex flex-col items-center justify-center text-gray-400">
+                                            <i data-lucide="history" class="w-12 h-12 mb-3 text-gray-300 dark:text-gray-600"></i>
+                                            <p class="font-medium text-gray-500 dark:text-gray-400">Nenhum pagamento registrado no histórico ainda.</p>
+                                        </div>
+                                    </td>
+                                </tr>
+                            {% endif %}
+                        </tbody>
+                    </table>
                 </div>
             </div>
 

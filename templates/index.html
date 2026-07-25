@@ -107,6 +107,30 @@
         </div>
     </div>
 
+    <!-- ======================================================= -->
+    <!-- NOVO: BANNER DE COBRANÇA B2B (AVISO DE ASSINATURA)      -->
+    <!-- ======================================================= -->
+    {% if fatura_pendente %}
+    <div class="bg-gradient-to-r from-amber-50 to-orange-50 dark:from-amber-900/20 dark:to-orange-900/20 border-l-4 border-amber-500 p-4 md:p-5 mb-4 md:mb-6 rounded-r-xl shadow-sm w-full relative overflow-hidden flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+        <div class="absolute top-0 right-0 w-32 h-32 bg-amber-500/10 rounded-bl-full -z-10"></div>
+        <div class="flex items-start sm:items-center gap-3 md:gap-4">
+            <div class="bg-amber-100 dark:bg-amber-900/50 p-2 md:p-3 rounded-full shrink-0">
+                <i data-lucide="alert-circle" class="w-5 md:w-6 h-5 md:h-6 text-amber-600 dark:text-amber-400 animate-pulse"></i>
+            </div>
+            <div>
+                <h4 class="text-sm md:text-base font-bold text-amber-900 dark:text-amber-300">Aviso de Assinatura</h4>
+                <p class="text-xs md:text-sm text-amber-700 dark:text-amber-200/80 mt-0.5 leading-relaxed">
+                    Você possui uma fatura pendente no valor de <strong>R$ {{ "%.2f"|format(fatura_pendente.valor_fatura) }}</strong> com vencimento para <strong>{{ fatura_pendente.data_vencimento[-2:] }}/{{ fatura_pendente.data_vencimento[5:7] }}/{{ fatura_pendente.data_vencimento[0:4] }}</strong>.
+                </p>
+            </div>
+        </div>
+        <a href="https://wa.me/5586900007237?text=Olá!%20Gostaria%20de%20verificar%20minha%20fatura%20pendente." target="_blank" class="w-full sm:w-auto bg-amber-500 hover:bg-amber-600 text-white text-xs md:text-sm font-bold py-3 md:py-2.5 px-4 rounded-lg shadow-md transition-all flex items-center justify-center gap-2 shrink-0 active:scale-95">
+            <i data-lucide="message-circle" class="w-4 h-4"></i> Falar com Financeiro
+        </a>
+    </div>
+    {% endif %}
+    <!-- ======================================================= -->
+
     <!-- Wrapper do Container de Alertas (com Setas para Navegação Web) -->
     <div id="wrapper-alertas" class="relative hidden mb-4 md:mb-6 w-full group">
         <!-- Seta Esquerda (Aparece no Desktop no Hover) -->
