@@ -1,194 +1,232 @@
 {% extends "base.html" %}
 
 {% block content %}
-    <a href="javascript:history.back()" class="flex items-center gap-1 text-gray-500 hover:text-blue-600 dark:text-gray-400 dark:hover:text-blue-400 mb-6 transition-colors text-sm font-medium w-fit">
-        <i data-lucide="arrow-left" class="w-4 h-4"></i>
-        <span>Voltar</span>
+    <a href="javascript:history.back()" class="flex items-center gap-1 text-gray-500 hover:text-blue-600 dark:text-gray-400 dark:hover:text-blue-400 mb-2 md:mb-4 transition-colors text-xs md:text-sm font-bold w-fit group">
+        <i data-lucide="arrow-left" class="w-3.5 h-3.5 md:w-4 md:h-4 group-hover:-translate-x-1 transition-transform"></i>
+        <span>Voltar para o Painel</span>
     </a>
 
-    <div class="mb-8">
-        <h2 class="text-2xl font-black text-gray-800 dark:text-white flex items-center gap-2">
-            <i data-lucide="user" class="w-6 h-6 text-blue-600 dark:text-blue-400"></i> Meu Perfil
+    <div class="mb-3 md:mb-6">
+        <h2 class="text-lg md:text-2xl font-black text-gray-800 dark:text-white flex items-center gap-1.5 md:gap-2">
+            <i data-lucide="user-circle" class="w-5 h-5 md:w-6 md:h-6 text-blue-600 dark:text-blue-400"></i> Meu Perfil
         </h2>
-        <p class="text-sm text-gray-500 dark:text-gray-400 mt-1">Gerencie suas informações pessoais, segurança e finanças.</p>
+        <p class="text-[9px] md:text-sm text-gray-500 dark:text-gray-400 mt-0.5 md:mt-1">Gerencie suas informações pessoais, segurança e finanças.</p>
     </div>
 
-    <!-- Header do Perfil -->
-    <div class="bg-white dark:bg-gray-800 rounded-2xl p-6 shadow-sm border border-gray-100 dark:border-gray-700 mb-6 flex items-center gap-5">
+    <!-- HEADER DO PERFIL (Super Compacto no Mobile) -->
+    <div class="bg-white dark:bg-gray-800 rounded-xl md:rounded-3xl shadow-sm border border-gray-100 dark:border-gray-700 mb-3 md:mb-6 overflow-hidden">
+        <!-- Banner Background -->
+        <div class="h-14 md:h-32 bg-gradient-to-r from-blue-600 to-indigo-600 w-full relative">
+            <div class="absolute inset-0 bg-black/10"></div>
+        </div>
         
-        <div class="relative group cursor-pointer">
-            <!-- Formulário Invisível para Envio da Foto -->
-            <form action="/upload_foto_perfil" method="POST" enctype="multipart/form-data" id="form-foto" class="hidden">
-                <input type="file" name="foto" id="input-foto" accept="image/*" onchange="document.getElementById('form-foto').submit();">
-            </form>
-            
-            <label for="input-foto" class="cursor-pointer block relative">
-                {% if foto_perfil %}
-                    <!-- Mostra a Foto se Existir -->
-                    <div class="w-20 h-20 rounded-full bg-gray-200 shadow-lg border-4 border-white dark:border-gray-900 overflow-hidden relative">
-                        <img src="{{ foto_perfil }}" alt="Foto de Perfil" class="w-full h-full object-cover">
-                    </div>
-                {% else %}
-                    <!-- Mostra a Inicial se NÃO Existir Foto -->
-                    <div class="w-20 h-20 bg-gradient-to-br from-blue-500 to-indigo-600 rounded-full flex items-center justify-center text-white text-3xl font-black shadow-lg border-4 border-white dark:border-gray-900">
-                        {{ nome_usuario[:1].upper() if nome_usuario else 'U' }}
-                    </div>
-                {% endif %}
-                
-                <!-- Overlay de Hover com Ícone de Câmera -->
-                <div class="absolute inset-0 bg-black/50 rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity border-4 border-transparent">
-                    <i data-lucide="camera" class="w-6 h-6 text-white"></i>
+        <div class="px-3 md:px-8 pb-3 md:pb-6 relative">
+            <div class="flex flex-row items-end gap-3 md:gap-6 -mt-6 sm:-mt-16 mb-1">
+                <!-- Foto do Perfil com Hover -->
+                <div class="relative group cursor-pointer shrink-0 z-10 w-fit">
+                    <!-- Formulário Invisível para Envio da Foto -->
+                    <form action="/upload_foto_perfil" method="POST" enctype="multipart/form-data" id="form-foto" class="hidden">
+                        <input type="file" name="foto" id="input-foto" accept="image/*" onchange="document.getElementById('form-foto').submit();">
+                    </form>
+                    
+                    <label for="input-foto" class="cursor-pointer block relative">
+                        {% if foto_perfil %}
+                            <!-- Mostra a Foto se Existir -->
+                            <div class="w-14 h-14 md:w-28 md:h-28 rounded-full bg-gray-200 shadow-md md:shadow-xl border-2 md:border-4 border-white dark:border-gray-800 overflow-hidden relative">
+                                <img src="{{ foto_perfil }}" alt="Foto de Perfil" class="w-full h-full object-cover">
+                            </div>
+                        {% else %}
+                            <!-- Mostra a Inicial se NÃO Existir Foto -->
+                            <div class="w-14 h-14 md:w-28 md:h-28 bg-gradient-to-br from-gray-800 to-gray-600 dark:from-gray-700 dark:to-gray-500 rounded-full flex items-center justify-center text-white text-xl md:text-4xl font-black shadow-md md:shadow-xl border-2 md:border-4 border-white dark:border-gray-800">
+                                {{ nome_usuario[:1].upper() if nome_usuario else 'U' }}
+                            </div>
+                        {% endif %}
+                        
+                        <!-- Overlay de Hover -->
+                        <div class="absolute inset-0 bg-black/60 rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity border-2 md:border-4 border-transparent backdrop-blur-sm">
+                            <div class="flex flex-col items-center">
+                                <i data-lucide="camera" class="w-4 h-4 md:w-6 md:h-6 text-white mb-0.5"></i>
+                                <span class="text-[7px] md:text-[9px] font-bold text-white uppercase tracking-wider hidden md:block">Alterar</span>
+                            </div>
+                        </div>
+                    </label>
                 </div>
-            </label>
-        </div>
 
-        <div>
-            <h3 class="text-xl font-bold text-gray-900 dark:text-white">{{ nome_usuario }}</h3>
-            <span class="inline-flex items-center gap-1 mt-1 px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-green-100 text-green-700 dark:bg-green-900/40 dark:text-green-400">
-                <i data-lucide="shield-check" class="w-3 h-3"></i> Conta Ativa
-            </span>
+                <!-- Info do Usuário -->
+                <div class="flex-grow pb-1 md:pb-2">
+                    <h3 class="text-base md:text-2xl font-black text-gray-900 dark:text-white leading-tight truncate max-w-[200px] md:max-w-none">{{ nome_usuario }}</h3>
+                    <span class="inline-flex items-center gap-1 mt-0.5 px-1.5 py-0.5 md:px-2.5 md:py-1 rounded text-[8px] md:text-xs font-bold bg-green-100 text-green-700 dark:bg-green-900/40 dark:text-green-400 border border-green-200 dark:border-green-800/50">
+                        <i data-lucide="shield-check" class="w-2.5 h-2.5 md:w-3.5 md:h-3.5"></i> Conta Protegida
+                    </span>
+                </div>
+            </div>
         </div>
     </div>
 
-    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-        <!-- Bloco de Dados Pessoais e Licença -->
-        <div class="bg-white dark:bg-gray-800 rounded-2xl shadow-sm border border-gray-100 dark:border-gray-700 overflow-hidden">
-            <div class="px-5 py-4 border-b border-gray-100 dark:border-gray-700 bg-gray-50/50 dark:bg-gray-900/50">
-                <h4 class="text-sm font-bold text-gray-700 dark:text-gray-200 flex items-center gap-2">
-                    <i data-lucide="contact" class="w-4 h-4 text-gray-400"></i> Informações da Conta
+    <!-- GRID DE OPÇÕES (Compactado para Mobile) -->
+    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-2.5 md:gap-6">
+        
+        <!-- ============================================== -->
+        <!-- BLOCO 1: DADOS PESSOAIS E PLANO -->
+        <!-- ============================================== -->
+        <div class="bg-white dark:bg-gray-800 rounded-xl md:rounded-3xl shadow-sm border border-gray-100 dark:border-gray-700 overflow-hidden flex flex-col hover:shadow-md transition-shadow">
+            <div class="px-3 py-2 md:px-5 md:py-4 border-b border-gray-100 dark:border-gray-700 bg-gray-50/50 dark:bg-gray-900/50">
+                <h4 class="text-xs md:text-sm font-bold text-gray-800 dark:text-gray-200 flex items-center gap-1.5 md:gap-2">
+                    <div class="p-1 bg-blue-100 dark:bg-blue-900/40 rounded md:rounded-lg"><i data-lucide="contact" class="w-3 h-3 md:w-4 md:h-4 text-blue-600 dark:text-blue-400"></i></div>
+                    Informações da Conta
                 </h4>
             </div>
-            <div class="p-5">
-                <form action="#" method="POST" class="space-y-5">
+            <div class="p-3 md:p-5 flex-grow">
+                <form action="#" method="POST" class="space-y-3 md:space-y-5 h-full flex flex-col">
                     <div>
-                        <label class="block text-xs font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wide mb-1.5">Nome de Usuário</label>
+                        <label class="block text-[8px] md:text-[10px] font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wider mb-1">Nome de Usuário</label>
                         <div class="relative">
-                            <i data-lucide="user" class="absolute left-3 top-2.5 w-4 h-4 text-gray-400"></i>
+                            <i data-lucide="user" class="absolute left-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 md:w-4 md:h-4 text-gray-400"></i>
                             <input type="text" name="nome" value="{{ nome_usuario }}" readonly
-                                   class="w-full pl-9 pr-3 py-2 bg-gray-100 dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-lg text-sm font-medium text-gray-600 dark:text-gray-400 cursor-not-allowed focus:ring-0">
+                                   class="w-full pl-7 pr-2 md:pl-9 md:pr-3 py-1.5 md:py-2.5 bg-gray-100 dark:bg-gray-900/80 border border-gray-200 dark:border-gray-700 rounded-lg md:rounded-xl text-xs md:text-sm font-bold text-gray-600 dark:text-gray-400 cursor-not-allowed focus:ring-0">
                         </div>
-                        <p class="text-[10px] text-gray-400 mt-1.5">* O nome de usuário atual não pode ser alterado.</p>
+                        <p class="text-[8px] md:text-[9px] text-gray-400 mt-1 flex items-center gap-1 leading-tight">
+                            <i data-lucide="info" class="w-2.5 h-2.5 md:w-3 md:h-3 shrink-0"></i> Não é possível alterar o nome.
+                        </p>
                     </div>
 
-                    <!-- Detalhes do Plano do Usuário -->
-                    <div class="pt-2">
-                        <label class="block text-xs font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wide mb-2">Detalhes do Plano</label>
-                        <div class="bg-gray-50 dark:bg-gray-900/50 rounded-xl p-4 border border-gray-200 dark:border-gray-700 space-y-3">
+                    <!-- Detalhes do Plano do Usuário (Estilo Recibo) -->
+                    <div class="pt-1 mt-auto">
+                        <label class="block text-[8px] md:text-[10px] font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wider mb-1">Detalhes do Plano</label>
+                        <div class="bg-gradient-to-b from-gray-50 to-white dark:from-gray-900/50 dark:to-gray-800 rounded-lg md:rounded-2xl p-2.5 md:p-4 border border-gray-200 dark:border-gray-700 space-y-1.5 md:space-y-3 shadow-inner">
                             
                             <!-- Licença -->
                             <div class="flex justify-between items-center">
-                                <span class="text-sm font-medium text-gray-600 dark:text-gray-400 flex items-center gap-2">
-                                    <i data-lucide="award" class="w-4 h-4"></i> Licença
+                                <span class="text-[9px] md:text-xs font-medium text-gray-600 dark:text-gray-400 flex items-center gap-1 md:gap-1.5">
+                                    <i data-lucide="award" class="w-3 h-3 md:w-3.5 md:h-3.5"></i> Licença
                                 </span>
-                                <span class="text-sm font-bold {% if licenca_usuario == 'Premium' %}text-amber-500{% else %}text-blue-600{% endif %}">
+                                <span class="text-[9px] md:text-xs font-bold px-1.5 py-0.5 rounded border {% if licenca_usuario == 'Premium' %}text-amber-600 bg-amber-50 border-amber-200 dark:bg-amber-900/20 dark:text-amber-400 dark:border-amber-800/50{% else %}text-blue-600 bg-blue-50 border-blue-200 dark:bg-blue-900/20 dark:text-blue-400 dark:border-blue-800/50{% endif %} uppercase tracking-wider">
                                     {{ licenca_usuario | default('Básica') }}
                                 </span>
                             </div>
 
                             <!-- Valor a Pagar -->
                             <div class="flex justify-between items-center">
-                                <span class="text-sm font-medium text-gray-600 dark:text-gray-400 flex items-center gap-2">
-                                    <i data-lucide="circle-dollar-sign" class="w-4 h-4"></i> Valor Mensal
+                                <span class="text-[9px] md:text-xs font-medium text-gray-600 dark:text-gray-400 flex items-center gap-1 md:gap-1.5">
+                                    <i data-lucide="circle-dollar-sign" class="w-3 h-3 md:w-3.5 md:h-3.5"></i> Valor
                                 </span>
-                                <span class="text-sm font-black text-gray-800 dark:text-gray-200">
+                                <span class="text-[11px] md:text-sm font-black text-gray-800 dark:text-gray-200">
                                     {% if valor_licenca and valor_licenca|float > 0 %}
                                         R$ {{ "%.2f"|format(valor_licenca|float) }}
                                     {% else %}
-                                        <span class="px-2 py-0.5 rounded-md text-[10px] font-bold bg-green-100 text-green-700 dark:bg-green-900/40 dark:text-green-400 uppercase tracking-wider">Gratuito</span>
+                                        <span class="text-green-500 dark:text-green-400">Gratuito</span>
                                     {% endif %}
                                 </span>
                             </div>
 
                             <!-- Módulos Liberados -->
-                            <div class="flex justify-between items-start pt-2 border-t border-gray-200 dark:border-gray-700/50">
-                                <span class="text-sm font-medium text-gray-600 dark:text-gray-400 flex items-center gap-2 mt-0.5">
-                                    <i data-lucide="layout-grid" class="w-4 h-4"></i> Módulos
+                            <div class="flex justify-between items-start pt-1.5 md:pt-3 border-t border-dashed border-gray-200 dark:border-gray-700">
+                                <span class="text-[9px] md:text-xs font-medium text-gray-600 dark:text-gray-400 flex items-center gap-1 md:gap-1.5 mt-0.5">
+                                    <i data-lucide="layout-grid" class="w-3 h-3 md:w-3.5 md:h-3.5"></i> Módulos
                                 </span>
-                                <span class="text-xs font-bold text-gray-700 dark:text-gray-300 text-right max-w-[160px] leading-snug">
+                                <span class="text-[8px] md:text-[10px] font-bold text-gray-700 dark:text-gray-300 text-right max-w-[100px] md:max-w-[140px] leading-tight">
                                     {{ modulos_liberados | default('Básico') }}
                                 </span>
                             </div>
-
                         </div>
                     </div>
-
                 </form>
             </div>
         </div>
 
-        <!-- Bloco de Segurança (Senha) -->
-        <div class="bg-white dark:bg-gray-800 rounded-2xl shadow-sm border border-gray-100 dark:border-gray-700 overflow-hidden">
-            <div class="px-5 py-4 border-b border-gray-100 dark:border-gray-700 bg-gray-50/50 dark:bg-gray-900/50">
-                <h4 class="text-sm font-bold text-gray-700 dark:text-gray-200 flex items-center gap-2">
-                    <i data-lucide="lock" class="w-4 h-4 text-gray-400"></i> Segurança
+        <!-- ============================================== -->
+        <!-- BLOCO 2: SEGURANÇA -->
+        <!-- ============================================== -->
+        <div class="bg-white dark:bg-gray-800 rounded-xl md:rounded-3xl shadow-sm border border-gray-100 dark:border-gray-700 overflow-hidden flex flex-col hover:shadow-md transition-shadow">
+            <div class="px-3 py-2 md:px-5 md:py-4 border-b border-gray-100 dark:border-gray-700 bg-gray-50/50 dark:bg-gray-900/50">
+                <h4 class="text-xs md:text-sm font-bold text-gray-800 dark:text-gray-200 flex items-center gap-1.5 md:gap-2">
+                    <div class="p-1 bg-purple-100 dark:bg-purple-900/40 rounded md:rounded-lg"><i data-lucide="lock" class="w-3 h-3 md:w-4 md:h-4 text-purple-600 dark:text-purple-400"></i></div>
+                    Segurança
                 </h4>
             </div>
-            <div class="p-5">
-                <form action="#" method="POST" class="space-y-4">
+            <div class="p-3 md:p-5 flex-grow flex flex-col">
+                <form action="#" method="POST" class="space-y-2.5 md:space-y-4 h-full flex flex-col">
                     <div>
-                        <label class="block text-xs font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wide mb-1.5">Nova Senha</label>
+                        <label class="block text-[8px] md:text-[10px] font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wider mb-1">Nova Senha</label>
                         <div class="relative">
-                            <i data-lucide="key" class="absolute left-3 top-2.5 w-4 h-4 text-gray-400"></i>
+                            <i data-lucide="key" class="absolute left-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 md:w-4 md:h-4 text-gray-400"></i>
                             <input type="password" name="nova_senha" placeholder="••••••••"
-                                   class="w-full pl-9 pr-3 py-2 bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-lg text-sm font-medium focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none transition-all">
+                                   class="w-full pl-7 pr-2 md:pl-9 md:pr-3 py-1.5 md:py-2.5 bg-gray-50 dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-lg md:rounded-xl text-xs md:text-sm font-bold text-gray-800 dark:text-gray-100 focus:ring-2 focus:ring-purple-500 outline-none transition-all">
                         </div>
                     </div>
                     <div>
-                        <label class="block text-xs font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wide mb-1.5">Confirmar Nova Senha</label>
+                        <label class="block text-[8px] md:text-[10px] font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wider mb-1">Confirmar Nova Senha</label>
                         <div class="relative">
-                            <i data-lucide="key" class="absolute left-3 top-2.5 w-4 h-4 text-gray-400"></i>
+                            <i data-lucide="key" class="absolute left-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 md:w-4 md:h-4 text-gray-400"></i>
                             <input type="password" name="confirmar_senha" placeholder="••••••••"
-                                   class="w-full pl-9 pr-3 py-2 bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-lg text-sm font-medium focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none transition-all">
+                                   class="w-full pl-7 pr-2 md:pl-9 md:pr-3 py-1.5 md:py-2.5 bg-gray-50 dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-lg md:rounded-xl text-xs md:text-sm font-bold text-gray-800 dark:text-gray-100 focus:ring-2 focus:ring-purple-500 outline-none transition-all">
                         </div>
                     </div>
-                    <button type="button" onclick="alert('Funcionalidade de alteração de senha em desenvolvimento.')" class="w-full bg-gray-800 dark:bg-gray-100 text-white dark:text-gray-900 font-bold py-2.5 rounded-lg text-sm hover:bg-gray-900 dark:hover:bg-white transition-all shadow-sm mt-2">
-                        Atualizar Senha
-                    </button>
+                    
+                    <div class="mt-auto pt-2 md:pt-4">
+                        <button type="button" onclick="alert('Funcionalidade de alteração de senha em desenvolvimento.')" class="w-full bg-gray-800 dark:bg-gray-100 text-white dark:text-gray-900 font-black py-2 md:py-3 rounded-lg md:rounded-xl text-xs md:text-sm hover:bg-gray-900 dark:hover:bg-white hover:scale-[1.02] active:scale-[0.98] transition-all shadow-sm flex justify-center items-center gap-1.5 md:gap-2">
+                            <i data-lucide="save" class="w-3.5 h-3.5 md:w-4 md:h-4"></i> Atualizar Senha
+                        </button>
+                    </div>
                 </form>
             </div>
         </div>
 
-        <!-- NOVO BLOCO: Ajustar Renda com Opção de Renda Variável -->
-        <div class="bg-white dark:bg-gray-800 rounded-2xl shadow-sm border border-gray-100 dark:border-gray-700 overflow-hidden">
-            <div class="px-5 py-4 border-b border-gray-100 dark:border-gray-700 bg-gray-50/50 dark:bg-gray-900/50">
-                <h4 class="text-sm font-bold text-gray-700 dark:text-gray-200 flex items-center gap-2">
-                    <i data-lucide="dollar-sign" class="w-4 h-4 text-green-500"></i> Ajustar Renda
+        <!-- ============================================== -->
+        <!-- BLOCO 3: AJUSTAR RENDA -->
+        <!-- ============================================== -->
+        <div class="bg-white dark:bg-gray-800 rounded-xl md:rounded-3xl shadow-sm border border-gray-100 dark:border-gray-700 overflow-hidden flex flex-col hover:shadow-md transition-shadow">
+            <div class="px-3 py-2 md:px-5 md:py-4 border-b border-gray-100 dark:border-gray-700 bg-gray-50/50 dark:bg-gray-900/50">
+                <h4 class="text-xs md:text-sm font-bold text-gray-800 dark:text-gray-200 flex items-center gap-1.5 md:gap-2">
+                    <div class="p-1 bg-green-100 dark:bg-green-900/40 rounded md:rounded-lg"><i data-lucide="dollar-sign" class="w-3 h-3 md:w-4 md:h-4 text-green-600 dark:text-green-400"></i></div>
+                    Ajustar Renda
                 </h4>
             </div>
-            <div class="p-5">
-                <form action="/renda" method="POST" class="space-y-4">
+            <div class="p-3 md:p-5 flex-grow flex flex-col">
+                <form action="/renda" method="POST" class="space-y-2.5 md:space-y-4 h-full flex flex-col">
                     <div>
-                        <label class="block text-xs font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wide mb-1.5">Renda Mensal (R$)</label>
+                        <label class="block text-[8px] md:text-[10px] font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wider mb-1">Renda Mensal (R$)</label>
                         <div class="relative">
-                            <i data-lucide="wallet" class="absolute left-3 top-2.5 w-4 h-4 text-gray-400"></i>
+                            <i data-lucide="wallet" class="absolute left-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 md:w-4 md:h-4 text-gray-400"></i>
                             <input type="number" step="0.01" name="renda" placeholder="Ex: 3500.00" value="{{ renda_atual | default('') }}" required
-                                   class="w-full pl-9 pr-3 py-2 bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-lg text-sm font-medium focus:ring-2 focus:ring-green-500 focus:border-transparent outline-none transition-all">
+                                   class="w-full pl-7 pr-2 md:pl-9 md:pr-3 py-1.5 md:py-2.5 bg-gray-50 dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-lg md:rounded-xl text-xs md:text-sm font-black text-gray-800 dark:text-gray-100 focus:ring-2 focus:ring-green-500 outline-none transition-all">
                         </div>
-                        <p class="text-[10px] text-gray-400 mt-1.5">O valor informado será utilizado como base para cálculos e relatórios de desempenho financeiro.</p>
                     </div>
 
-                    <!-- Nova Pergunta: Renda Variável -->
-                    <div class="pt-3 border-t border-gray-100 dark:border-gray-700/50">
-                        <label class="block text-xs font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wide mb-2">Sua renda é variável?</label>
-                        <div class="flex gap-4">
-                            <label class="flex items-center gap-2 cursor-pointer group">
-                                <input type="radio" name="renda_variavel" value="sim" {% if renda_variavel == 'sim' %}checked{% endif %} 
-                                       class="w-4 h-4 text-green-600 bg-gray-100 border-gray-300 focus:ring-green-500 dark:focus:ring-green-600 dark:ring-offset-gray-800 focus:ring-2 dark:bg-gray-700 dark:border-gray-600 transition-all">
-                                <span class="text-sm font-medium text-gray-700 dark:text-gray-300 group-hover:text-green-600 dark:group-hover:text-green-400 transition-colors">Sim</span>
+                    <!-- Pergunta: Renda Variável (Design Compacto) -->
+                    <div class="pt-1 md:pt-2">
+                        <label class="block text-[8px] md:text-[10px] font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wider mb-1 md:mb-2">Sua renda é variável?</label>
+                        <div class="grid grid-cols-2 gap-2 md:gap-3">
+                            <!-- Botão SIM -->
+                            <label class="relative flex items-center justify-center p-2 md:p-3 border border-gray-200 dark:border-gray-700 rounded-lg md:rounded-xl cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-900/50 transition-all group has-[:checked]:bg-green-50 dark:has-[:checked]:bg-green-900/20 has-[:checked]:border-green-500 dark:has-[:checked]:border-green-500">
+                                <input type="radio" name="renda_variavel" value="sim" {% if renda_variavel == 'sim' %}checked{% endif %} class="sr-only">
+                                <div class="flex items-center gap-1 md:gap-2">
+                                    <div class="w-3 h-3 md:w-4 md:h-4 rounded-full border border-gray-300 dark:border-gray-600 flex items-center justify-center group-has-[:checked]:border-green-500 group-has-[:checked]:bg-green-500">
+                                        <i data-lucide="check" class="w-2 h-2 md:w-3 md:h-3 text-white opacity-0 group-has-[:checked]:opacity-100"></i>
+                                    </div>
+                                    <span class="text-[9px] md:text-xs font-bold text-gray-600 dark:text-gray-400 group-has-[:checked]:text-green-700 dark:group-has-[:checked]:text-green-400">Sim</span>
+                                </div>
                             </label>
-                            <label class="flex items-center gap-2 cursor-pointer group">
-                                <!-- Se não houver valor salvo ou for diferente de 'sim', o 'Não' virá marcado por padrão -->
-                                <input type="radio" name="renda_variavel" value="nao" {% if renda_variavel != 'sim' %}checked{% endif %} 
-                                       class="w-4 h-4 text-green-600 bg-gray-100 border-gray-300 focus:ring-green-500 dark:focus:ring-green-600 dark:ring-offset-gray-800 focus:ring-2 dark:bg-gray-700 dark:border-gray-600 transition-all">
-                                <span class="text-sm font-medium text-gray-700 dark:text-gray-300 group-hover:text-green-600 dark:group-hover:text-green-400 transition-colors">Não</span>
+
+                            <!-- Botão NÃO -->
+                            <label class="relative flex items-center justify-center p-2 md:p-3 border border-gray-200 dark:border-gray-700 rounded-lg md:rounded-xl cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-900/50 transition-all group has-[:checked]:bg-green-50 dark:has-[:checked]:bg-green-900/20 has-[:checked]:border-green-500 dark:has-[:checked]:border-green-500">
+                                <input type="radio" name="renda_variavel" value="nao" {% if renda_variavel != 'sim' %}checked{% endif %} class="sr-only">
+                                <div class="flex items-center gap-1 md:gap-2">
+                                    <div class="w-3 h-3 md:w-4 md:h-4 rounded-full border border-gray-300 dark:border-gray-600 flex items-center justify-center group-has-[:checked]:border-green-500 group-has-[:checked]:bg-green-500">
+                                        <i data-lucide="check" class="w-2 h-2 md:w-3 md:h-3 text-white opacity-0 group-has-[:checked]:opacity-100"></i>
+                                    </div>
+                                    <span class="text-[9px] md:text-xs font-bold text-gray-600 dark:text-gray-400 group-has-[:checked]:text-green-700 dark:group-has-[:checked]:text-green-400">Não (Fixa)</span>
+                                </div>
                             </label>
                         </div>
-                        <p class="text-[10px] text-gray-400 mt-1.5">Se "Sim", a renda será zerada no início de todo mês. Se "Não", o valor será mantido fixo.</p>
+                        <p class="text-[8px] text-gray-400 mt-1.5 leading-tight text-center md:text-left"><strong class="text-gray-500 dark:text-gray-300">Sim:</strong> Zera dia 1º. <strong class="text-gray-500 dark:text-gray-300">Não:</strong> Fixo.</p>
                     </div>
 
-                    <button type="submit" class="w-full bg-green-600 hover:bg-green-700 text-white font-bold py-2.5 rounded-lg text-sm transition-all shadow-sm mt-2 flex justify-center items-center gap-2">
-                        Salvar Nova Renda
-                    </button>
+                    <div class="mt-auto pt-2 md:pt-4">
+                        <button type="submit" class="w-full bg-gradient-to-r from-green-500 to-emerald-600 text-white font-black py-2 md:py-3 rounded-lg md:rounded-xl text-xs md:text-sm hover:from-green-600 hover:to-emerald-700 hover:scale-[1.02] active:scale-[0.98] transition-all shadow-md flex justify-center items-center gap-1.5 md:gap-2">
+                            <i data-lucide="check-circle" class="w-3.5 h-3.5 md:w-4 md:h-4"></i> Salvar Nova Renda
+                        </button>
+                    </div>
                 </form>
             </div>
         </div>

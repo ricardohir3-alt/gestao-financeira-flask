@@ -1,22 +1,22 @@
 {% extends "base.html" %}
 
 {% block content %}
-    <a href="javascript:history.back()" class="flex items-center gap-1 text-gray-500 hover:text-blue-600 dark:text-gray-400 dark:hover:text-blue-400 mb-4 transition-colors text-sm font-medium">
-        <i data-lucide="arrow-left" class="w-4 h-4"></i>
+    <a href="javascript:history.back()" class="flex items-center gap-1 text-gray-500 hover:text-blue-600 dark:text-gray-400 dark:hover:text-blue-400 mb-3 md:mb-4 transition-colors text-xs md:text-sm font-bold w-fit group">
+        <i data-lucide="arrow-left" class="w-3.5 h-3.5 md:w-4 md:h-4 group-hover:-translate-x-1 transition-transform"></i>
         <span>Voltar</span>
     </a>
 
-    <div class="w-full bg-white dark:bg-gray-800 p-6 rounded-xl shadow-sm border border-gray-100 dark:border-gray-700">
-        <h2 class="text-xl font-bold mb-6 text-gray-800 dark:text-gray-200 flex items-center gap-2">
-            <i data-lucide="settings" class="w-6 h-6 text-blue-600 dark:text-blue-400"></i> Gestão do Sistema
+    <div class="w-full bg-white dark:bg-gray-800 p-4 md:p-6 rounded-xl md:rounded-3xl shadow-sm border border-gray-100 dark:border-gray-700 overflow-hidden">
+        <h2 class="text-lg md:text-xl font-bold mb-4 md:mb-6 text-gray-800 dark:text-gray-200 flex items-center gap-2">
+            <i data-lucide="settings" class="w-5 h-5 md:w-6 md:h-6 text-blue-600 dark:text-blue-400"></i> Gestão do Sistema
         </h2>
 
         <!-- ABA DE NAVEGAÇÃO -->
-        <div class="flex gap-4 border-b border-gray-200 dark:border-gray-700 mb-6 overflow-x-auto pb-1">
-            <button onclick="showTab('usuarios')" id="btn-usuarios" class="pb-2 border-b-2 border-blue-500 font-bold text-sm text-blue-600 dark:text-blue-400 transition-all whitespace-nowrap">Usuários</button>
-            <button onclick="showTab('cobrancas')" id="btn-cobrancas" class="pb-2 border-b-2 border-transparent hover:border-gray-300 font-bold text-sm text-gray-500 transition-all whitespace-nowrap">Cobranças</button>
-            <button onclick="showTab('sistema')" id="btn-sistema" class="pb-2 border-b-2 border-transparent hover:border-gray-300 font-bold text-sm text-gray-500 transition-all whitespace-nowrap">Sistema</button>
-            <button onclick="showTab('logs')" id="btn-logs" class="pb-2 border-b-2 border-transparent hover:border-gray-300 font-bold text-sm text-gray-500 transition-all whitespace-nowrap">Logs & Erros</button>
+        <div class="flex gap-3 md:gap-4 border-b border-gray-200 dark:border-gray-700 mb-4 md:mb-6 overflow-x-auto pb-1 scrollbar-hide">
+            <button onclick="showTab('usuarios')" id="btn-usuarios" class="pb-2 border-b-2 border-blue-500 font-bold text-xs md:text-sm text-blue-600 dark:text-blue-400 transition-all whitespace-nowrap">Usuários</button>
+            <button onclick="showTab('cobrancas')" id="btn-cobrancas" class="pb-2 border-b-2 border-transparent hover:border-gray-300 font-bold text-xs md:text-sm text-gray-500 transition-all whitespace-nowrap">Cobranças</button>
+            <button onclick="showTab('sistema')" id="btn-sistema" class="pb-2 border-b-2 border-transparent hover:border-gray-300 font-bold text-xs md:text-sm text-gray-500 transition-all whitespace-nowrap">Sistema</button>
+            <button onclick="showTab('logs')" id="btn-logs" class="pb-2 border-b-2 border-transparent hover:border-gray-300 font-bold text-xs md:text-sm text-gray-500 transition-all whitespace-nowrap">Logs & Erros</button>
         </div>
 
         {% if session.get('is_admin') %}
@@ -24,95 +24,97 @@
             <!-- SEÇÃO DE USUÁRIOS -->
             <div id="div-usuarios" class="block">
                 <!-- FORMULÁRIO DE NOVO USUÁRIO -->
-                <form action="/usuarios" method="POST" class="mb-8 space-y-4 bg-gray-50 dark:bg-gray-900/30 p-5 rounded-2xl border border-gray-100 dark:border-gray-700/50">
-                    <h3 class="text-sm font-bold text-gray-600 dark:text-gray-300 uppercase tracking-wider mb-2">Cadastrar Novo</h3>
-                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <form action="/usuarios" method="POST" class="mb-6 md:mb-8 space-y-3 md:space-y-4 bg-gray-50 dark:bg-gray-900/30 p-4 md:p-5 rounded-xl md:rounded-2xl border border-gray-100 dark:border-gray-700/50">
+                    <h3 class="text-xs md:text-sm font-bold text-gray-600 dark:text-gray-300 uppercase tracking-wider mb-1 md:mb-2">Cadastrar Novo</h3>
+                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 md:gap-4">
                         <div>
-                            <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1 flex items-center gap-1">
-                                <i data-lucide="user" class="w-4 h-4"></i> Nome de Usuário
+                            <label class="block text-[10px] md:text-xs font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wide mb-1 flex items-center gap-1">
+                                <i data-lucide="user" class="w-3.5 h-3.5 md:w-4 md:h-4"></i> Nome de Usuário
                             </label>
                             <input type="text" name="usuario" placeholder="Ex: JoaoSilva" required
-                                   class="w-full px-4 py-3 bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-xl text-gray-800 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all">
+                                   class="w-full px-3 py-2 md:px-4 md:py-2.5 bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-lg md:rounded-xl text-xs md:text-sm text-gray-800 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all">
                         </div>
                         <div>
-                            <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1 flex items-center gap-1">
-                                <i data-lucide="shield-check" class="w-4 h-4"></i> Licença Inicial
+                            <label class="block text-[10px] md:text-xs font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wide mb-1 flex items-center gap-1">
+                                <i data-lucide="shield-check" class="w-3.5 h-3.5 md:w-4 md:h-4"></i> Licença Inicial
                             </label>
-                            <select name="licenca" required class="w-full px-4 py-3 bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-xl text-gray-800 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all cursor-pointer">
+                            <select name="licenca" required class="w-full px-3 py-2 md:px-4 md:py-2.5 bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-lg md:rounded-xl text-xs md:text-sm text-gray-800 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all cursor-pointer">
                                 <option value="Básica" selected>Básica (Free)</option>
                                 <option value="Premium">Premium</option>
                             </select>
                         </div>
                     </div>
-                    <div class="relative w-full">
-                        <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1 flex items-center gap-1">
-                            <i data-lucide="key" class="w-4 h-4"></i> Senha Inicial
+                    <div>
+                        <label class="block text-[10px] md:text-xs font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wide mb-1 flex items-center gap-1">
+                            <i data-lucide="key" class="w-3.5 h-3.5 md:w-4 md:h-4"></i> Senha Inicial
                         </label>
-                        <input type="password" id="senha-input" name="senha" required
-                               class="w-full px-4 py-3 pr-10 bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-xl text-gray-800 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all">
-                        <button type="button" onclick="toggleSenha()" class="absolute right-4 top-10 text-gray-400 hover:text-gray-600 transition-colors">
-                            <i id="olhinho-icone" data-lucide="eye" class="w-5 h-5"></i>
-                        </button>
+                        <div class="relative w-full">
+                            <input type="password" id="senha-input" name="senha" required
+                                   class="w-full px-3 py-2 md:px-4 md:py-2.5 pr-10 bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-lg md:rounded-xl text-xs md:text-sm text-gray-800 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all">
+                            <button type="button" onclick="toggleSenha()" class="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 transition-colors focus:outline-none">
+                                <i id="olhinho-icone" data-lucide="eye" class="w-4 h-4 md:w-5 md:h-5"></i>
+                            </button>
+                        </div>
                     </div>
-                    <button type="submit" name="cadastrar" class="w-full bg-blue-600 text-white font-bold py-3.5 px-4 rounded-xl hover:bg-blue-700 transition duration-200 shadow-md flex items-center justify-center gap-2 mt-4 active:scale-95">
-                        <i data-lucide="user-plus" class="w-5 h-5"></i> Salvar Usuário
+                    <button type="submit" name="cadastrar" class="w-full bg-blue-600 text-white font-bold py-2.5 md:py-3 px-4 rounded-lg md:rounded-xl hover:bg-blue-700 transition duration-200 shadow-md flex items-center justify-center gap-2 mt-2 active:scale-95 text-xs md:text-sm">
+                        <i data-lucide="user-plus" class="w-4 h-4 md:w-5 md:h-5"></i> Salvar Usuário
                     </button>
                 </form>
 
-                <div class="flex items-center justify-between mb-4">
-                    <h3 class="text-sm font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wider">Carteira de Clientes</h3>
-                    <span class="bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-300 text-xs font-bold px-2 py-1 rounded-md">{{ usuarios|length }} Total</span>
+                <div class="flex items-center justify-between mb-3 md:mb-4">
+                    <h3 class="text-[10px] md:text-sm font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wider">Carteira de Clientes</h3>
+                    <span class="bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-300 text-[9px] md:text-xs font-bold px-2 py-0.5 md:py-1 rounded-md">{{ usuarios|length }} Total</span>
                 </div>
 
-                <!-- NOVO LAYOUT EM CARDS (GRID) -->
-                <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                <!-- CARDS COMPACTADOS NO MOBILE (GRID) -->
+                <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 md:gap-4">
                     {% for u in usuarios %}
-                    <div class="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-2xl shadow-sm hover:shadow-md hover:border-blue-300 dark:hover:border-blue-700 transition-all flex flex-col overflow-hidden group">
+                    <div class="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl md:rounded-2xl shadow-sm hover:shadow-md hover:border-blue-300 dark:hover:border-blue-700 transition-all flex flex-col overflow-hidden group">
                         
                         <!-- Cabeçalho do Card -->
-                        <div class="p-5 flex items-start gap-4 border-b border-gray-100 dark:border-gray-700/50">
-                            <div class="bg-blue-50 dark:bg-blue-900/20 p-3 rounded-full shrink-0 mt-1">
-                                <i data-lucide="user" class="w-6 h-6 text-blue-500 dark:text-blue-400"></i>
+                        <div class="p-3 md:p-5 flex items-center md:items-start gap-3 border-b border-gray-100 dark:border-gray-700/50">
+                            <div class="bg-blue-50 dark:bg-blue-900/20 p-2 md:p-3 rounded-full shrink-0">
+                                <i data-lucide="user" class="w-4 h-4 md:w-5 md:h-5 text-blue-500 dark:text-blue-400"></i>
                             </div>
                             <div class="flex flex-col min-w-0">
-                                <h4 class="font-bold text-gray-800 dark:text-gray-100 text-lg truncate" title="{{ u[1] }}">{{ u[1] }}</h4>
-                                <span class="text-[10px] font-black {% if u[2] == 'Premium' %}text-indigo-600 dark:text-indigo-400{% else %}text-blue-600 dark:text-blue-400{% endif %} uppercase tracking-widest mt-0.5">
+                                <h4 class="font-bold text-gray-800 dark:text-gray-100 text-sm md:text-lg truncate" title="{{ u[1] }}">{{ u[1] }}</h4>
+                                <span class="text-[9px] md:text-[10px] font-black {% if u[2] == 'Premium' %}text-indigo-600 dark:text-indigo-400{% else %}text-blue-600 dark:text-blue-400{% endif %} uppercase tracking-widest mt-0.5">
                                     {{ u[2] }}
                                 </span>
                             </div>
                         </div>
 
                         <!-- Rodapé de Ações do Card -->
-                        <div class="p-3 bg-gray-50 dark:bg-gray-900/40 flex items-center justify-between mt-auto">
+                        <div class="p-2 md:p-3 bg-gray-50 dark:bg-gray-900/40 flex items-center justify-between mt-auto">
                             {% if u[0] != 1 %}
-                                <div class="grid grid-cols-4 gap-2 w-full">
+                                <div class="grid grid-cols-4 gap-1.5 md:gap-2 w-full">
                                     
                                     <!-- Financeiro / Extrato -->
-                                    <a href="/financeiro?id_usuario={{ u[0] }}" class="flex items-center justify-center p-2 rounded-xl bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 text-emerald-500 hover:bg-emerald-50 dark:hover:bg-emerald-900/20 hover:border-emerald-200 transition-colors shadow-sm" title="Ver Extrato do Cliente">
-                                        <i data-lucide="dollar-sign" class="w-4 h-4"></i>
+                                    <a href="/financeiro?id_usuario={{ u[0] }}" class="flex items-center justify-center p-1.5 md:p-2 rounded-lg md:rounded-xl bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 text-emerald-500 hover:bg-emerald-50 dark:hover:bg-emerald-900/20 hover:border-emerald-200 transition-colors shadow-sm" title="Ver Extrato do Cliente">
+                                        <i data-lucide="dollar-sign" class="w-3.5 h-3.5 md:w-4 md:h-4"></i>
                                     </a>
 
                                     <!-- Tornar Admin -->
                                     <form action="/tornar_admin/{{ u[0] }}" method="POST" class="m-0 w-full" onsubmit="return confirm('ATENÇÃO: Tem certeza que deseja promover este usuário a Administrador?');">
-                                        <button type="submit" class="w-full flex items-center justify-center p-2 rounded-xl bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 text-indigo-500 hover:bg-indigo-50 dark:hover:bg-indigo-900/20 hover:border-indigo-200 transition-colors shadow-sm" title="Promover a Administrador">
-                                            <i data-lucide="shield" class="w-4 h-4"></i>
+                                        <button type="submit" class="w-full flex items-center justify-center p-1.5 md:p-2 rounded-lg md:rounded-xl bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 text-indigo-500 hover:bg-indigo-50 dark:hover:bg-indigo-900/20 hover:border-indigo-200 transition-colors shadow-sm" title="Promover a Administrador">
+                                            <i data-lucide="shield" class="w-3.5 h-3.5 md:w-4 md:h-4"></i>
                                         </button>
                                     </form>
                                     
                                     <!-- Editar -->
-                                    <button type="button" onclick="abrirEdicaoUsuario('{{ u[0] }}', '{{ u[1] }}', '{{ u[2] }}', '{{ u[3] }}', '{{ u[4] }}', '{{ u[5] if u|length > 5 else '' }}')" class="flex items-center justify-center p-2 rounded-xl bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 text-amber-500 hover:bg-amber-50 dark:hover:bg-amber-900/20 hover:border-amber-200 transition-colors shadow-sm" title="Editar Usuário / Contrato">
-                                        <i data-lucide="edit-3" class="w-4 h-4"></i>
+                                    <button type="button" onclick="abrirEdicaoUsuario('{{ u[0] }}', '{{ u[1] }}', '{{ u[2] }}', '{{ u[3] }}', '{{ u[4] }}', '{{ u[5] if u|length > 5 else '' }}')" class="flex items-center justify-center p-1.5 md:p-2 rounded-lg md:rounded-xl bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 text-amber-500 hover:bg-amber-50 dark:hover:bg-amber-900/20 hover:border-amber-200 transition-colors shadow-sm" title="Editar Usuário / Contrato">
+                                        <i data-lucide="edit-3" class="w-3.5 h-3.5 md:w-4 md:h-4"></i>
                                     </button>
                                     
                                     <!-- Inativar -->
-                                    <button type="button" onclick="confirmarInativacao('{{ u[0] }}', '{{ u[1] }}')" class="flex items-center justify-center p-2 rounded-xl bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 hover:border-red-200 transition-colors shadow-sm" title="Inativar Usuário">
-                                        <i data-lucide="trash-2" class="w-4 h-4"></i>
+                                    <button type="button" onclick="confirmarInativacao('{{ u[0] }}', '{{ u[1] }}')" class="flex items-center justify-center p-1.5 md:p-2 rounded-lg md:rounded-xl bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 hover:border-red-200 transition-colors shadow-sm" title="Inativar Usuário">
+                                        <i data-lucide="trash-2" class="w-3.5 h-3.5 md:w-4 md:h-4"></i>
                                     </button>
                                 </div>
                             {% else %}
                                 <div class="w-full flex justify-center py-1">
-                                    <span class="text-xs text-gray-400 font-bold uppercase tracking-widest flex items-center gap-1.5 opacity-70">
-                                        <i data-lucide="award" class="w-4 h-4"></i> Admin Master
+                                    <span class="text-[10px] md:text-xs text-gray-400 font-bold uppercase tracking-widest flex items-center gap-1 opacity-70">
+                                        <i data-lucide="award" class="w-3 h-3 md:w-4 md:h-4"></i> Admin Master
                                     </span>
                                 </div>
                             {% endif %}
@@ -124,102 +126,102 @@
 
             <!-- ABA: COBRANÇAS -->
             <div id="div-cobrancas" class="hidden">
-                <div class="bg-indigo-50 dark:bg-indigo-900/10 border border-indigo-200 dark:border-indigo-800/30 p-6 rounded-xl">
-                    <h3 class="text-sm font-bold text-indigo-600 dark:text-indigo-500 uppercase tracking-wider mb-4 flex items-center gap-2">
-                        <i data-lucide="circle-dollar-sign" class="w-5 h-5"></i> Gestão de Cobranças 
-                        <span id="cobranca-nome-usuario" class="text-gray-800 dark:text-gray-200 ml-1 font-black bg-indigo-100 dark:bg-indigo-900/50 px-2 py-0.5 rounded text-xs">Selecione um usuário</span>
+                <div class="bg-indigo-50 dark:bg-indigo-900/10 border border-indigo-200 dark:border-indigo-800/30 p-4 md:p-6 rounded-xl md:rounded-2xl">
+                    <h3 class="text-xs md:text-sm font-bold text-indigo-600 dark:text-indigo-500 uppercase tracking-wider mb-3 md:mb-4 flex items-center gap-1.5 md:gap-2">
+                        <i data-lucide="circle-dollar-sign" class="w-4 h-4 md:w-5 md:h-5"></i> Gestão de Cobranças 
+                        <span id="cobranca-nome-usuario" class="text-gray-800 dark:text-gray-200 ml-1 font-black bg-indigo-100 dark:bg-indigo-900/50 px-1.5 md:px-2 py-0.5 rounded text-[9px] md:text-xs">Selecione</span>
                     </h3>
                     
-                    <form action="/atualizar_cobranca" method="POST" class="space-y-4">
+                    <form action="/atualizar_cobranca" method="POST" class="space-y-3 md:space-y-4">
                         <input type="hidden" name="id_usuario_cobranca" id="cobranca-id">
 
-                        <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                        <div class="grid grid-cols-1 md:grid-cols-3 gap-3 md:gap-4">
                             <div>
-                                <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Status de Pagamento</label>
-                                <select name="status_pagamento" id="cobranca-status" required class="w-full px-4 py-3 bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-xl text-gray-800 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-indigo-500 transition-all cursor-pointer">
+                                <label class="block text-[10px] md:text-xs font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wide mb-1">Status de Pagamento</label>
+                                <select name="status_pagamento" id="cobranca-status" required class="w-full px-3 py-2 md:px-4 md:py-2.5 bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-lg md:rounded-xl text-xs md:text-sm text-gray-800 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-indigo-500 transition-all cursor-pointer">
                                     <option value="Em Dia">Em Dia / Pago</option>
                                     <option value="Pendente" selected>Pendente</option>
                                     <option value="Atrasado">Atrasado</option>
                                 </select>
                             </div>
                             <div>
-                                <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Data de Vencimento</label>
+                                <label class="block text-[10px] md:text-xs font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wide mb-1">Data de Vencimento</label>
                                 <input type="date" name="data_vencimento" id="cobranca-vencimento" 
-                                       class="w-full px-4 py-3 bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-xl text-gray-800 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-indigo-500 transition-all">
+                                       class="w-full px-3 py-2 md:px-4 md:py-2.5 bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-lg md:rounded-xl text-xs md:text-sm text-gray-800 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-indigo-500 transition-all">
                             </div>
                             <div>
-                                <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1 flex items-center gap-1">
-                                    <i data-lucide="receipt" class="w-4 h-4"></i> Valor da Fatura (R$)
+                                <label class="block text-[10px] md:text-xs font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wide mb-1 flex items-center gap-1">
+                                    <i data-lucide="receipt" class="w-3.5 h-3.5 md:w-4 md:h-4"></i> Valor da Fatura (R$)
                                 </label>
                                 <input type="text" name="valor_fatura" id="cobranca-valor" placeholder="0,00" required
-                                       class="w-full px-4 py-3 bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-xl text-gray-800 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-indigo-500 transition-all">
+                                       class="w-full px-3 py-2 md:px-4 md:py-2.5 bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-lg md:rounded-xl text-xs md:text-sm font-bold text-gray-800 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-indigo-500 transition-all">
                             </div>
                         </div>
 
-                        <div class="flex gap-3 mt-6">
-                            <button type="submit" name="salvar_cobranca" id="btn-salvar-cobranca" disabled class="flex-1 bg-indigo-600 text-white font-bold py-3.5 px-4 rounded-xl hover:bg-indigo-700 transition duration-200 shadow-md flex items-center justify-center gap-2 active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed">
-                                <i data-lucide="check-circle" class="w-5 h-5"></i> Atualizar Financeiro
+                        <div class="flex gap-2.5 md:gap-3 mt-4 md:mt-6">
+                            <button type="submit" name="salvar_cobranca" id="btn-salvar-cobranca" disabled class="flex-1 bg-indigo-600 text-white font-bold py-2.5 md:py-3 px-3 md:px-4 rounded-lg md:rounded-xl text-xs md:text-sm hover:bg-indigo-700 transition duration-200 shadow-sm flex items-center justify-center gap-1.5 md:gap-2 active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed">
+                                <i data-lucide="check-circle" class="w-4 h-4 md:w-5 md:h-5"></i> Atualizar
                             </button>
-                            <button type="button" onclick="showTab('usuarios')" class="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 text-gray-700 dark:text-gray-300 font-bold py-3.5 px-4 rounded-xl hover:bg-gray-50 dark:hover:bg-gray-700 transition duration-200 flex items-center justify-center gap-2 active:scale-95">
-                                <i data-lucide="x" class="w-5 h-5"></i> Cancelar
+                            <button type="button" onclick="showTab('usuarios')" class="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 text-gray-700 dark:text-gray-300 font-bold py-2.5 md:py-3 px-3 md:px-4 rounded-lg md:rounded-xl text-xs md:text-sm hover:bg-gray-50 dark:hover:bg-gray-700 transition duration-200 flex items-center justify-center gap-1.5 md:gap-2 active:scale-95">
+                                <i data-lucide="x" class="w-4 h-4 md:w-5 md:h-5"></i> Cancelar
                             </button>
                         </div>
                     </form>
                     
-                    <div class="mt-6 pt-4 border-t border-indigo-100 dark:border-indigo-800/30 text-xs text-gray-500 dark:text-gray-400">
-                        <p><i data-lucide="info" class="w-3 h-3 inline-block mr-1"></i> Para habilitar o salvamento, selecione um usuário clicando no botão financeiro ($) na aba "Usuários".</p>
+                    <div class="mt-4 md:mt-6 pt-3 md:pt-4 border-t border-indigo-100 dark:border-indigo-800/30 text-[9px] md:text-xs text-gray-500 dark:text-gray-400">
+                        <p><i data-lucide="info" class="w-2.5 h-2.5 md:w-3 md:h-3 inline-block mr-0.5 md:mr-1"></i> Para habilitar, selecione um usuário pelo ícone ($) na aba "Usuários".</p>
                     </div>
                 </div>
             </div>
 
             <!-- ABA: SISTEMA (Layout Dinâmico) -->
             <div id="div-sistema" class="hidden">
-                <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
-                    <div class="p-5 bg-gray-50 dark:bg-gray-900 rounded-2xl border border-gray-100 dark:border-gray-700">
-                        <div class="flex items-center gap-2 mb-2"><i data-lucide="database" class="text-blue-500 w-5 h-5"></i> <span class="font-bold text-gray-800 dark:text-gray-200">Banco de Dados</span></div>
-                        <h3 class="text-2xl font-black text-gray-900 dark:text-white">{{ sys_info.db_size }} MB</h3>
-                        <p class="text-[10px] text-gray-400">SQLite 3 (financas.db)</p>
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-3 md:gap-4 mb-4 md:mb-6">
+                    <div class="p-4 md:p-5 bg-gray-50 dark:bg-gray-900 rounded-xl md:rounded-2xl border border-gray-100 dark:border-gray-700">
+                        <div class="flex items-center gap-1.5 md:gap-2 mb-1.5 md:mb-2"><i data-lucide="database" class="text-blue-500 w-4 h-4 md:w-5 md:h-5"></i> <span class="font-bold text-xs md:text-sm text-gray-800 dark:text-gray-200">Banco de Dados</span></div>
+                        <h3 class="text-xl md:text-2xl font-black text-gray-900 dark:text-white">{{ sys_info.db_size }} MB</h3>
+                        <p class="text-[9px] md:text-[10px] text-gray-400 mt-0.5">SQLite 3 (financas.db)</p>
                     </div>
-                    <div class="p-5 bg-gray-50 dark:bg-gray-900 rounded-2xl border border-gray-100 dark:border-gray-700">
-                        <div class="flex items-center gap-2 mb-2"><i data-lucide="folder" class="text-purple-500 w-5 h-5"></i> <span class="font-bold text-gray-800 dark:text-gray-200">Uploads</span></div>
-                        <h3 class="text-2xl font-black text-gray-900 dark:text-white">{{ sys_info.uploads_size }} MB</h3>
-                        <p class="text-[10px] text-gray-400">Arquivos em /static/uploads/</p>
+                    <div class="p-4 md:p-5 bg-gray-50 dark:bg-gray-900 rounded-xl md:rounded-2xl border border-gray-100 dark:border-gray-700">
+                        <div class="flex items-center gap-1.5 md:gap-2 mb-1.5 md:mb-2"><i data-lucide="folder" class="text-purple-500 w-4 h-4 md:w-5 md:h-5"></i> <span class="font-bold text-xs md:text-sm text-gray-800 dark:text-gray-200">Uploads</span></div>
+                        <h3 class="text-xl md:text-2xl font-black text-gray-900 dark:text-white">{{ sys_info.uploads_size }} MB</h3>
+                        <p class="text-[9px] md:text-[10px] text-gray-400 mt-0.5">Arquivos em /static/uploads/</p>
                     </div>
-                    <div class="p-5 bg-gray-50 dark:bg-gray-900 rounded-2xl border border-gray-100 dark:border-gray-700">
-                        <div class="flex items-center gap-2 mb-2"><i data-lucide="hard-drive" class="text-red-500 w-5 h-5"></i> <span class="font-bold text-gray-800 dark:text-gray-200">Disco Web</span></div>
-                        <h3 class="text-2xl font-black text-gray-900 dark:text-white">{{ sys_info.disk_percent }}% <span class="text-sm font-medium text-gray-400">usado</span></h3>
-                        <div class="w-full bg-gray-200 dark:bg-gray-700 h-1.5 rounded-full mt-2">
+                    <div class="p-4 md:p-5 bg-gray-50 dark:bg-gray-900 rounded-xl md:rounded-2xl border border-gray-100 dark:border-gray-700">
+                        <div class="flex items-center gap-1.5 md:gap-2 mb-1.5 md:mb-2"><i data-lucide="hard-drive" class="text-red-500 w-4 h-4 md:w-5 md:h-5"></i> <span class="font-bold text-xs md:text-sm text-gray-800 dark:text-gray-200">Disco Web</span></div>
+                        <h3 class="text-xl md:text-2xl font-black text-gray-900 dark:text-white">{{ sys_info.disk_percent }}% <span class="text-[10px] md:text-sm font-medium text-gray-400">usado</span></h3>
+                        <div class="w-full bg-gray-200 dark:bg-gray-700 h-1.5 rounded-full mt-1.5 md:mt-2">
                             <div class="bg-red-500 h-1.5 rounded-full" style="width: {{ sys_info.disk_percent }}%"></div>
                         </div>
                     </div>
                 </div>
                 
-                <div class="p-6 bg-white dark:bg-gray-800 border border-gray-100 dark:border-gray-700 rounded-2xl shadow-sm">
-                    <h3 class="font-bold mb-4 flex items-center gap-2 text-gray-800 dark:text-gray-200"><i data-lucide="server" class="w-4 h-4"></i> Informações do Servidor</h3>
-                    <div class="grid grid-cols-2 md:grid-cols-3 gap-4">
-                        <div class="p-3 bg-gray-50 dark:bg-gray-900/50 border border-gray-100 dark:border-gray-700/50 rounded-lg">
-                            <p class="text-[10px] uppercase font-bold text-gray-400 tracking-wide">Linguagem</p>
-                            <p class="font-black text-gray-800 dark:text-gray-200 text-sm">Python {{ sys_info.python_version }}</p>
+                <div class="p-4 md:p-6 bg-white dark:bg-gray-800 border border-gray-100 dark:border-gray-700 rounded-xl md:rounded-2xl shadow-sm">
+                    <h3 class="font-bold mb-3 md:mb-4 flex items-center gap-1.5 md:gap-2 text-xs md:text-sm text-gray-800 dark:text-gray-200"><i data-lucide="server" class="w-3.5 h-3.5 md:w-4 md:h-4"></i> Informações do Servidor</h3>
+                    <div class="grid grid-cols-2 md:grid-cols-3 gap-2.5 md:gap-4">
+                        <div class="p-2 md:p-3 bg-gray-50 dark:bg-gray-900/50 border border-gray-100 dark:border-gray-700/50 rounded-lg">
+                            <p class="text-[8px] md:text-[10px] uppercase font-bold text-gray-400 tracking-wide">Linguagem</p>
+                            <p class="font-black text-gray-800 dark:text-gray-200 text-xs md:text-sm">Python {{ sys_info.python_version }}</p>
                         </div>
-                        <div class="p-3 bg-gray-50 dark:bg-gray-900/50 border border-gray-100 dark:border-gray-700/50 rounded-lg">
-                            <p class="text-[10px] uppercase font-bold text-gray-400 tracking-wide">Banco de Dados</p>
-                            <p class="font-black text-gray-800 dark:text-gray-200 text-sm">SQLite 3</p>
+                        <div class="p-2 md:p-3 bg-gray-50 dark:bg-gray-900/50 border border-gray-100 dark:border-gray-700/50 rounded-lg">
+                            <p class="text-[8px] md:text-[10px] uppercase font-bold text-gray-400 tracking-wide">Banco de Dados</p>
+                            <p class="font-black text-gray-800 dark:text-gray-200 text-xs md:text-sm">SQLite 3</p>
                         </div>
-                        <div class="p-3 bg-gray-50 dark:bg-gray-900/50 border border-gray-100 dark:border-gray-700/50 rounded-lg">
-                            <p class="text-[10px] uppercase font-bold text-gray-400 tracking-wide">Versão Instalada</p>
-                            <p class="font-black text-gray-800 dark:text-gray-200 text-sm">{{ sys_info.app_version }}</p>
+                        <div class="p-2 md:p-3 bg-gray-50 dark:bg-gray-900/50 border border-gray-100 dark:border-gray-700/50 rounded-lg">
+                            <p class="text-[8px] md:text-[10px] uppercase font-bold text-gray-400 tracking-wide">Versão Instalada</p>
+                            <p class="font-black text-gray-800 dark:text-gray-200 text-xs md:text-sm">{{ sys_info.app_version }}</p>
                         </div>
-                        <div class="p-3 bg-gray-50 dark:bg-gray-900/50 border border-gray-100 dark:border-gray-700/50 rounded-lg">
-                            <p class="text-[10px] uppercase font-bold text-gray-400 tracking-wide">Upload Máx.</p>
-                            <p class="font-black text-gray-800 dark:text-gray-200 text-sm">16 MB</p>
+                        <div class="p-2 md:p-3 bg-gray-50 dark:bg-gray-900/50 border border-gray-100 dark:border-gray-700/50 rounded-lg">
+                            <p class="text-[8px] md:text-[10px] uppercase font-bold text-gray-400 tracking-wide">Upload Máx.</p>
+                            <p class="font-black text-gray-800 dark:text-gray-200 text-xs md:text-sm">16 MB</p>
                         </div>
-                        <div class="p-3 bg-gray-50 dark:bg-gray-900/50 border border-gray-100 dark:border-gray-700/50 rounded-lg">
-                            <p class="text-[10px] uppercase font-bold text-gray-400 tracking-wide">Framework Base</p>
-                            <p class="font-black text-gray-800 dark:text-gray-200 text-sm">Flask {{ sys_info.flask_version }}</p>
+                        <div class="p-2 md:p-3 bg-gray-50 dark:bg-gray-900/50 border border-gray-100 dark:border-gray-700/50 rounded-lg">
+                            <p class="text-[8px] md:text-[10px] uppercase font-bold text-gray-400 tracking-wide">Framework Base</p>
+                            <p class="font-black text-gray-800 dark:text-gray-200 text-xs md:text-sm">Flask {{ sys_info.flask_version }}</p>
                         </div>
-                        <div class="p-3 bg-gray-50 dark:bg-gray-900/50 border border-gray-100 dark:border-gray-700/50 rounded-lg">
-                            <p class="text-[10px] uppercase font-bold text-gray-400 tracking-wide">Exec. Máxima</p>
-                            <p class="font-black text-gray-800 dark:text-gray-200 text-sm">300s</p>
+                        <div class="p-2 md:p-3 bg-gray-50 dark:bg-gray-900/50 border border-gray-100 dark:border-gray-700/50 rounded-lg">
+                            <p class="text-[8px] md:text-[10px] uppercase font-bold text-gray-400 tracking-wide">Exec. Máxima</p>
+                            <p class="font-black text-gray-800 dark:text-gray-200 text-xs md:text-sm">300s</p>
                         </div>
                     </div>
                 </div>
@@ -227,29 +229,29 @@
 
             <!-- SEÇÃO DE LOGS -->
             <div id="div-logs" class="hidden">
-                <div class="flex justify-between items-center mb-4">
-                    <h3 class="text-sm font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wider">Erros do Sistema</h3>
-                    <button onclick="window.location.reload()" class="text-xs text-blue-600 font-bold">Atualizar Logs</button>
+                <div class="flex justify-between items-center mb-3 md:mb-4">
+                    <h3 class="text-[10px] md:text-sm font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wider">Erros do Sistema</h3>
+                    <button onclick="window.location.reload()" class="text-[10px] md:text-xs text-blue-600 font-bold hover:underline">Atualizar Logs</button>
                 </div>
                 
-                <div class="overflow-hidden rounded-xl border border-gray-200 dark:border-gray-700">
-                    <table class="w-full text-left text-sm">
+                <div class="overflow-x-auto rounded-lg md:rounded-xl border border-gray-200 dark:border-gray-700 scrollbar-hide">
+                    <table class="w-full text-left text-xs md:text-sm">
                         <tbody class="divide-y divide-gray-100 dark:divide-gray-700">
                             {% for log in logs %}
                             <tr class="hover:bg-gray-50 dark:hover:bg-gray-900">
-                                <td class="px-4 py-3">
-                                    <div class="text-red-500 font-mono text-xs mb-2 truncate" title="{{ log.erro_raw }}">{{ log.erro_raw }}</div>
+                                <td class="px-3 py-2 md:px-4 md:py-3">
+                                    <div class="text-red-500 font-mono text-[9px] md:text-xs mb-1 md:mb-2 truncate max-w-[280px] md:max-w-[500px]" title="{{ log.erro_raw }}">{{ log.erro_raw }}</div>
                                     
                                     {% if log.diagnostico %}
-                                    <div class="bg-purple-50 dark:bg-purple-900/20 p-3 rounded-lg border border-purple-100 dark:border-purple-800">
-                                        <span class="text-[10px] font-bold text-purple-600 uppercase flex items-center gap-1">
-                                            <i data-lucide="brain-circuit" class="w-3 h-3"></i> Diagnóstico IA
+                                    <div class="bg-purple-50 dark:bg-purple-900/20 p-2 md:p-3 rounded-md md:rounded-lg border border-purple-100 dark:border-purple-800">
+                                        <span class="text-[9px] md:text-[10px] font-bold text-purple-600 uppercase flex items-center gap-1">
+                                            <i data-lucide="brain-circuit" class="w-2.5 h-2.5 md:w-3 md:h-3"></i> Diagnóstico IA
                                         </span>
-                                        <p class="text-xs text-purple-900 dark:text-purple-200 mt-1">{{ log.diagnostico }}</p>
+                                        <p class="text-[10px] md:text-xs text-purple-900 dark:text-purple-200 mt-0.5 md:mt-1 leading-snug">{{ log.diagnostico }}</p>
                                     </div>
                                     {% else %}
                                     <form action="/analisar_erro/{{ log.id }}" method="POST">
-                                        <button type="submit" class="text-[10px] bg-purple-600 text-white px-2 py-1 rounded hover:bg-purple-700 font-bold">
+                                        <button type="submit" class="text-[9px] md:text-[10px] bg-purple-600 text-white px-2 py-1 md:px-3 md:py-1.5 rounded hover:bg-purple-700 font-bold shadow-sm">
                                             Analisar com IA
                                         </button>
                                     </form>
@@ -257,7 +259,7 @@
                                 </td>
                             </tr>
                             {% else %}
-                            <tr><td class="px-4 py-8 text-center text-gray-400">Nenhum log registrado.</td></tr>
+                            <tr><td class="px-4 py-8 text-center text-gray-400 text-xs md:text-sm">Nenhum log registrado.</td></tr>
                             {% endfor %}
                         </tbody>
                     </table>
@@ -265,28 +267,25 @@
             </div>
 
         {% else %}
-            <!-- TELA DE ACESSO NEGADO INJETADA DIRETAMENTE NO ELSE -->
-            <div class="flex flex-col items-center justify-center py-12 px-4">
-                <div class="w-full max-w-md bg-white dark:bg-gray-800 p-8 rounded-3xl shadow-xl border border-gray-100 dark:border-gray-700 text-center relative overflow-hidden">
-                    <!-- Fundo decorativo vermelho -->
-                    <div class="absolute top-0 right-0 w-32 h-32 bg-red-500/5 rounded-bl-full -z-10"></div>
-                    <div class="absolute bottom-0 left-0 w-24 h-24 bg-red-500/5 rounded-tr-full -z-10"></div>
+            <!-- TELA DE ACESSO NEGADO -->
+            <div class="flex flex-col items-center justify-center py-8 md:py-12 px-2 md:px-4">
+                <div class="w-full max-w-md bg-white dark:bg-gray-800 p-6 md:p-8 rounded-2xl md:rounded-3xl shadow-xl border border-gray-100 dark:border-gray-700 text-center relative overflow-hidden">
+                    <div class="absolute top-0 right-0 w-24 h-24 md:w-32 md:h-32 bg-red-500/5 rounded-bl-full -z-10"></div>
+                    <div class="absolute bottom-0 left-0 w-16 h-16 md:w-24 md:h-24 bg-red-500/5 rounded-tr-full -z-10"></div>
 
-                    <!-- Ícone de Cadeado/Alerta -->
-                    <div class="inline-flex items-center justify-center w-24 h-24 rounded-full bg-red-50 dark:bg-red-900/30 mb-6 shadow-inner border-4 border-white dark:border-gray-800">
-                        <i data-lucide="shield-alert" class="w-12 h-12 text-red-500 dark:text-red-400 animate-pulse"></i>
+                    <div class="inline-flex items-center justify-center w-16 h-16 md:w-24 md:h-24 rounded-full bg-red-50 dark:bg-red-900/30 mb-4 md:mb-6 shadow-inner border-4 border-white dark:border-gray-800">
+                        <i data-lucide="shield-alert" class="w-8 h-8 md:w-12 md:h-12 text-red-500 dark:text-red-400 animate-pulse"></i>
                     </div>
 
-                    <h1 class="text-2xl font-black text-gray-800 dark:text-gray-100 mb-2">Acesso Restrito</h1>
+                    <h1 class="text-xl md:text-2xl font-black text-gray-800 dark:text-gray-100 mb-2">Acesso Restrito</h1>
                     
-                    <p class="text-sm text-gray-500 dark:text-gray-400 mb-8 leading-relaxed">
+                    <p class="text-xs md:text-sm text-gray-500 dark:text-gray-400 mb-6 md:mb-8 leading-relaxed">
                         Esta área é exclusiva para <strong>Administradores</strong> do sistema. 
                         Você não tem as permissões necessárias para visualizar ou alterar estas configurações.
                     </p>
 
-                    <!-- Botão Voltar -->
-                    <a href="/" class="w-full bg-gradient-to-r from-gray-800 to-gray-900 hover:from-black hover:to-black dark:from-gray-700 dark:to-gray-600 dark:hover:from-gray-600 dark:hover:to-gray-500 text-white font-bold py-3.5 rounded-2xl transition-all shadow-lg flex justify-center items-center gap-2">
-                        <i data-lucide="arrow-left" class="w-4 h-4"></i> Voltar ao Início
+                    <a href="/" class="w-full bg-gradient-to-r from-gray-800 to-gray-900 hover:from-black hover:to-black dark:from-gray-700 dark:to-gray-600 dark:hover:from-gray-600 dark:hover:to-gray-500 text-white font-bold py-2.5 md:py-3.5 rounded-xl md:rounded-2xl transition-all shadow-lg flex justify-center items-center gap-2 text-xs md:text-sm">
+                        <i data-lucide="arrow-left" class="w-3.5 h-3.5 md:w-4 md:h-4"></i> Voltar ao Início
                     </a>
                 </div>
             </div>
@@ -306,7 +305,7 @@
             allBtns.forEach(b => {
                 const btn = document.getElementById(b);
                 if (btn) {
-                    btn.className = "pb-2 border-b-2 border-transparent font-bold text-sm text-gray-500 hover:border-gray-300 transition-all whitespace-nowrap";
+                    btn.className = "pb-2 border-b-2 border-transparent font-bold text-xs md:text-sm text-gray-500 hover:border-gray-300 transition-all whitespace-nowrap";
                 }
             });
             
@@ -316,9 +315,9 @@
             const targetBtn = document.getElementById('btn-' + tab);
             if (targetBtn) {
                 if (tab === 'cobrancas') {
-                    targetBtn.className = "pb-2 border-b-2 border-indigo-500 font-bold text-sm text-indigo-600 dark:text-indigo-400 transition-all whitespace-nowrap";
+                    targetBtn.className = "pb-2 border-b-2 border-indigo-500 font-bold text-xs md:text-sm text-indigo-600 dark:text-indigo-400 transition-all whitespace-nowrap";
                 } else {
-                    targetBtn.className = "pb-2 border-b-2 border-blue-500 font-bold text-sm text-blue-600 dark:text-blue-400 transition-all whitespace-nowrap";
+                    targetBtn.className = "pb-2 border-b-2 border-blue-500 font-bold text-xs md:text-sm text-blue-600 dark:text-blue-400 transition-all whitespace-nowrap";
                 }
             }
         }
@@ -373,7 +372,7 @@
             });
         }
 
-        // Função de Edição adaptada para Contratos (B2B - Valor Total Variável)
+        // Função de Edição adaptada para Contratos com responsividade mobile
         function abrirEdicaoUsuario(idUsuario, nomeAtual, licencaAtual, valorAtual, modulosAtual, validadeAtual) {
             const mods = (modulosAtual && modulosAtual !== 'None') ? modulosAtual.split(',').map(m => m.trim()) : ['Todos'];
             const chk = (m) => (mods.includes('Todos') || mods.includes(m)) ? 'checked' : '';
@@ -394,16 +393,16 @@
             }
 
             const htmlFormulario = `
-                <div class="text-left space-y-4 mt-2">
+                <div class="text-left space-y-3 md:space-y-4 mt-1 md:mt-2">
                     <!-- Linha 1: Nome e Licença -->
-                    <div class="grid grid-cols-2 gap-4">
+                    <div class="grid grid-cols-2 gap-3 md:gap-4">
                         <div>
-                            <label class="block text-xs font-semibold text-gray-700 dark:text-gray-300 mb-1">Nome de Usuário</label>
-                            <input id="swal-nome" class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-gray-50 dark:bg-gray-700 text-gray-800 dark:text-gray-100 outline-none text-sm" value="${nomeAtual}">
+                            <label class="block text-[10px] md:text-xs font-semibold text-gray-700 dark:text-gray-300 mb-1">Nome de Usuário</label>
+                            <input id="swal-nome" class="w-full px-2 py-1.5 md:px-3 md:py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-gray-50 dark:bg-gray-700 text-gray-800 dark:text-gray-100 outline-none text-xs md:text-sm" value="${nomeAtual}">
                         </div>
                         <div>
-                            <label class="block text-xs font-semibold text-gray-700 dark:text-gray-300 mb-1">Tipo de Licença</label>
-                            <select id="swal-licenca" class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-gray-50 dark:bg-gray-700 text-gray-800 dark:text-gray-100 outline-none cursor-pointer text-sm">
+                            <label class="block text-[10px] md:text-xs font-semibold text-gray-700 dark:text-gray-300 mb-1">Tipo de Licença</label>
+                            <select id="swal-licenca" class="w-full px-2 py-1.5 md:px-3 md:py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-gray-50 dark:bg-gray-700 text-gray-800 dark:text-gray-100 outline-none cursor-pointer text-xs md:text-sm">
                                 <option value="Básica" ${licencaAtual === 'Básica' ? 'selected' : ''}>Básica (Free)</option>
                                 <option value="Premium" ${licencaAtual === 'Premium' ? 'selected' : ''}>Premium</option>
                             </select>
@@ -411,38 +410,38 @@
                     </div>
 
                     <!-- Linha 2: Calculadora Dinâmica (Total / Dias) -->
-                    <div class="bg-indigo-50 dark:bg-indigo-900/20 p-3 rounded-xl border border-indigo-100 dark:border-indigo-800/50">
-                        <label class="block text-xs font-black text-indigo-700 dark:text-indigo-400 mb-2 uppercase tracking-wide flex items-center gap-1">
-                            <i data-lucide="calculator" class="w-3 h-3"></i> Calculadora de Contrato
+                    <div class="bg-indigo-50 dark:bg-indigo-900/20 p-2.5 md:p-3 rounded-lg md:rounded-xl border border-indigo-100 dark:border-indigo-800/50">
+                        <label class="block text-[9px] md:text-[10px] font-black text-indigo-700 dark:text-indigo-400 mb-1.5 md:mb-2 uppercase tracking-wide flex items-center gap-1">
+                            <i data-lucide="calculator" class="w-2.5 h-2.5 md:w-3 md:h-3"></i> Calculadora
                         </label>
-                        <div class="grid grid-cols-3 gap-2">
+                        <div class="grid grid-cols-3 gap-1.5 md:gap-2">
                             <div>
-                                <label class="block text-[10px] text-gray-600 dark:text-gray-400 mb-1">Valor Total (R$)</label>
-                                <input id="swal-valor-total" type="number" step="0.01" min="0" oninput="calcularContrato()" class="w-full px-2 py-1.5 border border-indigo-200 dark:border-indigo-700 rounded-lg bg-white dark:bg-gray-800 text-sm outline-none focus:ring-1 focus:ring-indigo-500 font-bold text-indigo-700 dark:text-indigo-300" value="${(valorAtual !== 'None' && valorAtual) ? valorAtual : '0.00'}">
+                                <label class="block text-[8px] md:text-[10px] text-gray-600 dark:text-gray-400 mb-0.5 md:mb-1">Valor (R$)</label>
+                                <input id="swal-valor-total" type="number" step="0.01" min="0" oninput="calcularContrato()" class="w-full px-1.5 py-1 md:px-2 md:py-1.5 border border-indigo-200 dark:border-indigo-700 rounded bg-white dark:bg-gray-800 text-[10px] md:text-xs outline-none focus:ring-1 focus:ring-indigo-500 font-bold text-indigo-700 dark:text-indigo-300" value="${(valorAtual !== 'None' && valorAtual) ? valorAtual : '0.00'}">
                             </div>
                             <div>
-                                <label class="block text-[10px] text-gray-600 dark:text-gray-400 mb-1">Dias Contratados</label>
-                                <input id="swal-dias" type="number" min="0" oninput="calcularContrato()" class="w-full px-2 py-1.5 border border-indigo-200 dark:border-indigo-700 rounded-lg bg-white dark:bg-gray-800 text-sm outline-none focus:ring-1 focus:ring-indigo-500" value="30">
+                                <label class="block text-[8px] md:text-[10px] text-gray-600 dark:text-gray-400 mb-0.5 md:mb-1">Dias</label>
+                                <input id="swal-dias" type="number" min="0" oninput="calcularContrato()" class="w-full px-1.5 py-1 md:px-2 md:py-1.5 border border-indigo-200 dark:border-indigo-700 rounded bg-white dark:bg-gray-800 text-[10px] md:text-xs outline-none focus:ring-1 focus:ring-indigo-500" value="30">
                             </div>
                             <div>
-                                <label class="block text-[10px] text-gray-600 dark:text-gray-400 mb-1">Custo/Dia (R$)</label>
-                                <input id="swal-valor-dia" type="text" readonly class="w-full px-2 py-1.5 border border-indigo-200 dark:border-indigo-700 rounded-lg bg-indigo-100 dark:bg-indigo-900 text-sm outline-none cursor-not-allowed">
+                                <label class="block text-[8px] md:text-[10px] text-gray-600 dark:text-gray-400 mb-0.5 md:mb-1">Custo/Dia (R$)</label>
+                                <input id="swal-valor-dia" type="text" readonly class="w-full px-1.5 py-1 md:px-2 md:py-1.5 border border-indigo-200 dark:border-indigo-700 rounded bg-indigo-100 dark:bg-indigo-900 text-[10px] md:text-xs outline-none cursor-not-allowed">
                             </div>
                         </div>
-                        <div class="mt-2 pt-2 border-t border-indigo-200 dark:border-indigo-800 flex justify-between items-center">
-                            <span class="text-xs text-gray-600 dark:text-gray-400 font-medium">Novo Vencimento:</span>
-                            <span id="txt-novo-vencimento" class="text-sm font-black text-indigo-700 dark:text-indigo-400">${dataBaseBR}</span>
+                        <div class="mt-2 pt-1.5 md:pt-2 border-t border-indigo-200 dark:border-indigo-800 flex justify-between items-center">
+                            <span class="text-[10px] md:text-xs text-gray-600 dark:text-gray-400 font-medium">Novo Vencimento:</span>
+                            <span id="txt-novo-vencimento" class="text-xs md:text-sm font-black text-indigo-700 dark:text-indigo-400">${dataBaseBR}</span>
                         </div>
                     </div>
 
                     <!-- Linha 3: Módulos -->
                     <div>
-                        <label class="block text-xs font-semibold text-gray-700 dark:text-gray-300 mb-2">Módulos Liberados</label>
-                        <div class="grid grid-cols-2 gap-2 max-h-32 overflow-y-auto p-3 bg-gray-50 dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700">
+                        <label class="block text-[10px] md:text-xs font-semibold text-gray-700 dark:text-gray-300 mb-1 md:mb-2">Módulos Liberados</label>
+                        <div class="grid grid-cols-2 gap-1.5 md:gap-2 max-h-28 md:max-h-32 overflow-y-auto p-2 md:p-3 bg-gray-50 dark:bg-gray-800 rounded-lg md:rounded-xl border border-gray-200 dark:border-gray-700">
                             ${['Dashboard', 'Novo Gasto', 'Ajustar Renda', 'Dívidas', 'Metas', 'Lista de Compras', 'Xerox'].map(m => `
-                                <label class="flex items-center gap-2 cursor-pointer group">
-                                    <input type="checkbox" value="${m}" class="swal-check-modulo w-4 h-4 text-amber-500 rounded border-gray-300 focus:ring-amber-500 cursor-pointer" ${chk(m)}>
-                                    <span class="text-xs text-gray-600 dark:text-gray-300 group-hover:text-amber-600">${m}</span>
+                                <label class="flex items-center gap-1.5 md:gap-2 cursor-pointer group">
+                                    <input type="checkbox" value="${m}" class="swal-check-modulo w-3 h-3 md:w-4 md:h-4 text-amber-500 rounded border-gray-300 focus:ring-amber-500 cursor-pointer" ${chk(m)}>
+                                    <span class="text-[9px] md:text-xs text-gray-600 dark:text-gray-300 group-hover:text-amber-600">${m}</span>
                                 </label>
                             `).join('')}
                         </div>

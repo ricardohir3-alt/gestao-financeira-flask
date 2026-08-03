@@ -18,12 +18,37 @@
         .sidebar-scroll::-webkit-scrollbar { width: 4px; }
         .sidebar-scroll::-webkit-scrollbar-thumb { background-color: #cbd5e1; border-radius: 4px; }
         .dark .sidebar-scroll::-webkit-scrollbar-thumb { background-color: #475569; }
-        
+
         /* Ajuste para não bugar o bottom no iPhone */
         @supports (padding-bottom: env(safe-area-inset-bottom)) {
             .safe-bottom {
                 padding-bottom: env(safe-area-inset-bottom);
             }
+        }
+
+        /* ==================================================== */
+        /* MÁGICA DA TRANSIÇÃO DE TEMA (ESTILO TELEGRAM)        */
+        /* ==================================================== */
+        ::view-transition-old(root),
+        ::view-transition-new(root) {
+            animation: none;
+            mix-blend-mode: normal;
+        }
+
+        /* Durante a transição para o CLARO: O snapshot Antigo (Escuro) fica por cima e encolhe */
+        ::view-transition-old(root) {
+            z-index: 999;
+        }
+        ::view-transition-new(root) {
+            z-index: 1;
+        }
+
+        /* Durante a transição para o ESCURO: O snapshot Novo (Escuro) fica por cima e cresce */
+        .dark::view-transition-old(root) {
+            z-index: 1;
+        }
+        .dark::view-transition-new(root) {
+            z-index: 999;
         }
     </style>
 </head>
@@ -83,7 +108,7 @@
             <div class="flex justify-between items-center mb-4 md:mb-6">
                 <div></div>
                 <div class="flex gap-1 md:gap-2 items-center">
-                    
+
                     <!-- BOTÃO NOVIDADES REMOVIDO DAQUI -->
 
                     <button id="btn-fullscreen" class="flex items-center justify-center w-8 h-8 md:w-9 md:h-9 p-2 bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-200 rounded-full hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors border border-gray-200 dark:border-gray-700 shadow-sm" title="Tela Cheia">
@@ -92,7 +117,7 @@
                     <button id="btn-tema" class="flex items-center justify-center w-8 h-8 md:w-9 md:h-9 p-2 bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-200 rounded-full hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors border border-gray-200 dark:border-gray-700 shadow-sm">
                         <i id="icone-tema" data-lucide="moon" class="w-4 h-4 md:w-4 md:h-4"></i>
                     </button>
-                    
+
                     {% if request.endpoint not in ['login', 'recuperar', 'recuperar_senha'] %}
                         <div class="relative z-[100]">
                             <button onclick="togglePerfil()" id="btn-perfil" class="flex items-center justify-center w-8 h-8 md:w-9 md:h-9 bg-gradient-to-r from-blue-600 to-indigo-600 text-white rounded-full font-bold text-xs shadow-md hover:ring-2 ring-blue-300 transition-all ml-1 cursor-pointer">
@@ -128,17 +153,17 @@
                         // Tenta pegar o "nome" da sessão (se já foi preenchido no perfil)
                         // Se não tiver, usa o nome de "usuario" (login). Se falhar, usa "Visitante".
                         const sessionName = "{{ session.get('nome', session.get('usuario', 'Visitante')) }}".trim();
-                        const nomeUsuario = sessionName.split(' ')[0]; 
-                        
+                        const nomeUsuario = sessionName.split(' ')[0];
+
                         const titulo = document.getElementById('titulo-boas-vindas');
                         const subtitulo = document.getElementById('subtitulo-boas-vindas');
-                        
+
                         // Verifica no navegador se o usuário já acessou o sistema alguma vez neste aparelho
                         if (!localStorage.getItem('ja_acessou_sistema')) {
                             // PRIMEIRO ACESSO
                             titulo.innerHTML = `Seja bem-vindo(a), <span class="capitalize">${nomeUsuario}</span>! 🎉`;
                             subtitulo.innerText = "Que bom ter você por aqui. Vamos organizar suas finanças?";
-                            
+
                             // Marca que ele já acessou para as próximas vezes
                             localStorage.setItem('ja_acessou_sistema', 'sim');
                         } else {
@@ -162,28 +187,28 @@
     </div>
 
     {% if request.endpoint not in ['login', 'recuperar', 'recuperar_senha'] %}
-    
+
     <!-- OVERLAY DO MENU MAIS MOBILE -->
     <div id="mobile-menu-overlay" class="md:hidden fixed inset-0 bg-black/50 z-[98] hidden transition-opacity duration-300 opacity-0 backdrop-blur-sm" onclick="toggleMobileMenu()"></div>
 
     <!-- MENU MAIS DESLIZANTE MOBILE -->
     <div id="mobile-menu-mais" class="md:hidden fixed bottom-[68px] left-0 w-full bg-white dark:bg-gray-900 rounded-t-2xl shadow-[0_-10px_30px_rgba(0,0,0,0.15)] dark:shadow-[0_-10px_30px_rgba(0,0,0,0.4)] z-[99] transform translate-y-full transition-transform duration-300 ease-out p-4 flex flex-col gap-2 border-t border-gray-100 dark:border-gray-800">
         <div class="w-12 h-1.5 bg-gray-300 dark:bg-gray-700 rounded-full mx-auto mb-3"></div>
-        
+
         <a href="/usuarios" class="flex items-center gap-3 p-3 rounded-xl hover:bg-gray-50 dark:hover:bg-gray-800 text-gray-700 dark:text-gray-200 transition-colors group">
             <div class="w-10 h-10 rounded-full bg-blue-100 dark:bg-blue-900/30 flex items-center justify-center text-blue-600 dark:text-blue-400 group-hover:scale-105 transition-transform">
                 <i data-lucide="users" class="w-5 h-5"></i>
             </div>
             <span class="font-medium text-sm">Equipe</span>
         </a>
-        
+
         <a href="/relatorios_avancados" class="flex items-center gap-3 p-3 rounded-xl hover:bg-gray-50 dark:hover:bg-gray-800 text-gray-700 dark:text-gray-200 transition-colors group">
             <div class="w-10 h-10 rounded-full bg-purple-100 dark:bg-purple-900/30 flex items-center justify-center text-purple-600 dark:text-purple-400 group-hover:scale-105 transition-transform">
                 <i data-lucide="bar-chart-2" class="w-5 h-5"></i>
             </div>
             <span class="font-medium text-sm">Relatórios</span>
         </a>
-        
+
         <a href="/atualizacoes" class="flex items-center gap-3 p-3 rounded-xl hover:bg-gray-50 dark:hover:bg-gray-800 text-gray-700 dark:text-gray-200 transition-colors group">
             <div class="w-10 h-10 rounded-full bg-green-100 dark:bg-green-900/30 flex items-center justify-center text-green-600 dark:text-green-400 group-hover:scale-105 transition-transform">
                 <i data-lucide="megaphone" class="w-5 h-5"></i>
@@ -194,12 +219,12 @@
 
     <!-- MENU INFERIOR (BOTTOM NAVIGATION) - APENAS MOBILE -->
     <nav class="md:hidden fixed bottom-0 left-0 w-full bg-white dark:bg-gray-900 border-t border-gray-200 dark:border-gray-800 z-[100] flex justify-around items-end h-[68px] pb-2 px-2 shadow-[0_-4px_10px_rgba(0,0,0,0.03)] dark:shadow-[0_-4px_10px_rgba(0,0,0,0.2)] safe-bottom">
-        
+
         <a href="/" class="flex flex-col items-center justify-center w-full text-gray-500 hover:text-blue-600 dark:text-gray-400 dark:hover:text-blue-400 transition-colors pt-2">
             <i data-lucide="layout-dashboard" class="w-[22px] h-[22px] mb-1 {% if request.endpoint == 'home' %}text-blue-600 dark:text-blue-400{% endif %}"></i>
             <span class="text-[9px] font-medium {% if request.endpoint == 'home' %}text-blue-600 dark:text-blue-400 font-bold{% endif %}">Início</span>
         </a>
-        
+
         <a href="/compras" class="flex flex-col items-center justify-center w-full text-gray-500 hover:text-blue-600 dark:text-gray-400 dark:hover:text-blue-400 transition-colors pt-2">
             <i data-lucide="shopping-cart" class="w-[22px] h-[22px] mb-1"></i>
             <span class="text-[9px] font-medium">Compras</span>
@@ -211,7 +236,7 @@
             </div>
             <span class="text-[10px] font-bold text-blue-600 dark:text-blue-400 mt-1">Lançar</span>
         </a>
-        
+
         <a href="/dividas" class="flex flex-col items-center justify-center w-full text-gray-500 hover:text-purple-600 dark:text-gray-400 dark:hover:text-purple-400 transition-colors pt-2">
             <i data-lucide="compass" class="w-[22px] h-[22px] mb-1"></i>
             <span class="text-[9px] font-medium">Metas</span>
@@ -221,7 +246,7 @@
             <i data-lucide="menu" class="w-[22px] h-[22px] mb-1"></i>
             <span class="text-[9px] font-medium">Mais</span>
         </button>
-        
+
     </nav>
 
     <!-- Ajuste do Whatsapp para não sobrepor o Bottom Nav no Mobile -->
@@ -266,10 +291,58 @@
         if (localStorage.getItem('tema') === 'dark') htmlElement.classList.add('dark');
         updateIcon();
 
-        btnTema.addEventListener('click', () => {
-            htmlElement.classList.toggle('dark');
-            localStorage.setItem('tema', htmlElement.classList.contains('dark') ? 'dark' : 'light');
-            updateIcon();
+        // NOVA FUNÇÃO DE TRANSIÇÃO DE TEMA NATIVA (ESTILO TELEGRAM)
+        btnTema.addEventListener('click', (event) => {
+            const isDark = htmlElement.classList.contains('dark');
+
+            // Função interna que realmente troca a cor
+            const executeToggle = () => {
+                htmlElement.classList.toggle('dark');
+                localStorage.setItem('tema', htmlElement.classList.contains('dark') ? 'dark' : 'light');
+                updateIcon();
+                // Aviso para os gráficos caso estejam presentes
+                window.dispatchEvent(new Event('themeChanged'));
+            };
+
+            // Se o navegador não suportar a View Transitions API, apenas troca direto
+            if (!document.startViewTransition) {
+                executeToggle();
+                return;
+            }
+
+            // Captura as coordenadas do clique (x, y)
+            const x = event?.clientX ?? window.innerWidth / 2;
+            const y = event?.clientY ?? window.innerHeight / 2;
+
+            // Calcula o tamanho máximo do círculo
+            const endRadius = Math.hypot(
+                Math.max(x, innerWidth - x),
+                Math.max(y, innerHeight - y)
+            );
+
+            // Inicia a transição
+            const transition = document.startViewTransition(() => {
+                executeToggle();
+            });
+
+            // Aplica a animação de círculo
+            transition.ready.then(() => {
+                const clipPath = [
+                    `circle(0px at ${x}px ${y}px)`,
+                    `circle(${endRadius}px at ${x}px ${y}px)`
+                ];
+
+                document.documentElement.animate(
+                    {
+                        clipPath: isDark ? [...clipPath].reverse() : clipPath,
+                    },
+                    {
+                        duration: 500,
+                        easing: "ease-out",
+                        pseudoElement: isDark ? "::view-transition-old(root)" : "::view-transition-new(root)",
+                    }
+                );
+            });
         });
 
         // ==========================================
@@ -332,11 +405,11 @@
         function toggleMobileMenu() {
             const menuMais = document.getElementById('mobile-menu-mais');
             const overlayMais = document.getElementById('mobile-menu-overlay');
-            
+
             if (!menuMais || !overlayMais) return;
-            
+
             mobileMenuAberto = !mobileMenuAberto;
-            
+
             if (mobileMenuAberto) {
                 overlayMais.classList.remove('hidden');
                 // Pequeno delay para garantir que o display mude antes da animação de opacidade/transform

@@ -159,27 +159,33 @@
     </div>
     {% endif %}
 
-    <div class="grid grid-cols-1 sm:grid-cols-3 gap-3 md:gap-4 mb-4 md:mb-6">
-        <div class="bg-white dark:bg-gray-800 p-3 md:p-5 rounded-xl md:rounded-2xl shadow-sm border border-gray-100 dark:border-gray-700 relative overflow-hidden group hover:shadow-md transition-all">
+    <!-- ======================================================= -->
+    <!-- ATUALIZAÇÃO UI: CARDS COMPACTOS NO MOBILE               -->
+    <!-- ======================================================= -->
+    <div class="grid grid-cols-2 sm:grid-cols-3 gap-3 md:gap-4 mb-4 md:mb-6">
+        <!-- Entradas ocupa 1 coluna no mobile -->
+        <div class="col-span-1 bg-white dark:bg-gray-800 p-3 md:p-5 rounded-xl md:rounded-2xl shadow-sm border border-gray-100 dark:border-gray-700 relative overflow-hidden group hover:shadow-md transition-all flex flex-col justify-between min-h-[90px] md:min-h-0">
             <div class="flex justify-between items-start mb-1 md:mb-2">
-                <p class="text-[10px] md:text-xs font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wide">Entradas</p>
-                <a href="/renda" class="text-blue-500 hover:text-blue-700 bg-blue-50 dark:bg-blue-900/30 p-1 md:p-1.5 rounded-lg opacity-100 md:opacity-0 group-hover:opacity-100 transition-opacity" title="Editar Renda">
+                <p class="text-[9px] md:text-xs font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wide">Entradas</p>
+                <a href="/renda" class="text-blue-500 hover:text-blue-700 bg-blue-50 dark:bg-blue-900/30 p-1 md:p-1.5 rounded-lg opacity-100 md:opacity-0 group-hover:opacity-100 transition-opacity -mt-1 -mr-1 md:m-0" title="Editar Renda">
                     <i data-lucide="edit-2" class="w-3 h-3 md:w-3.5 md:h-3.5"></i>
                 </a>
             </div>
-            <p class="text-xl md:text-2xl font-black text-gray-800 dark:text-gray-100 valor-sensivel" data-valor="R$ {{ renda_total }}">R$ {{ renda_total }}</p>
+            <p class="text-base md:text-2xl font-black text-gray-800 dark:text-gray-100 valor-sensivel truncate" data-valor="R$ {{ renda_total }}">R$ {{ renda_total }}</p>
             <div class="absolute bottom-0 left-0 w-full h-1 bg-blue-500"></div>
         </div>
 
-        <div class="bg-white dark:bg-gray-800 p-3 md:p-5 rounded-xl md:rounded-2xl shadow-sm border border-gray-100 dark:border-gray-700 relative overflow-hidden hover:shadow-md transition-all">
-            <p class="text-[10px] md:text-xs font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wide mb-1 md:mb-2">Saídas</p>
-            <p class="text-xl md:text-2xl font-black text-red-500 dark:text-red-400 valor-sensivel" data-valor="R$ {{ gastos_totais }}">R$ {{ gastos_totais }}</p>
+        <!-- Saídas ocupa 1 coluna no mobile -->
+        <div class="col-span-1 bg-white dark:bg-gray-800 p-3 md:p-5 rounded-xl md:rounded-2xl shadow-sm border border-gray-100 dark:border-gray-700 relative overflow-hidden hover:shadow-md transition-all flex flex-col justify-between min-h-[90px] md:min-h-0">
+            <p class="text-[9px] md:text-xs font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wide mb-1 md:mb-2">Saídas</p>
+            <p class="text-base md:text-2xl font-black text-red-500 dark:text-red-400 valor-sensivel truncate" data-valor="R$ {{ gastos_totais }}">R$ {{ gastos_totais }}</p>
             <div class="absolute bottom-0 left-0 w-full h-1 bg-red-500"></div>
         </div>
 
-        <div class="bg-white dark:bg-gray-800 p-3 md:p-5 rounded-xl md:rounded-2xl shadow-sm border border-gray-100 dark:border-gray-700 relative overflow-hidden hover:shadow-md transition-all">
+        <!-- Saldo ganha destaque (Ocupa as 2 colunas em baixo no Mobile, e a 3ª coluna no Desktop) -->
+        <div class="col-span-2 sm:col-span-1 bg-white dark:bg-gray-800 p-4 md:p-5 rounded-xl md:rounded-2xl shadow-sm border border-gray-100 dark:border-gray-700 relative overflow-hidden hover:shadow-md transition-all flex flex-col justify-between">
             <p class="text-[10px] md:text-xs font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wide mb-1 md:mb-2">Saldo</p>
-            <p class="text-xl md:text-2xl font-black text-green-500 dark:text-green-400 valor-sensivel" data-valor="R$ {{ valor_disponivel }}">R$ {{ valor_disponivel }}</p>
+            <p class="text-xl md:text-2xl font-black text-green-500 dark:text-green-400 valor-sensivel truncate" data-valor="R$ {{ valor_disponivel }}">R$ {{ valor_disponivel }}</p>
             <div class="absolute bottom-0 left-0 w-full h-1 bg-green-500"></div>
         </div>
     </div>
@@ -400,9 +406,10 @@
         </div>
 
         {% if gastos %}
-            <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 md:gap-4 max-h-[500px] overflow-y-auto p-1 pb-6 sidebar-scroll w-full">
+            <!-- ATUALIZAÇÃO UI: Grid de 2 colunas no celular e fontes compactas para não quebrar a tela -->
+            <div class="grid grid-cols-2 lg:grid-cols-3 gap-2 md:gap-4 max-h-[500px] overflow-y-auto p-1 pb-6 sidebar-scroll w-full">
                 {% for gasto in gastos %}
-                    <!-- Card de Despesa -->
+                    <!-- Card de Despesa Compacto -->
                     <div ondblclick="abrirModalEditarGasto('{{ gasto.id }}', '{{ gasto.descricao }}', '{{ gasto.valor }}', '{{ gasto.data }}', '{{ gasto.categoria }}', '{{ gasto.quinzena }}')"
                          data-id="{{ gasto.id }}"
                          data-status="{{ gasto.status }}"
@@ -410,53 +417,51 @@
                          data-descricao="{{ gasto.descricao }}"
                          data-valor="{{ "%.2f"|format(gasto.valor) }}"
                          title="Duplo clique para editar"
-                         class="item-gasto flex flex-col justify-between bg-white dark:bg-gray-800 p-4 md:p-5 rounded-2xl border border-gray-100 dark:border-gray-700 shadow-sm transition-all hover:shadow-md hover:-translate-y-1 hover:border-blue-300 dark:hover:border-blue-700 group cursor-pointer select-none min-h-[140px]">
+                         class="item-gasto flex flex-col justify-between bg-white dark:bg-gray-800 p-3 md:p-5 rounded-xl md:rounded-2xl border border-gray-100 dark:border-gray-700 shadow-sm transition-all hover:shadow-md hover:-translate-y-1 hover:border-blue-300 dark:hover:border-blue-700 group cursor-pointer select-none min-h-[120px]">
 
                         <!-- Topo: Tags e Data -->
                         <div>
-                            <div class="flex justify-between items-start mb-3 gap-2">
-                                <div class="flex flex-wrap gap-1.5">
-                                    <span class="text-[9px] md:text-[10px] px-1.5 py-0.5 bg-gray-50 dark:bg-gray-900 text-gray-500 dark:text-gray-400 rounded-md border border-gray-100 dark:border-gray-800 font-semibold uppercase tracking-wider whitespace-nowrap">
+                            <div class="flex justify-between items-start mb-2 gap-1">
+                                <div class="flex flex-wrap gap-1">
+                                    <span class="text-[8px] md:text-[10px] px-1 py-0.5 bg-gray-50 dark:bg-gray-900 text-gray-500 dark:text-gray-400 rounded border border-gray-100 dark:border-gray-800 font-semibold uppercase tracking-wider truncate max-w-[60px] md:max-w-none">
                                         {{ gasto.categoria }}
                                     </span>
                                     {% if gasto.quinzena|string == '1' %}
-                                        <span class="text-[9px] md:text-[10px] px-1.5 py-0.5 bg-blue-50 dark:bg-blue-900/20 text-blue-600 dark:text-blue-400 rounded-md border border-blue-100 dark:border-blue-800 font-bold whitespace-nowrap">1ª Q.</span>
+                                        <span class="text-[8px] md:text-[10px] px-1 py-0.5 bg-blue-50 dark:bg-blue-900/20 text-blue-600 dark:text-blue-400 rounded border border-blue-100 dark:border-blue-800 font-bold">1ª Q.</span>
                                     {% elif gasto.quinzena|string == '2' %}
-                                        <span class="text-[9px] md:text-[10px] px-1.5 py-0.5 bg-indigo-50 dark:bg-indigo-900/20 text-indigo-600 dark:text-indigo-400 rounded-md border border-indigo-100 dark:border-indigo-800 font-bold whitespace-nowrap">2ª Q.</span>
-                                    {% else %}
-                                        <span class="text-[9px] md:text-[10px] px-1.5 py-0.5 bg-gray-50 dark:bg-gray-900 text-gray-500 dark:text-gray-400 rounded-md border border-gray-100 dark:border-gray-800 font-bold whitespace-nowrap">Integral</span>
+                                        <span class="text-[8px] md:text-[10px] px-1 py-0.5 bg-indigo-50 dark:bg-indigo-900/20 text-indigo-600 dark:text-indigo-400 rounded border border-indigo-100 dark:border-indigo-800 font-bold">2ª Q.</span>
                                     {% endif %}
                                 </div>
-                                <span class="flex items-center gap-1 text-[10px] text-gray-400 dark:text-gray-500 font-medium whitespace-nowrap shrink-0">
-                                    <i data-lucide="calendar" class="w-3 h-3"></i> {{ gasto.data[-2:] }}/{{ gasto.data[5:7] }}
+                                <span class="flex items-center gap-0.5 text-[8px] md:text-[10px] text-gray-400 dark:text-gray-500 font-medium whitespace-nowrap shrink-0">
+                                    <i data-lucide="calendar" class="w-2.5 h-2.5 md:w-3 md:h-3"></i> {{ gasto.data[-2:] }}/{{ gasto.data[5:7] }}
                                 </span>
                             </div>
 
                             <!-- Meio: Título e Valor -->
-                            <div class="mb-4">
-                                <h4 class="text-sm font-bold text-gray-800 dark:text-gray-100 leading-snug mb-1 line-clamp-2" title="{{ gasto.descricao }}">{{ gasto.descricao }}</h4>
-                                <span class="text-xl md:text-2xl font-black text-red-500 valor-sensivel" data-valor="R$ {{ "%.2f"|format(gasto.valor) }}">R$ {{ "%.2f"|format(gasto.valor) }}</span>
+                            <div class="mb-3">
+                                <h4 class="text-xs md:text-sm font-bold text-gray-800 dark:text-gray-100 leading-snug mb-1 line-clamp-2" title="{{ gasto.descricao }}">{{ gasto.descricao }}</h4>
+                                <span class="text-sm md:text-2xl font-black text-red-500 valor-sensivel" data-valor="R$ {{ "%.2f"|format(gasto.valor) }}">R$ {{ "%.2f"|format(gasto.valor) }}</span>
                             </div>
                         </div>
 
                         <!-- Rodapé: Ações -->
-                        <div class="flex items-center justify-between border-t border-gray-100 dark:border-gray-700/50 pt-3 mt-auto">
+                        <div class="flex items-center justify-between border-t border-gray-100 dark:border-gray-700/50 pt-2 mt-auto">
                             <form action="/atualizar_status/{{ gasto.id }}?mes={{ mes_filtro }}" method="POST" class="m-0" onclick="event.stopPropagation();">
                                 {% if gasto.status == 'PAGO' %}
-                                    <button type="submit" class="px-3 py-1.5 bg-green-100/80 text-green-700 dark:bg-green-900/40 dark:text-green-400 rounded-lg text-[10px] font-bold flex items-center gap-1 hover:bg-green-200 transition-colors shadow-sm active:scale-95">
-                                        <i data-lucide="check-circle" class="w-3.5 h-3.5"></i> Pago
+                                    <button type="submit" class="px-2 py-1 md:px-3 md:py-1.5 bg-green-100/80 text-green-700 dark:bg-green-900/40 dark:text-green-400 rounded-md md:rounded-lg text-[9px] md:text-[10px] font-bold flex items-center gap-1 hover:bg-green-200 transition-colors shadow-sm active:scale-95">
+                                        <i data-lucide="check-circle" class="w-3 h-3 md:w-3.5 md:h-3.5"></i> Pago
                                     </button>
                                 {% else %}
-                                    <button type="submit" class="px-3 py-1.5 bg-yellow-100/80 text-yellow-700 dark:bg-yellow-900/40 dark:text-yellow-400 rounded-lg text-[10px] font-bold flex items-center gap-1 hover:bg-yellow-200 transition-colors shadow-sm active:scale-95">
-                                        <i data-lucide="clock" class="w-3.5 h-3.5"></i> Pendente
+                                    <button type="submit" class="px-2 py-1 md:px-3 md:py-1.5 bg-yellow-100/80 text-yellow-700 dark:bg-yellow-900/40 dark:text-yellow-400 rounded-md md:rounded-lg text-[9px] md:text-[10px] font-bold flex items-center gap-1 hover:bg-yellow-200 transition-colors shadow-sm active:scale-95">
+                                        <i data-lucide="clock" class="w-3 h-3 md:w-3.5 md:h-3.5"></i> Pend.
                                     </button>
                                 {% endif %}
                             </form>
 
                             <form action="{{ url_for('excluir_gasto', id=gasto.id) }}" method="POST" class="m-0 inline-block" onsubmit="confirmarAcao(event, this, 'Excluir Despesa?', 'Tem certeza que deseja apagar este registro? O valor será restaurado no seu saldo.', 'Sim, excluir!')" onclick="event.stopPropagation();">
                                 <input type="hidden" name="mes_filtro" value="{{ mes_filtro }}">
-                                <button type="submit" class="text-gray-400 hover:text-red-500 bg-gray-50 dark:bg-gray-900 p-2 rounded-lg border border-gray-100 dark:border-gray-800 transition-colors active:scale-95" title="Excluir">
-                                    <i data-lucide="trash-2" class="w-4 h-4"></i>
+                                <button type="submit" class="text-gray-400 hover:text-red-500 bg-gray-50 dark:bg-gray-900 p-1.5 md:p-2 rounded-md md:rounded-lg border border-gray-100 dark:border-gray-800 transition-colors active:scale-95" title="Excluir">
+                                    <i data-lucide="trash-2" class="w-3.5 h-3.5 md:w-4 md:h-4"></i>
                                 </button>
                             </form>
                         </div>
@@ -476,8 +481,8 @@
         {% endif %}
     </div>
 
-    <!-- CONTEÚDO: ABA CATEGORIAS -->
-    <div id="conteudo-extrato-categorias" class="w-full hidden space-y-2 md:space-y-3 max-h-[500px] overflow-y-auto pr-2 md:pr-3 pb-4 md:pb-6 sidebar-scroll">
+    <!-- ATUALIZAÇÃO UI: ABA CATEGORIAS EM GRID PARA COMBINAR COM TRANSAÇÕES -->
+    <div id="conteudo-extrato-categorias" class="w-full hidden grid grid-cols-2 md:grid-cols-3 gap-2 md:gap-4 max-h-[500px] overflow-y-auto pr-1 pb-4 md:pb-6 sidebar-scroll">
     </div>
 
     <!-- ============================================================================== -->
@@ -1055,13 +1060,13 @@
                 btnCategorias.className = classInativo;
                 contTransacoes.classList.remove('hidden');
                 contTransacoes.classList.add('block');
-                contCategorias.classList.remove('block');
+                contCategorias.classList.remove('grid');
                 contCategorias.classList.add('hidden');
             } else {
                 btnCategorias.className = classAtivo;
                 btnTransacoes.className = classInativo;
                 contCategorias.classList.remove('hidden');
-                contCategorias.classList.add('block');
+                contCategorias.classList.add('grid');
                 contTransacoes.classList.remove('block');
                 contTransacoes.classList.add('hidden');
                 renderizarListaCategorias();
@@ -1077,7 +1082,7 @@
 
             if (nomes.length === 0) {
                 container.innerHTML = `
-                <div class="text-center py-10 bg-white dark:bg-gray-800 rounded-xl border border-dashed border-gray-200 dark:border-gray-700 w-full">
+                <div class="col-span-2 md:col-span-3 text-center py-10 bg-white dark:bg-gray-800 rounded-xl border border-dashed border-gray-200 dark:border-gray-700 w-full">
                     <i data-lucide="pie-chart" class="w-10 h-10 text-gray-300 dark:text-gray-600 mx-auto mb-2"></i>
                     <p class="text-sm text-gray-500 dark:text-gray-400 font-medium">Nenhuma categoria registrada.</p>
                 </div>`;
@@ -1091,22 +1096,20 @@
                 const valorFormatado = valores[i].toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
 
                 html += `
-                <div class="bg-white dark:bg-gray-800 p-3 md:p-4 rounded-xl md:rounded-2xl border border-gray-100 dark:border-gray-700 shadow-sm flex flex-col gap-2 hover:shadow-md transition-shadow">
-                    <div class="flex justify-between items-center w-full">
-                        <div class="flex items-center gap-2">
-                            <div class="p-1.5 bg-gray-50 dark:bg-gray-900 rounded-lg border border-gray-200 dark:border-gray-700">
-                                <i data-lucide="tag" class="w-4 h-4 text-gray-500"></i>
-                            </div>
-                            <span class="text-sm font-bold text-gray-800 dark:text-gray-100">${nomes[i]}</span>
+                <div class="bg-white dark:bg-gray-800 p-3 rounded-xl border border-gray-100 dark:border-gray-700 shadow-sm flex flex-col justify-center gap-2 hover:shadow-md transition-shadow">
+                    <div class="flex flex-col items-center text-center gap-1 w-full">
+                        <div class="p-1.5 bg-gray-50 dark:bg-gray-900 rounded-lg border border-gray-200 dark:border-gray-700 mx-auto">
+                            <i data-lucide="tag" class="w-4 h-4 text-gray-500"></i>
                         </div>
-                        <span class="text-sm md:text-base font-black text-gray-700 dark:text-gray-200 valor-sensivel" data-valor="R$ ${valorFormatado}">R$ ${valorFormatado}</span>
+                        <span class="text-xs font-bold text-gray-800 dark:text-gray-100 truncate w-full" title="${nomes[i]}">${nomes[i]}</span>
+                        <span class="text-sm font-black text-gray-700 dark:text-gray-200 valor-sensivel" data-valor="R$ ${valorFormatado}">R$ ${valorFormatado}</span>
                     </div>
 
-                    <div class="flex items-center gap-3 w-full mt-1 px-1">
-                        <div class="w-full bg-gray-100 dark:bg-gray-700 rounded-full h-2">
-                            <div class="bg-blue-500 h-2 rounded-full" style="width: ${perc}%"></div>
+                    <div class="flex flex-col items-center gap-1 w-full mt-1">
+                        <div class="w-full bg-gray-100 dark:bg-gray-700 rounded-full h-1.5">
+                            <div class="bg-blue-500 h-1.5 rounded-full" style="width: ${perc}%"></div>
                         </div>
-                        <span class="text-[10px] font-bold text-gray-500 w-8 text-right">${perc}%</span>
+                        <span class="text-[9px] font-bold text-gray-500">${perc}%</span>
                     </div>
                 </div>`;
             }

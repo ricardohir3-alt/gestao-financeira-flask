@@ -761,7 +761,7 @@ def usuarios():
         'disk_percent': disk_percent,
         'python_version': platform.python_version(),
         'flask_version': flask.__version__,
-        'app_version': 'v1.5.9'
+        'app_version': 'v1.6.1'
     }
 
     return render_template('telas/gestao_usuarios.html', usuarios=lista_users, logs=logs, sys_info=sys_info)
@@ -2565,7 +2565,7 @@ def enviar_whatsapp(telefone_destino, texto_mensagem):
 @app.context_processor
 def inject_global_vars():
     # Defina aqui a versão centralizada
-    versao = "1.6.0"
+    versao = "1.6.1"
 
     # Gera a data automaticamente (ex: "Julho 2026")
     data_formatada = datetime.now().strftime('%B %Y').capitalize()
