@@ -144,6 +144,24 @@ def iniciar_banco():
     ''')
     conexao.commit()
 
+    # ====================================================================
+    # === NOVA TABELA: JORNADA IA (CAIXINHAS/METAS) ======================
+    # ====================================================================
+    cursor.execute('''
+        CREATE TABLE IF NOT EXISTS metas (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            usuario_id INTEGER NOT NULL,
+            nome_meta TEXT NOT NULL,
+            valor_objetivo REAL NOT NULL,
+            valor_atual REAL DEFAULT 0.00,
+            data_prazo TEXT NOT NULL,
+            data_criacao TEXT NOT NULL,
+            status TEXT DEFAULT 'ATIVA'
+        )
+    ''')
+    conexao.commit()
+    # ====================================================================
+
     # === ATUALIZAÇÃO DA TABELA DÍVIDAS ===
     try:
         cursor.execute("ALTER TABLE dividas ADD COLUMN status TEXT DEFAULT 'ATIVA'")
@@ -453,6 +471,170 @@ def home():
                            perc_pago=perc_pago, perc_pendente=perc_pendente,
                            total_pago=total_pago_fmt, total_pendente=total_pendente_fmt,
                            top3_gastos=top3_gastos)
+
+@app.route('/historico_notificacoes')
+def historico_notificacoes():
+    # 1. Verifica se o usuário está logado (usando a mesma chave 'logado' do seu index)
+    if 'logado' not in session:
+        return redirect(url_for('login'))
+
+    # 2. Captura o ID do usuário logado
+    user_id = session['user_id']
+
+    # 3. Abre a conexão com o banco
+    conexao = get_db_connection()
+    cursor = conexao.cursor()
+
+    # 4. Busca todas as notificações do usuário, da mais recente para a mais antiga
+    # NOTA: Estou assumindo que a sua tabela se chama 'notificacoes'. Se for outro nome, basta trocar aqui embaixo!
+    cursor.execute('''
+        SELECT * FROM notificacoes
+        WHERE usuario_id = ?
+        ORDER BY data_criacao DESC
+    ''', (user_id,))
+
+    notificacoes_historico = cursor.fetchall()
+
+    # 5. Fecha a conexão
+    conexao.close()
+
+    # 6. Envia os dados para a tela
+    return render_template('telas/historico_notificacoes.html', notificacoes=notificacoes_historico)
+
+# ==============================================================================
+# GAMIFICAÇÃO E JORNADA IA (METAS E CAIXINHAS)
+# ==============================================================================
+
+@app.route('/nova_meta', methods=['POST'])
+def nova_meta():
+    if 'logado' not in session:
+        return redirect(url_for('login'))
+
+    user_id = session['user_id']
+
+    # 1. Pega os dados que o usuário preencheu no HTML
+    nome_meta = request.form.get('nome_meta')
+    valor_objetivo = request.form.get('valor_objetivo')
+    data_prazo = request.form.get('data_prazo')
+    data_criacao = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
+
+    conexao = sqlite3.connect('financas.db')
+    cursor = conexao.cursor()
+
+    # 2. Truque de RPG: Vamos "pausar" qualquer meta antiga para focar na nova!
+    # Isso garante que a Jornada IA não fique confusa olhando para várias metas ao mesmo tempo.
+    cursor.execute("UPDATE metas SET status = 'PAUSADA' WHERE usuario_id = ? AND status = 'ATIVA'", (user_id,))
+
+    # 3. Salva a nova missão no banco
+    cursor.execute('''
+        INSERT INTO metas (usuario_id, nome_meta, valor_objetivo, data_prazo, data_criacao)
+        VALUES (?, ?, ?, ?, ?)
+    ''', (user_id, nome_meta, valor_objetivo, data_prazo, data_criacao))
+
+    conexao.commit()
+    conexao.close()
+
+    # 4. Devolve o usuário para a página inicial (onde a Jornada IA já vai aparecer atualizada!)
+    return redirect(url_for('home'))
+
+
+@app.route('/api/jornada_rpg')
+def api_jornada_rpg():
+    if 'user_id' not in session:
+        return jsonify({'status': 'erro', 'mensagem': 'Não autorizado'}), 401
+
+    try:
+        id_usuario = session['user_id']
+        mes_atual = datetime.now().strftime('%Y-%m')
+
+        conexao = get_db_connection()
+        # Necessário para a função calcular_jornada_ia conseguir ler as colunas por nome
+        conexao.row_factory = sqlite3.Row
+        cursor = conexao.cursor()
+
+        # 1. Pega a Renda
+        cursor.execute("SELECT valor FROM renda WHERE usuario_id = ?", (id_usuario,))
+        row_renda = cursor.fetchone()
+        renda = float(row_renda[0]) if row_renda else 0.0
+
+        # 2. Pega os Gastos do Mês
+        cursor.execute("SELECT SUM(valor) FROM cobrancas WHERE usuario_id = ? AND data_vencimento LIKE ?", (id_usuario, f"{mes_atual}%"))
+        row_gastos = cursor.fetchone()
+        gastos = float(row_gastos[0]) if row_gastos and row_gastos[0] else 0.0
+
+        # === INTEGRAÇÃO: Busca os dados da Caixinha/Meta ===
+        jornada_ia = calcular_jornada_ia(id_usuario, cursor)
+
+        conexao.close()
+
+        saldo = renda - gastos
+        perc_poupado = (saldo / renda * 100) if renda > 0 else 0
+
+        # 3. Lógica dos Checkpoints (Baseado em % da renda salva no mês)
+        if perc_poupado >= 30:
+            nivel = 4
+            meta_atual = renda * 0.40 # Próxima meta fantasma
+            nome_nivel = "Nível 4: Independência"
+        elif perc_poupado >= 20:
+            nivel = 3
+            meta_atual = renda * 0.30
+            nome_nivel = "Nível 3: Paz de Espírito"
+        elif perc_poupado >= 10:
+            nivel = 2
+            meta_atual = renda * 0.20
+            nome_nivel = "Nível 2: Escudo Protetor"
+        elif perc_poupado > 0:
+            nivel = 1
+            meta_atual = renda * 0.10
+            nome_nivel = "Nível 1: O Despertar"
+        else:
+            nivel = 0
+            meta_atual = renda * 0.10 if renda > 0 else 100
+            nome_nivel = "Nível 0: Sobrevivência"
+
+        progresso = (saldo / meta_atual * 100) if meta_atual > 0 else 0
+        if progresso > 100: progresso = 100
+        if progresso < 0: progresso = 0
+
+        # 4. Chama o Gemini para criar a mensagem dinâmica
+        prompt = f"""
+        Atue como um Mentor Financeiro Gamificado (Mentor Hir3).
+        O usuário ganha R$ {renda:.2f}, gastou R$ {gastos:.2f} e sobrou R$ {saldo:.2f} neste mês.
+        Ele está no '{nome_nivel}'.
+        """
+
+        # Se ele tiver uma meta criada, o Mentor Hir3 vai usar isso no conselho!
+        if jornada_ia:
+            prompt += f"""
+            MISSÃO PRINCIPAL DO JOGADOR: Ele tem o grande objetivo de juntar R$ {jornada_ia['objetivo']:.2f} para conquistar '{jornada_ia['nome']}'.
+            Para não atrasar a jornada, ele precisa guardar R$ {jornada_ia['missao_mensal']:.2f} este mês.
+            Use esse objetivo para motivá-lo na sua resposta! Diga se o que sobrou (R$ {saldo:.2f}) já é suficiente para a missão do mês ou se ele precisa economizar mais.
+            """
+
+        prompt += """
+        Escreva uma mensagem curta e direta (máximo 3 linhas) em tom de RPG.
+        Se sobrou dinheiro, elogie e dê a próxima missão.
+        Se ele gastou mais do que ganha (saldo negativo), dê um alerta de perigo (um 'Boss' apareceu) e uma dica rápida de corte.
+        Não use formatação pesada, apenas emojis.
+        """
+
+        # Substitua 'model' pela sua variável de modelo do Gemini já configurada no app.py
+        resposta_ia = model.generate_content(prompt)
+        mensagem_mentoria = resposta_ia.text.strip()
+
+        return jsonify({
+            'status': 'sucesso',
+            'nivel': nivel,
+            'saldo': saldo,
+            'meta_atual': meta_atual,
+            'progresso': progresso,
+            'mensagem': mensagem_mentoria,
+            'jornada_ia': jornada_ia  # Enviamos os dados da meta para o HTML construir os gráficos
+        })
+
+    except Exception as e:
+        print(f"Erro na Jornada RPG: {e}")
+        return jsonify({'status': 'erro', 'mensagem': 'Erro ao calcular jornada com a IA.'}), 500
 
 # ==============================================================================
 # ROTA DE GESTÃO DE USUÁRIOS (PROTEGIDA PARA ADMIN)
@@ -933,8 +1115,19 @@ def perfil():
     cursor = conexao.cursor()
 
     if request.method == 'POST':
-        # Aqui no futuro podemos processar a atualização de senha ou nome
-        pass
+        # 1. Pega o novo nome vindo do formulário (o input no perfil.html precisa ter name="nome")
+        novo_nome = request.form.get('nome')
+
+        if novo_nome:
+            # 2. Atualiza no banco de dados (estou usando a coluna 'usuario' com base no seu SELECT abaixo)
+            cursor.execute("UPDATE usuarios SET usuario = ? WHERE id = ?", (novo_nome, user_id))
+            conexao.commit()
+
+            # ====================================================================
+            # 3. ATUALIZA A SESSÃO: Isso faz a mensagem de boas-vindas do Index
+            # reconhecer o nome novo na mesma hora, sem precisar deslogar!
+            # ====================================================================
+            session['nome'] = novo_nome
 
     try:
         # Pede ao banco TODAS as informações novas do usuário
@@ -1112,6 +1305,7 @@ import sqlite3
 import json # <- Essencial para a IA funcionar
 import calendar
 from datetime import datetime, timedelta # <- Necessário para o cálculo automático de meses
+from flask import jsonify # <- Adicionado para retornar JSON na API do Modal
 
 # ==============================================================================
 # MOTOR DE APRENDIZADO DA IA (hir3) - BLINDADO
@@ -1323,62 +1517,152 @@ def excluir_gasto(id):
 
     return redirect(url_for('home'))
 
+
 # ==============================================================================
-# NOVA AUTOMAÇÃO: DUPLICAR MÊS ANTERIOR (1-Click)
+# NOVA API PARA O MODAL: BUSCA CONTAS DE UM MÊS ESPECÍFICO
 # ==============================================================================
-@app.route('/duplicar_gastos', methods=['POST'])
-def duplicar_gastos():
-    """
-    Copia os gastos do mês passado para o mês atual automaticamente.
-    Mantive a estrutura para aceitar inputs manuais caso você precise no futuro,
-    mas se não receber nada (como é o caso do novo botão), ele calcula sozinho.
-    """
-    if 'logado' not in session:
+@app.route('/api/gastos_mes', methods=['GET'])
+def api_gastos_mes():
+    """Retorna os gastos de um mês específico no formato JSON para o JavaScript."""
+    if 'user_id' not in session:
+        return jsonify([]), 401
+
+    user_id = session['user_id']
+    mes = request.args.get('mes') # Formato experado: YYYY-MM
+
+    if not mes:
+        return jsonify([])
+
+    conexao = sqlite3.connect('financas.db')
+    conexao.row_factory = sqlite3.Row
+    cursor = conexao.cursor()
+
+    try:
+        cursor.execute('SELECT id, descricao, valor, categoria FROM gastos WHERE data LIKE ? AND usuario_id = ? ORDER BY data ASC', (mes + '%', user_id))
+        gastos = cursor.fetchall()
+
+        lista_gastos = []
+        for g in gastos:
+            lista_gastos.append({
+                'id': g['id'],
+                'descricao': g['descricao'],
+                'valor': float(g['valor']),
+                'categoria': g['categoria']
+            })
+
+        return jsonify(lista_gastos)
+    except Exception as e:
+        print(f"Erro ao buscar contas para a API: {e}")
+        return jsonify([]), 500
+    finally:
+        conexao.close()
+
+
+# ==============================================================================
+# NOVA AUTOMAÇÃO: DUPLICAR EM LOTE (SELECIONADAS NO MODAL)
+# ==============================================================================
+@app.route('/duplicar_gastos_lote', methods=['POST'])
+def duplicar_gastos_lote():
+    """Recebe as contas selecionadas nos checkboxes do Modal e as copia para o novo mês."""
+    if 'user_id' not in session:
         return redirect(url_for('login'))
 
     user_id = session['user_id']
+    mes_destino = request.form.get('mes_destino')
+    contas_selecionadas = request.form.getlist('contas_selecionadas') # Pega a lista de IDs checados
 
+    # Proteção caso o usuário envie vazio
+    if not mes_destino or not contas_selecionadas:
+        return redirect(url_for('novo_gasto'))
+
+    try:
+        ano_dest, mes_dest = map(int, mes_destino.split('-'))
+        ultimo_dia_mes_dest = calendar.monthrange(ano_dest, mes_dest)[1]
+
+        conexao = sqlite3.connect('financas.db')
+        conexao.row_factory = sqlite3.Row
+        cursor = conexao.cursor()
+
+        # Cria a interrogação para cada conta selecionada (?, ?, ?)
+        placeholders = ','.join('?' for _ in contas_selecionadas)
+        query = f'SELECT * FROM gastos WHERE id IN ({placeholders}) AND usuario_id = ?'
+
+        # Junta a lista de IDs com o ID do usuário para a query
+        parametros = contas_selecionadas + [user_id]
+
+        cursor.execute(query, parametros)
+        gastos_origem = cursor.fetchall()
+
+        # Insere as contas duplicadas no mês de destino
+        for gasto in gastos_origem:
+            try:
+                dia_origem = int(gasto['data'][8:10])
+            except (ValueError, IndexError):
+                dia_origem = 1 # Proteção contra datas mal formatadas
+
+            dia_dest = min(dia_origem, ultimo_dia_mes_dest)
+            nova_data = f"{ano_dest:04d}-{mes_dest:02d}-{dia_dest:02d}"
+
+            # Sempre insere a duplicata como 'PENDENTE' para o usuário pagar no novo mês
+            cursor.execute('''
+                INSERT INTO gastos (descricao, categoria, valor, quinzena, status, data, usuario_id)
+                VALUES (?, ?, ?, ?, ?, ?, ?)
+            ''', (gasto['descricao'], gasto['categoria'], gasto['valor'],
+                  gasto['quinzena'], 'PENDENTE', nova_data, user_id))
+
+        conexao.commit()
+
+    except Exception as e:
+        print(f"Erro fatal na duplicação em lote: {e}")
+    finally:
+        conexao.close()
+
+    # Redireciona para o painel principal exibindo o mês que acabou de receber os dados
+    return redirect(url_for('home', mes=mes_destino))
+
+
+# ==============================================================================
+# AUTOMAÇÃO ANTIGA (LEGACY): DUPLICAR MÊS ANTERIOR (1-Click)
+# Mantido por segurança caso tenha botões em outras partes do sistema usando.
+# ==============================================================================
+@app.route('/duplicar_gastos', methods=['POST'])
+def duplicar_gastos():
+    if 'user_id' not in session:
+        return redirect(url_for('login'))
+
+    user_id = session['user_id']
     mes_origem = request.form.get('mes_origem')
     mes_destino = request.form.get('mes_destino')
 
-    # INTELIGÊNCIA DE UX: Se não foi enviado nenhum mês pelo botão (1-Click)...
     if not mes_origem or not mes_destino:
         hoje = datetime.now()
-
-        # Mês Destino = Hoje
         ano_dest = hoje.year
         mes_dest = hoje.month
         mes_destino = f"{ano_dest:04d}-{mes_dest:02d}"
 
-        # Mês Origem = Mês Passado
         primeiro_dia_atual = hoje.replace(day=1)
         data_mes_passado = primeiro_dia_atual - timedelta(days=1)
         mes_origem = data_mes_passado.strftime('%Y-%m')
     else:
-        # Se veio preenchido, usa o manual
         ano_dest, mes_dest = map(int, mes_destino.split('-'))
 
     conexao = sqlite3.connect('financas.db')
     conexao.row_factory = sqlite3.Row
     cursor = conexao.cursor()
 
-    # Busca todos os gastos do usuário no mês de origem
-    cursor.execute('SELECT * FROM gastos WHERE data LIKE ? AND usuario_id = ?',
-                   (mes_origem + '%', user_id))
+    cursor.execute('SELECT * FROM gastos WHERE data LIKE ? AND usuario_id = ?', (mes_origem + '%', user_id))
     gastos_origem = cursor.fetchall()
 
-    # Insere as contas duplicadas no mês de destino
     for gasto in gastos_origem:
         try:
             dia_origem = int(gasto['data'][8:10])
         except (ValueError, IndexError):
-            dia_origem = 1 # Proteção contra datas mal formatadas
+            dia_origem = 1
 
         ultimo_dia_mes_dest = calendar.monthrange(ano_dest, mes_dest)[1]
         dia_dest = min(dia_origem, ultimo_dia_mes_dest)
         nova_data = f"{ano_dest:04d}-{mes_dest:02d}-{dia_dest:02d}"
 
-        # Sempre insere a duplicata como 'PENDENTE'
         cursor.execute('''
             INSERT INTO gastos (descricao, categoria, valor, quinzena, status, data, usuario_id)
             VALUES (?, ?, ?, ?, ?, ?, ?)
@@ -1388,7 +1672,6 @@ def duplicar_gastos():
     conexao.commit()
     conexao.close()
 
-    # Redireciona para o painel principal exibindo o mês que acabou de receber os dados
     return redirect(url_for('home', mes=mes_destino))
 
 # ==============================================================================

@@ -52,19 +52,19 @@
                             {% endif %}
                         </span>
                     </div>
-                    
+
                     <div class="max-h-64 overflow-y-auto">
                         {% if notificacoes %}
                             {% for notif in notificacoes %}
                             <!-- Notificação Dinâmica com Histórico -->
-                            <div id="notif-{{ notif.id }}" 
-                                 {% if notif.lida == 0 %}onclick="marcarNotificacaoLida({{ notif.id }})"{% endif %} 
+                            <div id="notif-{{ notif.id }}"
+                                 {% if notif.lida == 0 %}onclick="marcarNotificacaoLida({{ notif.id }})"{% endif %}
                                  class="p-4 border-b border-gray-100 dark:border-gray-700/50 hover:bg-gray-50 dark:hover:bg-gray-700/50 transition-colors relative {% if notif.lida == 1 %}opacity-60{% else %}cursor-pointer{% endif %}">
-                                
+
                                 {% if notif.lida == 0 %}
                                 <div class="indicador-nao-lido absolute left-0 top-0 h-full w-1 bg-blue-500"></div>
                                 {% endif %}
-                                
+
                                 <div class="flex gap-3">
                                     <div class="mt-0.5">
                                         <div class="bg-{{ notif.cor }}-100 dark:bg-{{ notif.cor }}-900/50 p-1.5 rounded-lg text-{{ notif.cor }}-600 dark:text-{{ notif.cor }}-400">
@@ -88,11 +88,11 @@
                             </div>
                         {% endif %}
                     </div>
-                    
+
                     <!-- CORREÇÃO 3: NOVO RODAPÉ COM SWEET ALERT -->
                     <div class="bg-gray-50 dark:bg-gray-900/50 px-4 py-2 border-t border-gray-200 dark:border-gray-700 flex justify-between items-center">
                         <a href="/historico_notificacoes" class="text-[10px] md:text-xs text-blue-500 hover:text-blue-700 dark:text-blue-400 font-bold">Ver histórico</a>
-                        
+
                         {% if notificacoes %}
                         <!-- SweetAlert no botão Limpar Tudo -->
                         <form action="/limpar_notificacoes" method="POST" class="m-0" onsubmit="confirmarAcao(event, this, 'Limpar Painel?', 'Deseja apagar todas as notificações deste painel?', 'Sim, limpar!')">
@@ -200,7 +200,7 @@
             </div>
             <span id="texto-fluxo-mes" class="text-lg md:text-xl font-black text-gray-700 dark:text-gray-100 transition-colors">0%</span>
         </div>
-        
+
         <!-- Barra de Progresso -->
         <div class="w-full bg-gray-100 dark:bg-gray-700 rounded-full h-2.5 md:h-3 overflow-hidden flex">
             <div id="barra-fluxo-mes" class="bg-gradient-to-r from-green-400 via-yellow-400 to-red-500 h-2.5 md:h-3 rounded-full transition-all duration-1000 w-0"></div>
@@ -214,8 +214,9 @@
                 <button onclick="mostrarGrafico('ondas')" id="btn-ondas" class="flex-1 py-1.5 md:py-2 text-xs md:text-sm font-bold rounded-md bg-white dark:bg-gray-800 shadow-sm text-blue-600 dark:text-blue-400 transition-all flex justify-center items-center gap-1 md:gap-2">
                     <i data-lucide="trending-up" class="w-3 md:w-4 h-3 md:h-4"></i> Gastos
                 </button>
-                <button onclick="mostrarGrafico('donut')" id="btn-donut" class="flex-1 py-1.5 md:py-2 text-xs md:text-sm font-bold rounded-md text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200 transition-all flex justify-center items-center gap-1 md:gap-2">
-                    <i data-lucide="pie-chart" class="w-3 md:w-4 h-3 md:h-4"></i> Categoria
+                
+                <button onclick="mostrarGrafico('jornada')" id="btn-jornada" class="flex-1 py-1.5 md:py-2 text-xs md:text-sm font-bold rounded-md text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200 transition-all flex justify-center items-center gap-1 md:gap-2">
+                    <i data-lucide="map" class="w-3 md:w-4 h-3 md:h-4"></i> Jornada IA
                 </button>
             </div>
 
@@ -230,16 +231,97 @@
                 {% endif %}
             </div>
 
-            <div id="container-donut" class="hidden flex-grow flex flex-col justify-center">
-                {% if valores_categorias %}
-                    <div id="grafico-donut" class="flex justify-center w-full"></div>
+            <!-- ============================================================================== -->
+            <!-- ATUALIZAÇÃO: JORNADA GAMIFICADA (RPG) INTEGRADADA COM A CAIXINHA               -->
+            <!-- ============================================================================== -->
+            <div id="container-jornada" class="hidden flex-grow flex-col max-h-[250px] md:max-h-[300px] overflow-y-auto sidebar-scroll pr-1 mt-2">
+                
+                {% if jornada_ia %}
+                    <!-- Caixa de Diálogo da IA Dinâmica -->
+                    <div class="bg-gradient-to-r from-purple-50 to-indigo-50 dark:from-purple-900/20 dark:to-indigo-900/20 border border-purple-200 dark:border-purple-800/50 rounded-xl p-3 md:p-4 mb-5 relative overflow-hidden shadow-sm">
+                        <div class="flex gap-3 relative z-10">
+                            <div class="bg-purple-100 dark:bg-purple-900/50 p-2 rounded-lg shrink-0 h-fit">
+                                <i data-lucide="bot" class="w-5 h-5 text-purple-600 dark:text-purple-400"></i>
+                            </div>
+                            <div>
+                                <h4 class="text-[10px] md:text-xs font-bold text-purple-800 dark:text-purple-300 uppercase tracking-wider mb-1 flex items-center gap-1">
+                                    <i data-lucide="sparkles" class="w-3 h-3"></i> Mentor Hir3
+                                </h4>
+                                <p id="texto-mentor-hir3" class="text-xs md:text-sm text-gray-700 dark:text-gray-300 font-medium leading-snug">
+                                    <!-- O JavaScript injeta o conselho gamificado aqui -->
+                                    <i data-lucide="loader" class="w-3 h-3 inline animate-spin text-purple-500"></i> Preparando missão...
+                                </p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Linha do Tempo RPG da Meta -->
+                    <div class="relative flex-grow px-2 md:px-4 pb-2">
+                        <!-- Linha vertical de fundo -->
+                        <div class="absolute top-2 bottom-6 left-6 md:left-8 w-0.5 bg-gray-200 dark:bg-gray-700 z-0"></div>
+
+                        <!-- Meta Principal (Em andamento) -->
+                        <div class="relative flex items-center gap-4 mb-5">
+                            <span class="absolute flex h-8 w-8 z-0 left-0">
+                                <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-blue-400 opacity-75"></span>
+                            </span>
+                            <div class="w-8 h-8 rounded-full bg-blue-600 text-white flex items-center justify-center shrink-0 z-10 shadow-md ring-4 ring-white dark:ring-gray-800">
+                                <i data-lucide="target" class="w-4 h-4"></i>
+                            </div>
+                            <div class="bg-blue-50 dark:bg-blue-900/20 p-3 rounded-xl border border-blue-200 dark:border-blue-800/50 w-full transform scale-[1.02] shadow-sm">
+                                <div class="flex justify-between items-center mb-1">
+                                    <h5 class="text-[10px] md:text-xs font-bold text-blue-600 dark:text-blue-400 uppercase tracking-wide">Missão: {{ jornada_ia.nome }}</h5>
+                                    <span class="text-[9px] font-bold bg-blue-200 text-blue-800 dark:bg-blue-900 dark:text-blue-300 px-1.5 py-0.5 rounded">{{ jornada_ia.progresso_perc }}%</span>
+                                </div>
+                                <p class="text-sm md:text-base font-black text-gray-800 dark:text-gray-100 valor-sensivel" data-valor="R$ {{ "%.2f"|format(jornada_ia.atual)|replace('.', ',') }} / R$ {{ "%.2f"|format(jornada_ia.objetivo)|replace('.', ',') }}">
+                                    R$ {{ "%.2f"|format(jornada_ia.atual)|replace('.', ',') }} / R$ {{ "%.2f"|format(jornada_ia.objetivo)|replace('.', ',') }}
+                                </p>
+                                <!-- Barra de progresso -->
+                                <div class="w-full bg-blue-200/50 dark:bg-blue-900/30 rounded-full h-1.5 mt-2 overflow-hidden">
+                                    <div class="bg-blue-600 h-1.5 rounded-full" style="width: {{ jornada_ia.progresso_perc }}%"></div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Checkpoint do Mês -->
+                        <div class="relative flex items-center gap-4 mb-3">
+                            <div class="w-8 h-8 rounded-full bg-gray-200 dark:bg-gray-700 text-gray-500 flex items-center justify-center shrink-0 z-10 ring-4 ring-white dark:ring-gray-800">
+                                <i data-lucide="flag" class="w-4 h-4"></i>
+                            </div>
+                            <div class="p-2 w-full">
+                                <h5 class="text-[10px] md:text-xs font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wide">Desafio do Mês</h5>
+                                <p class="text-xs font-medium text-gray-600 dark:text-gray-400">
+                                    Guarde + R$ {{ "%.2f"|format(jornada_ia.missao_mensal)|replace('.', ',') }} para manter o ritmo!
+                                </p>
+                            </div>
+                        </div>
+
+                        <!-- Botão de alterar meta -->
+                        <div class="relative flex items-center gap-4 mt-2">
+                            <div class="w-8 h-8 shrink-0 z-10"></div>
+                            <button onclick="abrirModalMeta()" class="text-[10px] font-bold text-blue-500 hover:text-blue-700 dark:text-blue-400 transition-colors uppercase tracking-wide flex items-center gap-1">
+                                <i data-lucide="refresh-cw" class="w-3 h-3"></i> Mudar Missão Principal
+                            </button>
+                        </div>
+                    </div>
+
                 {% else %}
-                    <div class="flex flex-col items-center justify-center h-32 md:h-48 text-gray-400 dark:text-gray-500">
-                        <i data-lucide="pie-chart" class="w-8 md:w-10 h-8 md:h-10 mb-2 opacity-50"></i>
-                        <p class="text-xs md:text-sm font-medium">Nenhuma categoria encontrada.</p>
+                    <!-- Tela inicial quando não há meta -->
+                    <div class="flex flex-col items-center justify-center text-center p-6 bg-gray-50 dark:bg-gray-900/50 rounded-xl border border-dashed border-gray-300 dark:border-gray-700 h-full mt-2">
+                        <div class="bg-blue-100 dark:bg-blue-900/50 p-4 rounded-full mb-4">
+                            <i data-lucide="map" class="w-8 h-8 text-blue-600 dark:text-blue-400"></i>
+                        </div>
+                        <h4 class="font-bold text-gray-800 dark:text-gray-200 mb-2">Qual é o seu grande objetivo?</h4>
+                        <p class="text-xs text-gray-500 dark:text-gray-400 mb-5 leading-relaxed max-w-[200px] mx-auto">
+                            A <strong>Jornada IA</strong> divide seus sonhos em missões mensais que cabem no seu bolso.
+                        </p>
+                        <button onclick="abrirModalMeta()" class="bg-gradient-to-r from-blue-600 to-indigo-600 text-white px-6 py-2.5 rounded-xl font-bold flex items-center gap-2 shadow-md hover:scale-105 active:scale-95 transition-all text-sm">
+                            <i data-lucide="target" class="w-4 h-4"></i> Iniciar Jornada
+                        </button>
                     </div>
                 {% endif %}
             </div>
+            <!-- ============================================================================== -->
         </div>
 
         <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-1 gap-3 md:gap-4">
@@ -290,7 +372,7 @@
     </div>
 
     <!-- ======================================================= -->
-    <!-- NOVO EXTRATO DO MÊS: SUPER ABAS (TRANSAÇÕES X CATEGORIAS) -->
+    <!-- EXTRATO DO MÊS: SUPER ABAS (TRANSAÇÕES X CATEGORIAS)    -->
     <!-- ======================================================= -->
     <div class="flex flex-col sm:flex-row sm:justify-between sm:items-center mb-3 md:mb-4 border-b border-gray-200 dark:border-gray-800 pb-3 gap-3">
         <h2 class="text-sm md:text-lg font-bold text-gray-800 dark:text-gray-200 flex items-center gap-2">
@@ -318,9 +400,9 @@
         </div>
 
         {% if gastos %}
-            <div class="space-y-2 md:space-y-3 max-h-[500px] overflow-y-auto pr-2 md:pr-3 pb-4 md:pb-6 sidebar-scroll w-full">
+            <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 md:gap-4 max-h-[500px] overflow-y-auto p-1 pb-6 sidebar-scroll w-full">
                 {% for gasto in gastos %}
-                    <!-- ATUALIZAÇÃO: Em vez de redirecionar a tela, chama o Modal de Edição no Duplo Clique -->
+                    <!-- Card de Despesa -->
                     <div ondblclick="abrirModalEditarGasto('{{ gasto.id }}', '{{ gasto.descricao }}', '{{ gasto.valor }}', '{{ gasto.data }}', '{{ gasto.categoria }}', '{{ gasto.quinzena }}')"
                          data-id="{{ gasto.id }}"
                          data-status="{{ gasto.status }}"
@@ -328,66 +410,64 @@
                          data-descricao="{{ gasto.descricao }}"
                          data-valor="{{ "%.2f"|format(gasto.valor) }}"
                          title="Duplo clique para editar"
-                         class="item-gasto flex flex-col sm:flex-row sm:items-center justify-between bg-white dark:bg-gray-800 p-3 md:p-4 rounded-xl md:rounded-2xl border border-gray-100 dark:border-gray-700 shadow-sm transition-all hover:shadow-md hover:border-blue-300 dark:hover:border-blue-700 group gap-3 sm:gap-0 cursor-pointer select-none">
+                         class="item-gasto flex flex-col justify-between bg-white dark:bg-gray-800 p-4 md:p-5 rounded-2xl border border-gray-100 dark:border-gray-700 shadow-sm transition-all hover:shadow-md hover:-translate-y-1 hover:border-blue-300 dark:hover:border-blue-700 group cursor-pointer select-none min-h-[140px]">
 
-                        <div class="flex flex-col gap-1">
-                            <span class="text-sm md:text-base font-bold text-gray-800 dark:text-gray-100 leading-tight">{{ gasto.descricao }}</span>
-                            <span class="text-sm md:text-base font-black text-red-500 valor-sensivel" data-valor="R$ {{ "%.2f"|format(gasto.valor) }}">R$ {{ "%.2f"|format(gasto.valor) }}</span>
+                        <!-- Topo: Tags e Data -->
+                        <div>
+                            <div class="flex justify-between items-start mb-3 gap-2">
+                                <div class="flex flex-wrap gap-1.5">
+                                    <span class="text-[9px] md:text-[10px] px-1.5 py-0.5 bg-gray-50 dark:bg-gray-900 text-gray-500 dark:text-gray-400 rounded-md border border-gray-100 dark:border-gray-800 font-semibold uppercase tracking-wider whitespace-nowrap">
+                                        {{ gasto.categoria }}
+                                    </span>
+                                    {% if gasto.quinzena|string == '1' %}
+                                        <span class="text-[9px] md:text-[10px] px-1.5 py-0.5 bg-blue-50 dark:bg-blue-900/20 text-blue-600 dark:text-blue-400 rounded-md border border-blue-100 dark:border-blue-800 font-bold whitespace-nowrap">1ª Q.</span>
+                                    {% elif gasto.quinzena|string == '2' %}
+                                        <span class="text-[9px] md:text-[10px] px-1.5 py-0.5 bg-indigo-50 dark:bg-indigo-900/20 text-indigo-600 dark:text-indigo-400 rounded-md border border-indigo-100 dark:border-indigo-800 font-bold whitespace-nowrap">2ª Q.</span>
+                                    {% else %}
+                                        <span class="text-[9px] md:text-[10px] px-1.5 py-0.5 bg-gray-50 dark:bg-gray-900 text-gray-500 dark:text-gray-400 rounded-md border border-gray-100 dark:border-gray-800 font-bold whitespace-nowrap">Integral</span>
+                                    {% endif %}
+                                </div>
+                                <span class="flex items-center gap-1 text-[10px] text-gray-400 dark:text-gray-500 font-medium whitespace-nowrap shrink-0">
+                                    <i data-lucide="calendar" class="w-3 h-3"></i> {{ gasto.data[-2:] }}/{{ gasto.data[5:7] }}
+                                </span>
+                            </div>
 
-                            <div class="flex flex-wrap items-center gap-1.5 mt-0.5">
-                                <span class="flex items-center gap-1 text-[10px] md:text-xs text-gray-500 dark:text-gray-400 bg-gray-50 dark:bg-gray-900 px-1.5 md:px-2 py-0.5 md:py-1 rounded-md border border-gray-100 dark:border-gray-800">
-                                    <i data-lucide="calendar" class="w-3 md:w-3.5 h-3 md:h-3.5"></i> {{ gasto.data[-2:] }}/{{ gasto.data[5:7] }}
-                                </span>
-                                <span class="text-[10px] md:text-xs px-1.5 md:px-2 py-0.5 md:py-1 bg-gray-50 dark:bg-gray-900 text-gray-500 dark:text-gray-400 rounded-md border border-gray-100 dark:border-gray-800 font-medium">
-                                    {{ gasto.categoria }}
-                                </span>
-                                {% if gasto.quinzena|string == '1' %}
-                                    <span class="text-[10px] md:text-xs px-1.5 md:px-2 py-0.5 md:py-1 bg-blue-50 dark:bg-blue-900/20 text-blue-600 dark:text-blue-400 rounded-md border border-blue-100 dark:border-blue-800 font-bold">
-                                        1ª Quinzena
-                                    </span>
-                                {% elif gasto.quinzena|string == '2' %}
-                                    <span class="text-[10px] md:text-xs px-1.5 md:px-2 py-0.5 md:py-1 bg-indigo-50 dark:bg-indigo-900/20 text-indigo-600 dark:text-indigo-400 rounded-md border border-indigo-100 dark:border-indigo-800 font-bold">
-                                        2ª Quinzena
-                                    </span>
-                                {% else %}
-                                    <span class="text-[10px] md:text-xs px-1.5 md:px-2 py-0.5 md:py-1 bg-gray-50 dark:bg-gray-900 text-gray-500 dark:text-gray-400 rounded-md border border-gray-100 dark:border-gray-800 font-bold">
-                                        Mês Integral
-                                    </span>
-                                {% endif %}
+                            <!-- Meio: Título e Valor -->
+                            <div class="mb-4">
+                                <h4 class="text-sm font-bold text-gray-800 dark:text-gray-100 leading-snug mb-1 line-clamp-2" title="{{ gasto.descricao }}">{{ gasto.descricao }}</h4>
+                                <span class="text-xl md:text-2xl font-black text-red-500 valor-sensivel" data-valor="R$ {{ "%.2f"|format(gasto.valor) }}">R$ {{ "%.2f"|format(gasto.valor) }}</span>
                             </div>
                         </div>
 
-                        <div class="flex sm:flex-col items-center sm:items-end justify-between sm:h-full gap-2 md:gap-3 w-full sm:w-auto mt-1 sm:mt-0">
+                        <!-- Rodapé: Ações -->
+                        <div class="flex items-center justify-between border-t border-gray-100 dark:border-gray-700/50 pt-3 mt-auto">
                             <form action="/atualizar_status/{{ gasto.id }}?mes={{ mes_filtro }}" method="POST" class="m-0" onclick="event.stopPropagation();">
                                 {% if gasto.status == 'PAGO' %}
-                                    <button type="submit" class="px-2 md:px-3 py-1 md:py-1.5 bg-green-100/80 text-green-700 dark:bg-green-900/40 dark:text-green-400 rounded-lg text-[10px] md:text-xs font-bold flex items-center gap-1 hover:bg-green-200 transition-colors shadow-sm">
-                                        <i data-lucide="check-circle" class="w-3 md:w-4 h-3 md:h-4"></i> Pago
+                                    <button type="submit" class="px-3 py-1.5 bg-green-100/80 text-green-700 dark:bg-green-900/40 dark:text-green-400 rounded-lg text-[10px] font-bold flex items-center gap-1 hover:bg-green-200 transition-colors shadow-sm active:scale-95">
+                                        <i data-lucide="check-circle" class="w-3.5 h-3.5"></i> Pago
                                     </button>
                                 {% else %}
-                                    <button type="submit" class="px-2 md:px-3 py-1 md:py-1.5 bg-yellow-100/80 text-yellow-700 dark:bg-yellow-900/40 dark:text-yellow-400 rounded-lg text-[10px] md:text-xs font-bold flex items-center gap-1 hover:bg-yellow-200 transition-colors shadow-sm">
-                                        <i data-lucide="clock" class="w-3 md:w-4 h-3 md:h-4"></i> Pend.
+                                    <button type="submit" class="px-3 py-1.5 bg-yellow-100/80 text-yellow-700 dark:bg-yellow-900/40 dark:text-yellow-400 rounded-lg text-[10px] font-bold flex items-center gap-1 hover:bg-yellow-200 transition-colors shadow-sm active:scale-95">
+                                        <i data-lucide="clock" class="w-3.5 h-3.5"></i> Pendente
                                     </button>
                                 {% endif %}
                             </form>
 
-                            <div class="flex items-center gap-1.5 md:gap-2" onclick="event.stopPropagation();">
-                                <form action="{{ url_for('excluir_gasto', id=gasto.id) }}" method="POST" class="m-0 inline-block" onsubmit="confirmarAcao(event, this, 'Excluir Despesa?', 'Tem certeza que deseja apagar este registro? O valor será restaurado no seu saldo.', 'Sim, excluir!')">
-                                    <input type="hidden" name="mes_filtro" value="{{ mes_filtro }}">
-                                    <button type="submit" class="text-gray-400 hover:text-red-500 bg-gray-50 dark:bg-gray-900 p-1.5 md:p-2 rounded-lg border border-gray-100 dark:border-gray-800 transition-colors" title="Excluir">
-                                        <i data-lucide="trash-2" class="w-3.5 md:w-4 h-3.5 md:h-4"></i>
-                                    </button>
-                                </form>
-                            </div>
+                            <form action="{{ url_for('excluir_gasto', id=gasto.id) }}" method="POST" class="m-0 inline-block" onsubmit="confirmarAcao(event, this, 'Excluir Despesa?', 'Tem certeza que deseja apagar este registro? O valor será restaurado no seu saldo.', 'Sim, excluir!')" onclick="event.stopPropagation();">
+                                <input type="hidden" name="mes_filtro" value="{{ mes_filtro }}">
+                                <button type="submit" class="text-gray-400 hover:text-red-500 bg-gray-50 dark:bg-gray-900 p-2 rounded-lg border border-gray-100 dark:border-gray-800 transition-colors active:scale-95" title="Excluir">
+                                    <i data-lucide="trash-2" class="w-4 h-4"></i>
+                                </button>
+                            </form>
                         </div>
-
                     </div>
                 {% endfor %}
-
-                <div id="msg-filtro-vazio" class="hidden text-center py-8 text-gray-400 dark:text-gray-500 text-xs md:text-sm font-medium w-full">
-                    Nenhum gasto encontrado para este filtro.
-                </div>
-
             </div>
+
+            <div id="msg-filtro-vazio" class="hidden text-center py-8 text-gray-400 dark:text-gray-500 text-xs md:text-sm font-medium w-full">
+                Nenhum gasto encontrado para este filtro.
+            </div>
+
         {% else %}
             <div class="text-center py-10 md:py-16 bg-white dark:bg-gray-800 rounded-xl md:rounded-2xl border border-dashed border-gray-200 dark:border-gray-700 w-full">
                 <i data-lucide="inbox" class="w-10 md:w-12 h-10 md:h-12 text-gray-300 dark:text-gray-600 mx-auto mb-2 md:mb-3"></i>
@@ -401,12 +481,54 @@
     </div>
 
     <!-- ============================================================================== -->
-    <!-- NOVO MODAL: EDITAR GASTO (Mesmo visual de "Nova Despesa") -->
+    <!-- MODAL: CRIAR NOVA CAIXINHA / META (JORNADA IA) -->
+    <!-- ============================================================================== -->
+    <div id="modal-nova-meta" class="fixed inset-0 bg-black/60 backdrop-blur-sm z-[150] hidden flex-col items-center justify-center p-4 transition-all duration-300 opacity-0 pointer-events-none">
+        <div class="bg-white dark:bg-gray-900 rounded-3xl w-full max-w-md shadow-2xl border border-gray-100 dark:border-gray-800 overflow-hidden transform scale-95 transition-transform duration-300" id="card-nova-meta">
+            
+            <div class="p-5 md:p-6 bg-gradient-to-r from-blue-50 to-indigo-50 dark:from-blue-900/20 dark:to-indigo-900/20 border-b border-gray-100 dark:border-gray-800 flex justify-between items-center">
+                <h2 class="text-lg md:text-xl font-black text-gray-800 dark:text-gray-100 flex items-center gap-2">
+                    <i data-lucide="target" class="text-blue-500 w-5 h-5"></i>
+                    Nova Missão Principal
+                </h2>
+                <button onclick="fecharModalMeta()" class="text-gray-400 hover:text-red-500 transition-colors bg-white/50 dark:bg-gray-800 p-1.5 rounded-full focus:outline-none">
+                    <i data-lucide="x" class="w-4 h-4"></i>
+                </button>
+            </div>
+            
+            <div class="p-5 md:p-6">
+                <form action="/nova_meta" method="POST" class="space-y-4">
+                    <div>
+                        <label class="block text-xs font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wider mb-1.5">Qual é o seu objetivo?</label>
+                        <input type="text" name="nome_meta" placeholder="Ex: Reserva de Emergência, PC Gamer..." required 
+                               class="w-full bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl px-4 py-3 text-gray-800 dark:text-gray-100 focus:ring-2 focus:ring-blue-500 outline-none transition-all font-medium text-sm">
+                    </div>
+                    
+                    <div>
+                        <label class="block text-xs font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wider mb-1.5">Quanto você precisa? (R$)</label>
+                        <input type="number" step="0.01" name="valor_objetivo" placeholder="Ex: 2000.00" required 
+                               class="w-full bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl px-4 py-3 text-gray-800 dark:text-gray-100 focus:ring-2 focus:ring-blue-500 outline-none transition-all font-black text-sm">
+                    </div>
+                    
+                    <div>
+                        <label class="block text-xs font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wider mb-1.5">Para quando é essa meta?</label>
+                        <input type="month" name="data_prazo" required 
+                               class="w-full bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl px-4 py-3 text-gray-800 dark:text-gray-100 focus:ring-2 focus:ring-blue-500 outline-none transition-all font-medium text-sm">
+                    </div>
+                    
+                    <button type="submit" class="w-full bg-gradient-to-r from-blue-600 to-indigo-600 text-white rounded-xl px-4 py-3.5 font-black mt-2 hover:shadow-lg hover:scale-[1.02] active:scale-[0.98] transition-all flex justify-center items-center gap-2">
+                        Começar Jornada <i data-lucide="arrow-right" class="w-4 h-4"></i>
+                    </button>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- ============================================================================== -->
+    <!-- MODAL: EDITAR GASTO -->
     <!-- ============================================================================== -->
     <div id="modal-editar-gasto" class="fixed inset-0 bg-black/60 backdrop-blur-sm z-[80] hidden flex-col items-center justify-center p-4 transition-all duration-300 opacity-0 pointer-events-none">
         <div class="bg-white dark:bg-gray-800 w-full max-w-md rounded-3xl shadow-2xl border border-gray-200 dark:border-gray-700 overflow-hidden transform scale-95 transition-transform duration-300" id="card-editar-gasto">
-            
-            <!-- Header do Modal -->
             <div class="p-4 bg-gray-50 dark:bg-gray-900 border-b border-gray-100 dark:border-gray-700 flex justify-between items-center">
                 <h3 class="font-bold text-gray-800 dark:text-gray-200 flex items-center gap-2">
                     <i data-lucide="edit-3" class="w-5 h-5 text-blue-500"></i> Editar Despesa
@@ -415,17 +537,13 @@
                     <i data-lucide="x" class="w-5 h-5"></i>
                 </button>
             </div>
-            
-            <!-- Formulário Interno -->
             <div class="p-5">
                 <form id="form-editar-gasto" method="POST">
-                    
                     <div class="mb-4">
                         <label class="block text-xs font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wider mb-1">Descrição</label>
                         <input type="text" name="descricao" id="edit-gasto-desc" required
                                class="w-full px-3 py-2 bg-gray-50 dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-xl text-sm font-bold text-gray-800 dark:text-gray-100 focus:ring-2 focus:ring-blue-500">
                     </div>
-
                     <div class="grid grid-cols-2 gap-3 mb-4">
                         <div>
                             <label class="block text-xs font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wider mb-1">Valor (R$)</label>
@@ -438,7 +556,6 @@
                                    class="w-full px-3 py-2 bg-gray-50 dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-xl text-sm font-bold text-gray-800 dark:text-gray-100 focus:ring-2 focus:ring-blue-500">
                         </div>
                     </div>
-
                     <div class="grid grid-cols-2 gap-3 mb-6">
                         <div>
                             <label class="block text-xs font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wider mb-1">Categoria</label>
@@ -465,7 +582,6 @@
                             </select>
                         </div>
                     </div>
-
                     <div class="flex gap-3">
                         <button type="button" onclick="fecharModalEditarGasto()" class="flex-1 px-4 py-3 bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 font-bold rounded-xl hover:bg-gray-200 dark:hover:bg-gray-600 transition-colors">
                             Cancelar
@@ -515,10 +631,38 @@
     <script src="https://cdn.jsdelivr.net/npm/apexcharts"></script>
     <script>
         // ==========================================
+        // LÓGICA: MODAL DE NOVA META (CAIXINHA)
+        // ==========================================
+        function abrirModalMeta() {
+            const modal = document.getElementById('modal-nova-meta');
+            const card = document.getElementById('card-nova-meta');
+            
+            modal.classList.remove('hidden');
+            modal.classList.add('flex');
+            
+            setTimeout(() => {
+                modal.classList.remove('opacity-0', 'pointer-events-none');
+                card.classList.remove('scale-95');
+            }, 10);
+        }
+        
+        function fecharModalMeta() {
+            const modal = document.getElementById('modal-nova-meta');
+            const card = document.getElementById('card-nova-meta');
+            
+            modal.classList.add('opacity-0', 'pointer-events-none');
+            card.classList.add('scale-95');
+            
+            setTimeout(() => {
+                modal.classList.add('hidden');
+                modal.classList.remove('flex');
+            }, 300);
+        }
+
+        // ==========================================
         // LÓGICA: MODAL DE EDIÇÃO DE GASTO
         // ==========================================
         function abrirModalEditarGasto(id, descricao, valor, data, categoria, quinzena) {
-            // Se o drag do carrossel (swipe no celular) estiver ativo, não abre o modal
             if(window.isDraggingAlert) return;
 
             document.getElementById('edit-gasto-desc').value = descricao;
@@ -531,10 +675,10 @@
 
             const modal = document.getElementById('modal-editar-gasto');
             const card = document.getElementById('card-editar-gasto');
-            
+
             modal.classList.remove('hidden');
             modal.classList.add('flex');
-            
+
             setTimeout(() => {
                 modal.classList.remove('opacity-0', 'pointer-events-none');
                 card.classList.remove('scale-95');
@@ -544,10 +688,10 @@
         function fecharModalEditarGasto() {
             const modal = document.getElementById('modal-editar-gasto');
             const card = document.getElementById('card-editar-gasto');
-            
+
             modal.classList.add('opacity-0', 'pointer-events-none');
             card.classList.add('scale-95');
-            
+
             setTimeout(() => {
                 modal.classList.add('hidden');
                 modal.classList.remove('flex');
@@ -576,7 +720,7 @@
         }
 
         // ==========================================
-        // LÓGICA: NOTIFICAÇÕES DINÂMICAS (IA HIR3)
+        // LÓGICA: NOTIFICAÇÕES DINÂMICAS E CLIQUES
         // ==========================================
         let contagemNotificacoes = parseInt("{{ total_notificacoes | default(0) }}");
 
@@ -600,18 +744,15 @@
                         if(notifEl) {
                             notifEl.classList.add('opacity-60');
                             notifEl.classList.remove('cursor-pointer');
-                            notifEl.removeAttribute('onclick'); 
-                            
+                            notifEl.removeAttribute('onclick');
                             const indicador = notifEl.querySelector('.indicador-nao-lido');
                             if(indicador) indicador.remove();
                         }
-                        
                         contagemNotificacoes--;
                         const badge = document.getElementById('badge-contador');
                         if(badge) {
                             badge.innerText = contagemNotificacoes > 0 ? contagemNotificacoes + " Nova(s)" : "Nenhuma";
                         }
-                        
                         if(contagemNotificacoes <= 0) {
                             const ping = document.getElementById('ping-notificacoes');
                             if(ping) ping.style.display = 'none';
@@ -624,22 +765,22 @@
         document.addEventListener('click', function(event) {
             const painelNotif = document.getElementById('painel-notificacoes');
             const botaoNotif = event.target.closest('button[onclick="toggleNotificacoes()"]');
-            
+
             if (!botaoNotif && !painelNotif.contains(event.target)) {
                 painelNotif.classList.add('opacity-0', 'pointer-events-none', 'scale-95');
                 painelNotif.classList.remove('opacity-100', 'scale-100');
             }
 
             const modalProj = document.getElementById('modal-projecao');
-            if (event.target === modalProj) {
-                fecharModalProjecao();
-            }
+            if (event.target === modalProj) fecharModalProjecao();
 
             const modalEditar = document.getElementById('modal-editar-gasto');
             const cardEditar = document.getElementById('card-editar-gasto');
-            if (event.target === modalEditar && !cardEditar.contains(event.target)) {
-                fecharModalEditarGasto();
-            }
+            if (event.target === modalEditar && !cardEditar.contains(event.target)) fecharModalEditarGasto();
+
+            const modalMeta = document.getElementById('modal-nova-meta');
+            const cardMeta = document.getElementById('card-nova-meta');
+            if (event.target === modalMeta && !cardMeta.contains(event.target)) fecharModalMeta();
         });
 
         // ==========================================
@@ -669,31 +810,31 @@
 
         function scrollAlertas(direcao) {
             const container = document.getElementById('alertas-vencimento');
-            const scrollAmount = 240; 
+            const scrollAmount = 240;
             container.scrollBy({ left: direcao * scrollAmount, behavior: 'smooth' });
         }
 
         // ==========================================
-        // NOVA INTELIGÊNCIA: FLUXO DO MÊS + PROJEÇÃO
+        // FLUXO DO MÊS E VENCIMENTOS
         // ==========================================
         function calcularFluxoMes() {
             const strRenda = "{{ renda_total }}".replace(/\./g, '').replace(',', '.');
             const strGastos = "{{ gastos_totais }}".replace(/\./g, '').replace(',', '.');
-            
+
             const renda = parseFloat(strRenda) || 0;
             const gastos = parseFloat(strGastos) || 0;
-            
+
             let perc = 0;
             if (renda > 0) {
                 perc = (gastos / renda) * 100;
             } else if (gastos > 0) {
                 perc = 100;
             }
-            
+
             const barraPerc = perc > 100 ? 100 : perc;
             const textoEl = document.getElementById('texto-fluxo-mes');
             const barraEl = document.getElementById('barra-fluxo-mes');
-            
+
             if (textoEl) {
                 if (perc > 100) {
                     textoEl.classList.add('text-red-500');
@@ -701,24 +842,22 @@
                 }
                 textoEl.innerText = perc.toFixed(1).replace('.', ',') + '%';
             }
-            
+
             setTimeout(() => {
                 if (barraEl) barraEl.style.width = barraPerc + '%';
             }, 100);
 
-            const mesFiltroStr = "{{ mes_filtro }}"; 
+            const mesFiltroStr = "{{ mes_filtro }}";
             const anoFiltro = parseInt(mesFiltroStr.substring(0, 4));
             const mesFiltro = parseInt(mesFiltroStr.substring(5, 7)) - 1;
-            
+
             const hoje = new Date();
             const eMesAtual = (hoje.getFullYear() === anoFiltro && hoje.getMonth() === mesFiltro);
-            
+
             let diaCalculo = hoje.getDate();
             let diasNoMes = new Date(anoFiltro, mesFiltro + 1, 0).getDate();
-            
-            if (!eMesAtual) {
-                diaCalculo = diasNoMes; 
-            }
+
+            if (!eMesAtual) diaCalculo = diasNoMes;
             if (diaCalculo === 0) diaCalculo = 1;
 
             const mediaDiaria = gastos / diaCalculo;
@@ -731,26 +870,21 @@
             document.getElementById('mod-gasto-atual').setAttribute('data-valor', 'R$ ' + formatMoeda(gastos));
             document.getElementById('mod-media-diaria').setAttribute('data-valor', 'R$ ' + formatMoeda(mediaDiaria));
             document.getElementById('mod-gasto-projetado').setAttribute('data-valor', 'R$ ' + formatMoeda(gastoProjetado));
-            
+
             const elSaldo = document.getElementById('mod-saldo-projetado');
             elSaldo.setAttribute('data-valor', 'R$ ' + formatMoeda(saldoProjetado));
             elSaldo.className = "font-black text-lg valor-sensivel " + (saldoProjetado >= 0 ? "text-green-500" : "text-red-500");
 
-            if(typeof atualizarVisibilidade === "function") {
-                atualizarVisibilidade();
-            }
+            if(typeof atualizarVisibilidade === "function") atualizarVisibilidade();
         }
 
-        // ==========================================
-        // NOVA INTELIGÊNCIA: AVISO DE VENCIMENTO
-        // ==========================================
         function verificarVencimentos() {
             const itens = document.querySelectorAll('.item-gasto[data-status="PENDENTE"]');
             const containerAlertas = document.getElementById('alertas-vencimento');
             const wrapperAlertas = document.getElementById('wrapper-alertas');
             let temAlerta = false;
 
-            containerAlertas.innerHTML = ''; 
+            containerAlertas.innerHTML = '';
 
             const hoje = new Date();
             hoje.setHours(0, 0, 0, 0);
@@ -762,7 +896,7 @@
                 const partes = dataGastoStr.split('-');
                 if(partes.length !== 3) return;
                 const ano = parseInt(partes[0]);
-                const mes = parseInt(partes[1]) - 1; 
+                const mes = parseInt(partes[1]) - 1;
                 const dia = parseInt(partes[2]);
                 const dataGasto = new Date(ano, mes, dia);
                 dataGasto.setHours(0, 0, 0, 0);
@@ -776,7 +910,6 @@
                 const categoria = item.getAttribute('data-categoria') || 'Gasto';
                 const quinzena = item.getAttribute('data-quinzena') || '0';
 
-                // Modificado: O alerta também abre o Modal Flutuante em vez de redirecionar a tela
                 if (diffDias === 1) {
                     adicionarAlerta(descricao, valor, dataGastoStr, categoria, quinzena, 'Vence Amanhã!', 'text-yellow-800 bg-yellow-50 dark:bg-yellow-900/30 border-yellow-200 dark:border-yellow-800', 'alert-triangle', id);
                     temAlerta = true;
@@ -796,7 +929,7 @@
             }
         }
 
-        window.isDraggingAlert = false; 
+        window.isDraggingAlert = false;
 
         function adicionarAlerta(descricao, valor, data, categoria, quinzena, mensagem, classes, icone, id) {
             const container = document.getElementById('alertas-vencimento');
@@ -806,15 +939,9 @@
                         <i data-lucide="${icone}" class="w-4 h-4"></i>
                     </div>
                     <div class="flex flex-col min-w-0 overflow-hidden w-full text-current pointer-events-none">
-                        <span class="text-[10px] font-bold uppercase tracking-wider mb-0.5 opacity-90 truncate">
-                            ${mensagem}
-                        </span>
-                        <span class="text-sm font-bold truncate" title="${descricao}">
-                            ${descricao}
-                        </span>
-                        <span class="text-xs font-black mt-0.5 opacity-90 valor-sensivel" data-valor="R$ ${valor}">
-                            R$ ${valor}
-                        </span>
+                        <span class="text-[10px] font-bold uppercase tracking-wider mb-0.5 opacity-90 truncate">${mensagem}</span>
+                        <span class="text-sm font-bold truncate" title="${descricao}">${descricao}</span>
+                        <span class="text-xs font-black mt-0.5 opacity-90 valor-sensivel" data-valor="R$ ${valor}">R$ ${valor}</span>
                     </div>
                 </div>
             `;
@@ -826,9 +953,7 @@
             calcularFluxoMes();
 
             const slider = document.getElementById('alertas-vencimento');
-            let isDown = false;
-            let startX;
-            let scrollLeft;
+            let isDown = false, startX, scrollLeft;
 
             slider.addEventListener('mousedown', (e) => {
                 isDown = true;
@@ -838,33 +963,16 @@
                 startX = e.pageX - slider.offsetLeft;
                 scrollLeft = slider.scrollLeft;
             });
-
-            slider.addEventListener('mouseleave', () => {
-                isDown = false;
-                slider.classList.remove('cursor-grabbing');
-                slider.classList.add('cursor-grab');
-            });
-
-            slider.addEventListener('mouseup', () => {
-                isDown = false;
-                slider.classList.remove('cursor-grabbing');
-                slider.classList.add('cursor-grab');
-                setTimeout(() => window.isDraggingAlert = false, 10);
-            });
-
+            slider.addEventListener('mouseleave', () => { isDown = false; slider.classList.remove('cursor-grabbing'); slider.classList.add('cursor-grab'); });
+            slider.addEventListener('mouseup', () => { isDown = false; slider.classList.remove('cursor-grabbing'); slider.classList.add('cursor-grab'); setTimeout(() => window.isDraggingAlert = false, 10); });
             slider.addEventListener('mousemove', (e) => {
                 if (!isDown) return;
                 e.preventDefault();
                 const x = e.pageX - slider.offsetLeft;
-                const walk = (x - startX) * 2; 
-                
-                if (Math.abs(walk) > 5) {
-                    window.isDraggingAlert = true; 
-                }
-                
+                const walk = (x - startX) * 2;
+                if (Math.abs(walk) > 5) window.isDraggingAlert = true;
                 slider.scrollLeft = scrollLeft - walk;
             });
-
 
             const isDarkMode = document.documentElement.classList.contains('dark');
             const textColor = isDarkMode ? '#9ca3af' : '#6b7280';
@@ -875,35 +983,64 @@
             var optionsOndas = { series: [{ name: 'Gastos', data: {{ valores_grafico | tojson }} }], chart: { type: 'area', height: chartHeight, toolbar: { show: false }, background: 'transparent' }, colors: ['#3b82f6'], stroke: { curve: 'smooth', width: isMobile ? 2 : 3 }, fill: { type: 'gradient', gradient: { shadeIntensity: 1, opacityFrom: 0.4, opacityTo: 0.05, stops: [0, 90, 100] } }, xaxis: { categories: {{ dias_grafico | tojson }}, labels: { style: { colors: textColor, fontSize: '9px' } } }, yaxis: { show: false }, theme: { mode: isDarkMode ? 'dark' : 'light' } };
             new ApexCharts(document.querySelector("#grafico-ondas"), optionsOndas).render();
             {% endif %}
-
-            {% if valores_categorias %}
-            var optionsDonut = { series: {{ valores_categorias | tojson }}, labels: {{ labels_categorias | tojson }}, chart: { type: 'donut', height: chartHeight, background: 'transparent' }, legend: { position: 'bottom', fontSize: isMobile ? '9px' : '11px', labels: { colors: textColor } }, stroke: { width: 1, colors: isDarkMode ? ['#1f2937'] : ['#ffffff'] }, theme: { mode: isDarkMode ? 'dark' : 'light' } };
-            new ApexCharts(document.querySelector("#grafico-donut"), optionsDonut).render();
-            {% endif %}
         });
+
+        // ==========================================
+        // ABAS DE GRÁFICOS E IA
+        // ==========================================
+        let mentorCarregado = false;
 
         function mostrarGrafico(tipo) {
             const btnOndas = document.getElementById('btn-ondas');
-            const btnDonut = document.getElementById('btn-donut');
+            const btnJornada = document.getElementById('btn-jornada');
             const contOndas = document.getElementById('container-ondas');
-            const contDonut = document.getElementById('container-donut');
+            const contJornada = document.getElementById('container-jornada');
 
             const classAtivo = "flex-1 py-1.5 md:py-2 text-xs md:text-sm font-bold rounded-md bg-white dark:bg-gray-800 shadow-sm text-blue-600 dark:text-blue-400 transition-all flex justify-center items-center gap-1 md:gap-2";
             const classInativo = "flex-1 py-1.5 md:py-2 text-xs md:text-sm font-bold rounded-md text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200 transition-all flex justify-center items-center gap-1 md:gap-2";
 
             if (tipo === 'ondas') {
                 btnOndas.className = classAtivo;
-                btnDonut.className = classInativo;
+                btnJornada.className = classInativo;
                 contOndas.classList.remove('hidden');
-                contDonut.classList.add('hidden');
+                contJornada.classList.add('hidden');
+                contJornada.classList.remove('flex');
             } else {
-                btnDonut.className = classAtivo;
+                btnJornada.className = classAtivo;
                 btnOndas.className = classInativo;
-                contDonut.classList.remove('hidden');
+                contJornada.classList.remove('hidden');
+                contJornada.classList.add('flex');
                 contOndas.classList.add('hidden');
+                
+                // Dispara a busca da IA se for a primeira vez que abre
+                carregarMensagemMentor();
+                lucide.createIcons();
             }
         }
 
+        function carregarMensagemMentor() {
+            if(mentorCarregado) return; // Evita buscar toda vez que clica na aba
+            const textoMentor = document.getElementById('texto-mentor-hir3');
+            if(!textoMentor) return;
+
+            fetch('/api/jornada_rpg')
+                .then(res => res.json())
+                .then(data => {
+                    if(data.status === 'sucesso') {
+                        textoMentor.innerHTML = `"${data.mensagem}"`;
+                        mentorCarregado = true;
+                    } else {
+                        textoMentor.innerHTML = "Sua jornada financeira continua! Mantenha o foco.";
+                    }
+                })
+                .catch(err => {
+                    textoMentor.innerHTML = "Mantenha o foco na sua missão este mês!";
+                });
+        }
+
+        // ==========================================
+        // ABAS DO EXTRATO E CATEGORIAS
+        // ==========================================
         function mudarAbaExtrato(aba) {
             const btnTransacoes = document.getElementById('aba-master-transacoes');
             const btnCategorias = document.getElementById('aba-master-categorias');
@@ -927,7 +1064,6 @@
                 contCategorias.classList.add('block');
                 contTransacoes.classList.remove('block');
                 contTransacoes.classList.add('hidden');
-                
                 renderizarListaCategorias();
             }
         }
@@ -936,7 +1072,7 @@
             const container = document.getElementById('conteudo-extrato-categorias');
             const nomes = {% if labels_categorias %}{{ labels_categorias | tojson | safe }}{% else %}[]{% endif %};
             const valores = {% if valores_categorias %}{{ valores_categorias | tojson | safe }}{% else %}[]{% endif %};
-            
+
             const totalGastos = valores.reduce((a, b) => a + b, 0);
 
             if (nomes.length === 0) {
@@ -953,7 +1089,7 @@
             for (let i = 0; i < nomes.length; i++) {
                 const perc = totalGastos > 0 ? ((valores[i] / totalGastos) * 100).toFixed(1) : 0;
                 const valorFormatado = valores[i].toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
-                
+
                 html += `
                 <div class="bg-white dark:bg-gray-800 p-3 md:p-4 rounded-xl md:rounded-2xl border border-gray-100 dark:border-gray-700 shadow-sm flex flex-col gap-2 hover:shadow-md transition-shadow">
                     <div class="flex justify-between items-center w-full">
@@ -965,7 +1101,7 @@
                         </div>
                         <span class="text-sm md:text-base font-black text-gray-700 dark:text-gray-200 valor-sensivel" data-valor="R$ ${valorFormatado}">R$ ${valorFormatado}</span>
                     </div>
-                    
+
                     <div class="flex items-center gap-3 w-full mt-1 px-1">
                         <div class="w-full bg-gray-100 dark:bg-gray-700 rounded-full h-2">
                             <div class="bg-blue-500 h-2 rounded-full" style="width: ${perc}%"></div>
@@ -974,13 +1110,10 @@
                     </div>
                 </div>`;
             }
-            
+
             container.innerHTML = html;
             lucide.createIcons();
-            
-            if(typeof atualizarVisibilidade === "function") {
-                atualizarVisibilidade();
-            }
+            if(typeof atualizarVisibilidade === "function") atualizarVisibilidade();
         }
 
         function filtrarGastos(status) {
@@ -1007,9 +1140,7 @@
             });
 
             const msgVazio = document.getElementById('msg-filtro-vazio');
-            if (msgVazio) {
-                msgVazio.style.display = visiveis === 0 ? 'block' : 'none';
-            }
+            if (msgVazio) msgVazio.style.display = visiveis === 0 ? 'block' : 'none';
         }
     </script>
 {% endblock %}
