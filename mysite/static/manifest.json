@@ -1,0 +1,23 @@
+{
+  "name": "Minhas Finanças - HIR3",
+  "short_name": "Finanças",
+  "description": "Controle Financeiro da HIR3 Solutions",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#181A20",
+  "theme_color": "#181A20",
+  "icons": [
+    {
+      "src": "/static/img_home_final.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "/static/img_splash_final.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "maskable"
+    }
+  ]
+}

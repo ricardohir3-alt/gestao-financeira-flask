@@ -1,0 +1,36 @@
+import sqlite3
+conexao = sqlite3.connect('financas.db')
+cursor = conexao.cursor()
+
+# Atualiza a tabela GASTOS
+try:
+    cursor.execute("ALTER TABLE gastos ADD COLUMN usuario_id INTEGER DEFAULT 1")
+    print("Coluna 'usuario_id' adicionada na tabela 'gastos'.")
+except sqlite3.OperationalError:
+    print("A coluna 'usuario_id' já existe em 'gastos'.")
+
+# Atualiza a tabela RESERVAS
+try:
+    cursor.execute("ALTER TABLE reservas ADD COLUMN usuario_id INTEGER DEFAULT 1")
+    print("Coluna 'usuario_id' adicionada na tabela 'reservas'.")
+except sqlite3.OperationalError:
+    print("A coluna 'usuario_id' já existe em 'reservas'.")
+
+# Atualiza a tabela COMPRAS
+try:
+    cursor.execute("ALTER TABLE compras ADD COLUMN usuario_id INTEGER DEFAULT 1")
+    print("Coluna 'usuario_id' adicionada na tabela 'compras'.")
+except sqlite3.OperationalError:
+    print("A coluna 'usuario_id' já existe em 'compras'.")
+
+# Garante que dados antigos pertençam ao admin (ID 1)
+cursor.execute("UPDATE gastos SET usuario_id = 1 WHERE usuario_id IS NULL")
+cursor.execute("UPDATE reservas SET usuario_id = 1 WHERE usuario_id IS NULL")
+cursor.execute("UPDATE compras SET usuario_id = 1 WHERE usuario_id IS NULL")
+
+conexao.commit()
+conexao.close()
+print("Banco de dados atualizado com sucesso!")
+exit()
+migrar.py
+exit()

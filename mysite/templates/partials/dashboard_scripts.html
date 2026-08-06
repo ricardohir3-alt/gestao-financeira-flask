@@ -1,0 +1,440 @@
+<script src="https://cdn.jsdelivr.net/npm/apexcharts"></script>
+
+<!-- LÓGICA EXCLUSIVA DO DASHBOARD -->
+<script>
+    // JS Exibição Nome do Mês Header (CORRIGIDO PARA TRADUÇÃO DINÂMICA)
+    function atualizarNomeMes() {
+        const val = "{{ mes_filtro }}";
+        if(val) {
+            const parts = val.split('-');
+            
+            // Mapeamento dos meses para facilitar a tradução no main.js depois
+            const monthsPT = ["JANEIRO", "FEVEREIRO", "MARÇO", "ABRIL", "MAIO", "JUNHO", "JULHO", "AGOSTO", "SETEMBRO", "OUTUBRO", "NOVEMBRO", "DEZEMBRO"];
+            const monthsEN = ["JANUARY", "FEBRUARY", "MARCH", "APRIL", "MAY", "JUNE", "JULY", "AUGUST", "SEPTEMBER", "OCTOBER", "NOVEMBER", "DECEMBER"];
+            const monthsZH = ["一月", "二月", "三月", "四月", "五月", "六月", "七月", "八月", "九月", "十月", "十一月", "十二月"];
+            
+            const m = parseInt(parts[1], 10) - 1;
+            const lang = localStorage.getItem('idioma_sistema') || 'PT-BR';
+            
+            let nomeMes = monthsPT[m];
+            let conjuncao = ' DE ';
+            
+            if(lang === 'EN-US') { nomeMes = monthsEN[m]; conjuncao = ' '; }
+            if(lang === 'ZH-CN') { nomeMes = parts[0] + '年 ' + monthsZH[m]; conjuncao = ''; }
+
+            const display = document.getElementById('display-month');
+            if(display) {
+                if(lang === 'ZH-CN') {
+                    display.innerText = nomeMes;
+                } else {
+                    display.innerText = `${nomeMes}${conjuncao}${parts[0]}`;
+                }
+            }
+        }
+    }
+
+    // JS Modais Básicos do Dashboard
+    function abrirModalExtrato() { const m = document.getElementById('modal-extrato'), c = document.getElementById('card-extrato'); m.classList.remove('hidden'); m.classList.add('flex'); setTimeout(() => { m.classList.remove('opacity-0'); c.classList.remove('scale-95'); }, 10); if(typeof ganharXP === 'function') ganharXP(2, 'xp_motivo_extrato'); }
+    function fecharModalExtrato() { const m = document.getElementById('modal-extrato'), c = document.getElementById('card-extrato'); m.classList.add('opacity-0'); c.classList.add('scale-95'); setTimeout(() => { m.classList.add('hidden'); m.classList.remove('flex'); }, 300); }
+    function abrirModalRenda() { const m = document.getElementById('modal-renda'), c = document.getElementById('card-renda'); m.classList.remove('hidden'); m.classList.add('flex'); setTimeout(() => { m.classList.remove('opacity-0'); c.classList.remove('scale-95'); }, 10); }
+    function fecharModalRenda() { const m = document.getElementById('modal-renda'), c = document.getElementById('card-renda'); m.classList.add('opacity-0'); c.classList.add('scale-95'); setTimeout(() => { m.classList.add('hidden'); m.classList.remove('flex'); }, 300); }
+    function abrirModalGraficoLinha() { const m = document.getElementById('modal-grafico-linha'); m.classList.remove('hidden'); m.classList.add('flex'); setTimeout(() => { m.classList.remove('opacity-0'); m.children[0].classList.remove('scale-95'); }, 10); }
+    function fecharModalGraficoLinha() { const m = document.getElementById('modal-grafico-linha'); m.classList.add('opacity-0'); m.children[0].classList.add('scale-95'); setTimeout(() => { m.classList.add('hidden'); m.classList.remove('flex'); }, 300); }
+    function abrirModalProjecao() { const m = document.getElementById('modal-projecao'); m.classList.remove('hidden'); m.classList.add('flex'); setTimeout(() => { m.classList.remove('opacity-0'); m.children[0].classList.remove('scale-95'); }, 10); }
+    function fecharModalProjecao() { const m = document.getElementById('modal-projecao'); m.classList.add('opacity-0'); m.children[0].classList.add('scale-95'); setTimeout(() => { m.classList.add('hidden'); m.classList.remove('flex'); }, 300); }
+
+    function abrirModalEditarGasto(id, desc, valor, data, cat, q, status) {
+        const form = document.getElementById('form-editar-gasto');
+        form.action = '/editar_gasto/' + id + '?mes={{ mes_filtro }}';
+        document.getElementById('edit-gasto-desc').value = desc;
+        document.getElementById('edit-gasto-valor').value = parseFloat(valor).toFixed(2);
+        document.getElementById('edit-gasto-data').value = data;
+        document.getElementById('edit-gasto-categoria').value = cat;
+        document.getElementById('edit-gasto-quinzena').value = q;
+        const statusField = document.getElementById('edit-gasto-status');
+        if(statusField) statusField.value = status || 'PENDENTE';
+
+        const m = document.getElementById('modal-editar-gasto'), c = document.getElementById('card-editar-gasto');
+        m.classList.remove('hidden'); m.classList.add('flex'); setTimeout(() => { m.classList.remove('opacity-0'); c.classList.remove('scale-95'); }, 10);
+    }
+    function fecharModalEditarGasto() { const m = document.getElementById('modal-editar-gasto'), c = document.getElementById('card-editar-gasto'); m.classList.add('opacity-0'); c.classList.add('scale-95'); setTimeout(() => { m.classList.add('hidden'); m.classList.remove('flex'); }, 300); }
+
+    document.addEventListener('click', function(e) {
+        const modais = [
+            {bg: 'modal-extrato', card: 'card-extrato', close: fecharModalExtrato},
+            {bg: 'modal-renda', card: 'card-renda', close: fecharModalRenda},
+            {bg: 'modal-editar-gasto', card: 'card-editar-gasto', close: fecharModalEditarGasto},
+            {bg: 'modal-grafico-linha', card: 'modal-grafico-linha', close: fecharModalGraficoLinha},
+            {bg: 'modal-projecao', card: 'modal-projecao', close: fecharModalProjecao}
+        ];
+        modais.forEach(m => { const elBg = document.getElementById(m.bg); const elCard = document.getElementById(m.card) || elBg.children[0]; if (elBg && elCard && e.target === elBg && !elCard.contains(e.target)) m.close(); });
+    });
+
+    function calcularFluxoMes() {
+        const renda = parseFloat("{{ renda_total }}".replace(/\./g, '').replace(',', '.')) || 0;
+        const gastos = parseFloat("{{ gastos_totais }}".replace(/\./g, '').replace(',', '.')) || 0;
+        let perc = (renda > 0) ? (gastos / renda) * 100 : (gastos > 0 ? 100 : 0);
+        const t = document.getElementById('texto-fluxo-mes');
+        if(t) { if(perc > 100) { t.classList.add('text-red-400'); t.classList.remove('text-gray-900', 'dark:text-white'); } t.innerText = perc.toFixed(1).replace('.', ',') + '%'; }
+        const b = document.getElementById('barra-fluxo-mes'); if(b) setTimeout(() => { b.style.width = (perc > 100 ? 100 : perc) + '%'; }, 100);
+
+        const mFiltro = "{{ mes_filtro }}"; const ano = parseInt(mFiltro.substring(0, 4)); const mes = parseInt(mFiltro.substring(5, 7)) - 1;
+        const h = new Date(); const eMesAtual = (h.getFullYear() === ano && h.getMonth() === mes);
+        let dDias = eMesAtual ? h.getDate() : new Date(ano, mes + 1, 0).getDate(); if(dDias === 0) dDias = 1;
+        const mDiaria = gastos / dDias; const gProj = mDiaria * new Date(ano, mes + 1, 0).getDate(); const sProj = renda - gProj;
+        const fmt = (v) => v.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+        
+        const lang = localStorage.getItem('idioma_sistema') || 'PT-BR';
+        let txtDia = eMesAtual ? `Dia ${dDias}` : `Mês Fechado`;
+        if(lang === 'EN-US') txtDia = eMesAtual ? `Day ${dDias}` : `Closed Month`;
+        if(lang === 'ZH-CN') txtDia = eMesAtual ? `第 ${dDias} 天` : `关闭月份`;
+
+        const elDia = document.getElementById('mod-dia-atual'); if(elDia) elDia.innerText = txtDia;
+        const elG = document.getElementById('mod-gasto-atual'); if(elG) elG.setAttribute('data-valor', 'R$ ' + fmt(gastos));
+        const elM = document.getElementById('mod-media-diaria'); if(elM) elM.setAttribute('data-valor', 'R$ ' + fmt(mDiaria));
+        const elP = document.getElementById('mod-gasto-projetado'); if(elP) elP.setAttribute('data-valor', 'R$ ' + fmt(gProj));
+        const elS = document.getElementById('mod-saldo-projetado'); if(elS) { elS.setAttribute('data-valor', 'R$ ' + fmt(sProj)); elS.className = "font-black text-sm md:text-base valor-sensivel " + (sProj >= 0 ? "text-indigo-500" : "text-red-400"); }
+        if(typeof atualizarVisibilidade === "function") atualizarVisibilidade();
+    }
+
+    function verificarVencimentos() {
+        const itens = document.querySelectorAll('.item-gasto[data-status="PENDENTE"]');
+        const cont = document.getElementById('alertas-vencimento'); const w = document.getElementById('wrapper-alertas');
+        let tem = false; cont.innerHTML = ''; const h = new Date(); h.setHours(0,0,0,0);
+        
+        const lang = localStorage.getItem('idioma_sistema') || 'PT-BR';
+
+        itens.forEach(i => {
+            const ds = i.getAttribute('data-data'); if(!ds) return;
+            const p = ds.split('-'); if(p.length !== 3) return;
+            const dg = new Date(parseInt(p[0]), parseInt(p[1]) - 1, parseInt(p[2])); dg.setHours(0,0,0,0);
+            const dd = Math.ceil((dg.getTime() - h.getTime()) / (1000 * 60 * 60 * 24));
+            const d = i.getAttribute('data-descricao'), v = i.getAttribute('data-valor'), id = i.getAttribute('data-id');
+            const c = i.getAttribute('data-categoria') || 'Gasto', q = i.getAttribute('data-quinzena') || '0';
+            const s = i.getAttribute('data-status') || 'PENDENTE';
+            
+            let msgAmanha = 'Vence Amanhã!'; let msgHoje = 'Vence HOJE!'; let msgAtraso = `Atrasado há ${Math.abs(dd)} dia(s)`;
+            if(lang === 'EN-US') { msgAmanha = 'Due Tomorrow!'; msgHoje = 'Due TODAY!'; msgAtraso = `Overdue by ${Math.abs(dd)} day(s)`; }
+            if(lang === 'ZH-CN') { msgAmanha = '明天到期！'; msgHoje = '今天到期！'; msgAtraso = `逾期 ${Math.abs(dd)} 天`; }
+
+            if (dd === 1) { addAlerta(d, v, ds, c, q, s, msgAmanha, 'text-yellow-800 bg-yellow-50 border-yellow-200', 'alert-triangle', id); tem = true; }
+            else if (dd === 0) { addAlerta(d, v, ds, c, q, s, msgHoje, 'text-orange-800 bg-orange-50 border-orange-200', 'bell', id); tem = true; }
+            else if (dd < 0) { addAlerta(d, v, ds, c, q, s, msgAtraso, 'text-red-800 bg-red-50 border-red-200', 'alert-octagon', id); tem = true; }
+        });
+        if(tem) { w.classList.remove('hidden'); if(typeof lucide !== 'undefined') lucide.createIcons(); if(typeof atualizarVisibilidade === "function") atualizarVisibilidade(); }
+    }
+
+    function addAlerta(desc, val, data, cat, q, st, msg, cls, ico, id) {
+        const html = `<div onclick="abrirModalEditarGasto('${id}', '${desc}', '${val.replace('R$ ', '').replace('.','').replace(',', '.')}', '${data}', '${cat}', '${q}', '${st}')" class="snap-center shrink-0 w-[85%] md:w-64 bg-white dark:bg-[#1a1b26] border border-gray-100 dark:border-white/5 rounded-2xl p-3 flex items-center gap-3 shadow-sm hover:border-indigo-500/30 cursor-pointer ${cls}">
+            <div class="bg-white/50 p-2 rounded-full pointer-events-none"><i data-lucide="${ico}" class="w-4 h-4"></i></div>
+            <div class="flex flex-col w-full pointer-events-none flex-grow"><span class="text-[9px] font-bold uppercase tracking-wider opacity-90 truncate">${msg}</span><span class="text-[10px] font-bold truncate">${desc}</span><span class="text-xs font-black mt-0.5 opacity-90 valor-sensivel" data-valor="R$ ${val}">R$ ${val}</span></div>
+        </div>`;
+        document.getElementById('alertas-vencimento').insertAdjacentHTML('beforeend', html);
+    }
+
+    function filtrarGastos(st) {
+        ['TODOS', 'PAGO', 'PENDENTE'].forEach(id => {
+            const b = document.getElementById('tab-' + id);
+            if(!b) return;
+            if (id === st) b.className = "px-3 py-1.5 text-[10px] font-bold rounded-lg bg-indigo-100 dark:bg-indigo-900/30 text-indigo-800 dark:text-indigo-300 transition-all";
+            else b.className = "px-3 py-1.5 text-[10px] font-bold rounded-lg text-gray-500 hover:bg-gray-200 dark:hover:bg-gray-800 transition-all";
+        });
+        let v = 0;
+        document.querySelectorAll('.item-gasto').forEach(i => {
+            if (st === 'TODOS' || i.getAttribute('data-status') === st) { i.style.display = 'flex'; v++; } else i.style.display = 'none';
+        });
+        const m = document.getElementById('msg-filtro-vazio'); if (m) m.style.display = v === 0 ? 'block' : 'none';
+    }
+
+    document.addEventListener("DOMContentLoaded", function() {
+        atualizarNomeMes();
+        if(typeof carregarSistemaXP === 'function') carregarSistemaXP();
+        verificarVencimentos();
+        calcularFluxoMes();
+
+        // Adiciona escuta para re-rodar textos do mês e dia quando a pessoa clica no menu Idioma
+        window.addEventListener('themeChanged', () => {}); 
+
+        const slider = document.getElementById('alertas-vencimento');
+        let isDown = false, startX, scrollLeft;
+        if(slider) {
+            slider.addEventListener('mousedown', (e) => { isDown = true; window.isDraggingAlert = false; slider.classList.add('cursor-grabbing'); slider.classList.remove('cursor-grab'); startX = e.pageX - slider.offsetLeft; scrollLeft = slider.scrollLeft; });
+            slider.addEventListener('mouseleave', () => { isDown = false; slider.classList.remove('cursor-grabbing'); slider.classList.add('cursor-grab'); });
+            slider.addEventListener('mouseup', () => { isDown = false; slider.classList.remove('cursor-grabbing'); slider.classList.add('cursor-grab'); setTimeout(() => window.isDraggingAlert = false, 10); });
+            slider.addEventListener('mousemove', (e) => { if (!isDown) return; e.preventDefault(); const x = e.pageX - slider.offsetLeft; const walk = (x - startX) * 2; if (Math.abs(walk) > 5) window.isDraggingAlert = true; slider.scrollLeft = scrollLeft - walk; });
+        }
+
+        const isDark = document.documentElement.classList.contains('dark') || document.body.classList.contains('dark') || localStorage.theme === 'dark';
+        const textColor = isDark ? '#9ca3af' : '#6b7280';
+        const titleColor = isDark ? '#ffffff' : '#111827';
+        const trackColor = isDark ? '#1f2937' : '#e5e7eb';
+        const isMob = window.innerWidth < 768;
+
+        // Renderizar Gráfico de Ondas
+        {% if valores_grafico %}
+        new ApexCharts(document.querySelector("#grafico-ondas"), {
+            series: [{ name: 'Gastos', data: {{ valores_grafico | tojson }} }],
+            chart: { type: 'area', height: 250, toolbar: { show: false }, background: 'transparent', foreColor: textColor },
+            colors: ['#6366f1'],
+            stroke: { curve: 'smooth', width: 2 },
+            fill: { type: 'gradient', gradient: { shadeIntensity: 1, opacityFrom: 0.4, opacityTo: 0.05, stops: [0, 90, 100] } },
+            xaxis: { categories: {{ dias_grafico | tojson }}, labels: { style: { colors: textColor, fontSize: '9px' } } },
+            yaxis: { show: false }
+        }).render();
+        {% endif %}
+
+        // Renderizar Gráfico de Donut (Categorias)
+        {% if valores_categorias and labels_categorias %}
+        const vt = {{ valores_categorias | sum | round(2) }};
+        new ApexCharts(document.querySelector("#grafico-donut-container"), {
+            series: {{ valores_categorias | tojson }}, labels: {{ labels_categorias | tojson }},
+            chart: { type: 'donut', height: isMob ? 260 : 300, background: 'transparent', foreColor: textColor },
+            colors: ['#6366f1', '#14b8a6', '#ef4444', '#10b981', '#f59e0b', '#ec4899', '#8b5cf6', '#06b6d4'],
+            plotOptions: {
+                pie: {
+                    donut: {
+                        size: '80%',
+                        labels: {
+                            show: true,
+                            name: { show: true, fontSize: '10px', fontWeight: 600, color: textColor, offsetY: -5, formatter: function() { return 'TOTAL' } },
+                            value: { show: true, fontSize: isMob ? '20px' : '24px', fontWeight: 800, color: titleColor, offsetY: 5, formatter: function (val) { return "R$ " + val.toLocaleString('pt-BR', {minimumFractionDigits: 2, maximumFractionDigits: 2}); } },
+                            total: { show: true, showAlways: true, label: 'TOTAL', color: textColor, fontSize: '10px', fontWeight: 600, formatter: function () { return "R$ " + vt.toLocaleString('pt-BR', {minimumFractionDigits: 2, maximumFractionDigits: 2}); } }
+                        }
+                    }
+                }
+            },
+            dataLabels: { enabled: false },
+            stroke: { show: true, colors: isDark ? ['#1a1b26'] : ['#ffffff'], width: 6 },
+            legend: {
+                position: 'bottom',
+                horizontalAlign: 'left',
+                fontSize: '12px',
+                markers: { radius: 12, width: 8, height: 8 },
+                itemMargin: { horizontal: 0, vertical: 4 },
+                labels: { colors: textColor },
+                formatter: function(seriesName, opts) {
+                    return seriesName + " <span style='float: right; font-weight: bold; color: " + titleColor + "'>R$ " + opts.w.globals.seriesTotals[opts.seriesIndex].toLocaleString('pt-BR', {minimumFractionDigits: 2, maximumFractionDigits: 2}) + "</span>";
+                }
+            }
+        }).render();
+        {% endif %}
+
+        // ===================================================================
+        // MÁGICA: SALVAMOS O GRÁFICO NA WINDOW PARA ANIMÁ-LO DEPOIS
+        // ===================================================================
+        const pagoPerc = parseFloat("{{ perc_pago }}".replace(',', '.')) || 0;
+        const hasBills = parseFloat("{{ gastos_totais }}".replace(/\./g, '').replace(',', '.')) > 0;
+        const scoreVal = hasBills ? (pagoPerc * 10) : 1000;
+
+        window.graficoScoreChart = new ApexCharts(document.querySelector("#grafico-score"), {
+            series: [pagoPerc],
+            chart: { type: 'radialBar', height: isMob ? 180 : 200, sparkline: { enabled: true }, foreColor: textColor },
+            plotOptions: {
+                radialBar: {
+                    startAngle: -90,
+                    endAngle: 90,
+                    hollow: { size: '60%' },
+                    track: { background: trackColor, strokeWidth: '100%', margin: 5 },
+                    dataLabels: {
+                        name: { show: false },
+                        value: {
+                            offsetY: -5,
+                            fontSize: isMob ? '18px' : '22px',
+                            fontWeight: 700,
+                            color: titleColor,
+                            formatter: function () { return scoreVal.toFixed(0); }
+                        }
+                    }
+                }
+            },
+            fill: {
+                type: 'gradient',
+                gradient: {
+                    shade: isDark ? 'dark' : 'light',
+                    type: 'horizontal',
+                    colorStops: [
+                        { offset: 0, color: '#ef4444', opacity: 1 },
+                        { offset: 50, color: '#eab308', opacity: 1 },
+                        { offset: 100, color: '#22c55e', opacity: 1 }
+                    ]
+                }
+            },
+            stroke: { lineCap: 'round' }
+        });
+        window.graficoScoreChart.render();
+
+    });
+
+    // =======================================================
+    // OPERAÇÕES EM SEGUNDO PLANO (AJAX) - SEM RECARREGAR A TELA
+    // =======================================================
+
+    function extrairValoresDoFundo(html) {
+        const parser = new DOMParser();
+        const novoDoc = parser.parseFromString(html, 'text/html');
+        const valoresAtuais = document.querySelectorAll('.valor-sensivel');
+        const valoresNovos = novoDoc.querySelectorAll('.valor-sensivel');
+        
+        // ATUALIZA APENAS OS 3 PRIMEIROS CARDS (Saldo, Entradas, Saídas)
+        for(let i = 0; i < 3; i++) {
+            if(valoresAtuais[i] && valoresNovos[i]) {
+                valoresAtuais[i].innerHTML = valoresNovos[i].innerHTML;
+                valoresAtuais[i].setAttribute('data-valor', valoresNovos[i].getAttribute('data-valor'));
+            }
+        }
+
+        // =======================================================
+        // ATUALIZAÇÃO DINÂMICA DO SCORE DE PAGAMENTO
+        // =======================================================
+        const secScoreNovo = novoDoc.getElementById('section-score');
+        
+        if (secScoreNovo) {
+            // 1. Atualiza os textinhos laterais com a porcentagem
+            const textPagoAntigo = document.getElementById('texto-perc-pago');
+            if (textPagoAntigo) textPagoAntigo.innerHTML = novoDoc.getElementById('texto-perc-pago').innerHTML;
+            
+            const textPendenteAntigo = document.getElementById('texto-perc-pendente');
+            const textPendenteNovo = novoDoc.getElementById('texto-perc-pendente');
+            if (textPendenteAntigo && textPendenteNovo) {
+                textPendenteAntigo.innerHTML = textPendenteNovo.innerHTML;
+                textPendenteAntigo.className = textPendenteNovo.className;
+            }
+
+            // 2. Extrai novos dados matemáticos direto do HTML gerado pelo Flask
+            const novoPercPago = parseFloat(secScoreNovo.getAttribute('data-pago').replace(',', '.')) || 0;
+            const novosGastosTotais = secScoreNovo.getAttribute('data-gastos');
+            const hasBills = parseFloat(novosGastosTotais.replace(/\./g, '').replace(',', '.')) > 0;
+            const novoScoreVal = hasBills ? (novoPercPago * 10) : 1000;
+
+            // 3. ANIMA O GRÁFICO (Magia acontecendo!)
+            if (window.graficoScoreChart) {
+                // Preenche ou Esvazia a barra colorida
+                window.graficoScoreChart.updateSeries([novoPercPago]);
+                // Atualiza o numero gigante no centro do arco
+                window.graficoScoreChart.updateOptions({
+                    plotOptions: {
+                        radialBar: {
+                            dataLabels: {
+                                value: { formatter: function () { return novoScoreVal.toFixed(0); } }
+                            }
+                        }
+                    }
+                });
+            }
+        }
+    }
+
+    function excluirSemReload(event, form, id) {
+        event.preventDefault(); // Trava o recarregamento normal da página
+        
+        const executarExclusaoAJAX = () => {
+            const btn = form.querySelector('button');
+            btn.innerHTML = '<i data-lucide="loader" class="w-3.5 h-3.5 animate-spin"></i>';
+            
+            fetch(form.action, { method: 'POST', body: new FormData(form) })
+            .then(() => fetch(window.location.href))
+            .then(res => res.text())
+            .then(html => {
+                const card = document.querySelector(`.item-gasto[data-id="${id}"]`);
+                if(card) {
+                    card.style.transition = 'all 0.3s ease';
+                    card.style.opacity = '0';
+                    card.style.transform = 'scale(0.9)';
+                    setTimeout(() => card.remove(), 300);
+                }
+                extrairValoresDoFundo(html); 
+            });
+        };
+
+        const lang = localStorage.getItem('idioma_sistema') || 'PT-BR';
+        let titleText = 'Excluir?'; let descText = 'Deseja apagar esta despesa?'; let btnSim = 'Sim, excluir!'; let btnNao = 'Cancelar';
+        if(lang === 'EN-US') { titleText = 'Delete?'; descText = 'Do you want to delete this expense?'; btnSim = 'Yes, delete!'; btnNao = 'Cancel'; }
+        if(lang === 'ZH-CN') { titleText = '删除？'; descText = '您要删除这笔支出吗？'; btnSim = '是的，删除！'; btnNao = '取消'; }
+
+        if (typeof Swal !== 'undefined') {
+            Swal.fire({
+                title: titleText,
+                text: descText,
+                icon: 'warning',
+                showCancelButton: true,
+                confirmButtonColor: '#ef4444', 
+                cancelButtonColor: '#6b7280',  
+                confirmButtonText: btnSim,
+                cancelButtonText: btnNao
+            }).then((result) => {
+                if (result.isConfirmed) {
+                    executarExclusaoAJAX();
+                }
+            });
+        } else {
+            if (confirm(descText)) {
+                executarExclusaoAJAX();
+            }
+        }
+    }
+
+    function statusSemReload(event, form, id) {
+        event.preventDefault();
+        
+        fetch(form.action, { method: 'POST', body: new FormData(form) })
+        .then(() => fetch(window.location.href))
+        .then(res => res.text())
+        .then(html => {
+            const parser = new DOMParser();
+            const novoDoc = parser.parseFromString(html, 'text/html');
+            
+            const cardAntigo = document.querySelector(`.item-gasto[data-id="${id}"]`);
+            const cardNovo = novoDoc.querySelector(`.item-gasto[data-id="${id}"]`);
+            
+            if(cardAntigo && cardNovo) {
+                cardAntigo.innerHTML = cardNovo.innerHTML;
+                cardAntigo.setAttribute('data-status', cardNovo.getAttribute('data-status'));
+            }
+            
+            if(typeof lucide !== 'undefined') lucide.createIcons();
+            extrairValoresDoFundo(html);
+            if(window.aplicarTraducao) window.aplicarTraducao(localStorage.getItem('idioma_sistema') || 'PT-BR');
+        });
+    }
+
+    function editarSemReload(event, form) {
+        event.preventDefault();
+        
+        const idMatch = form.action.match(/\/editar_gasto\/(\d+)/);
+        if (!idMatch) return;
+        const idGasto = idMatch[1];
+        
+        const btn = form.querySelector('button[type="submit"]');
+        const txtOriginal = btn.innerHTML;
+        
+        const lang = localStorage.getItem('idioma_sistema') || 'PT-BR';
+        btn.innerHTML = lang === 'EN-US' ? 'Saving...' : (lang === 'ZH-CN' ? '保存中...' : 'Salvando...');
+        
+        fetch(form.action, { method: 'POST', body: new FormData(form) })
+        .then(() => fetch(window.location.href))
+        .then(res => res.text())
+        .then(html => {
+            const parser = new DOMParser();
+            const novoDoc = parser.parseFromString(html, 'text/html');
+            
+            const cardAntigo = document.querySelector(`.item-gasto[data-id="${idGasto}"]`);
+            const cardNovo = novoDoc.querySelector(`.item-gasto[data-id="${idGasto}"]`);
+            if(cardAntigo && cardNovo) {
+                cardAntigo.innerHTML = cardNovo.innerHTML;
+                ['data-descricao', 'data-valor', 'data-data', 'data-categoria', 'data-quinzena', 'data-status'].forEach(attr => {
+                    cardAntigo.setAttribute(attr, cardNovo.getAttribute(attr));
+                });
+            }
+            
+            fecharModalEditarGasto();
+            btn.innerHTML = txtOriginal; 
+            if(typeof lucide !== 'undefined') lucide.createIcons();
+            extrairValoresDoFundo(html);
+            if(window.aplicarTraducao) window.aplicarTraducao(localStorage.getItem('idioma_sistema') || 'PT-BR');
+        })
+        .catch(err => {
+            console.error("Erro ao editar:", err);
+            btn.innerHTML = txtOriginal;
+        });
+    }
+</script>
