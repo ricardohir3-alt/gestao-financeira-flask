@@ -1,16 +1,17 @@
 {% extends "base.html" %}
 
 {% block content %}
-    <div class="flex flex-col items-center justify-center min-h-[80vh] p-4">
+    <div class="flex flex-col items-center justify-center min-h-[80vh] p-4 sm:p-6">
 
-        <div class="w-full max-w-sm bg-white dark:bg-gray-800 p-8 rounded-3xl shadow-2xl border border-gray-100 dark:border-gray-700">
+        <!-- CAIXA PRINCIPAL: Ajustado com sm:max-w-md e sm:p-8 para melhor responsividade -->
+        <div class="w-full max-w-sm sm:max-w-md bg-white dark:bg-gray-800 p-6 sm:p-8 rounded-3xl shadow-2xl border border-gray-100 dark:border-gray-700">
 
-            <!-- CABEÇALHO CLEAN: Apenas a Logo -->
-            <div class="text-center mb-8">
+            <!-- CABEÇALHO CLEAN: Apenas a Logo (Fixo para ambas as telas) -->
+            <div class="text-center mb-6 sm:mb-8">
                 <div class="flex justify-center">
-                    <img src="{{ url_for('static', filename='icone_app.png') }}"
+                    <img src="{{ url_for('static', filename='img_home_final.png') }}"
                          alt="Logo"
-                         class="w-24 h-24 rounded-3xl shadow-xl border border-gray-100 dark:border-gray-700">
+                         class="w-20 h-20 sm:w-24 sm:h-24 rounded-3xl shadow-xl border border-gray-100 dark:border-gray-700 object-cover">
                 </div>
             </div>
 
@@ -20,65 +21,157 @@
             </div>
             {% endif %}
 
-            <form action="/login" method="POST" class="space-y-5">
-                <!-- Campo: Usuário -->
-                <div>
-                    <label class="block text-[10px] font-bold text-gray-400 dark:text-gray-500 uppercase tracking-widest mb-1.5 ml-1">Usuário</label>
-                    <div class="relative">
-                        <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                            <i data-lucide="user" class="w-4 h-4 text-gray-400"></i>
+            <!-- ========================================== -->
+            <!-- BLOCO 1: FORMULÁRIO DE LOGIN (Visível) -->
+            <!-- ========================================== -->
+            <div id="bloco-login" class="w-full transition-all duration-300">
+                <form action="/login" method="POST" class="space-y-4 sm:space-y-5">
+                    <!-- Campo: Usuário -->
+                    <div>
+                        <label class="block text-[10px] font-bold text-gray-400 dark:text-gray-500 uppercase tracking-widest mb-1.5 ml-1">Usuário</label>
+                        <div class="relative">
+                            <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                                <i data-lucide="user" class="w-4 h-4 text-gray-400"></i>
+                            </div>
+                            <input type="text" name="usuario" placeholder="Seu usuário" required
+                                   class="w-full pl-10 pr-3 py-3 sm:py-3.5 bg-gray-50 dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-2xl text-sm text-gray-800 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all">
                         </div>
-                        <input type="text" name="usuario" placeholder="Seu usuário" required
-                               class="w-full pl-10 pr-3 py-3.5 bg-gray-50 dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-2xl text-sm text-gray-800 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all">
                     </div>
+
+                    <!-- Campo: Senha -->
+                    <div class="space-y-3">
+                        <div>
+                            <label class="block text-[10px] font-bold text-gray-400 dark:text-gray-500 uppercase tracking-widest mb-1.5 ml-1">Senha</label>
+                            <div class="relative">
+                                <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                                    <i data-lucide="lock" class="w-4 h-4 text-gray-400"></i>
+                                </div>
+                                <input type="password" id="senha" name="senha" placeholder="••••••••" required
+                                       class="w-full pl-10 pr-12 py-3 sm:py-3.5 bg-gray-50 dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-2xl text-sm text-gray-800 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all">
+
+                                <!-- Botão do Olhinho -->
+                                <button type="button" onclick="togglePassword('senha', 'eye-icon')" class="absolute inset-y-0 right-0 pr-4 flex items-center text-gray-400 hover:text-blue-500 dark:hover:text-blue-400 focus:outline-none transition-colors">
+                                    <i data-lucide="eye" id="eye-icon" class="w-4 h-4"></i>
+                                </button>
+                            </div>
+                        </div>
+
+                        <!-- Opções: Manter conectado & Esqueceu a senha -->
+                        <div class="flex items-center justify-between px-1">
+                            <div class="flex items-center">
+                                <input type="checkbox" id="lembrar" name="lembrar"
+                                       class="w-4 h-4 text-blue-600 bg-gray-50 border-gray-300 rounded focus:ring-blue-500 dark:focus:ring-blue-600 dark:ring-offset-gray-900 focus:ring-2 dark:bg-gray-800 dark:border-gray-600 cursor-pointer">
+                                <label for="lembrar" class="ml-2 text-[11px] font-medium text-gray-500 dark:text-gray-400 cursor-pointer">Manter conectado</label>
+                            </div>
+                            <a href="/recuperar_senha" class="text-[11px] font-bold text-blue-600 hover:text-blue-500 dark:text-blue-400 dark:hover:text-blue-300 transition-colors">
+                                Esqueceu a senha?
+                            </a>
+                        </div>
+                    </div>
+
+                    <!-- Botão de Submit -->
+                    <button type="submit" class="w-full bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white font-bold py-3.5 sm:py-4 rounded-2xl transition-all shadow-lg shadow-blue-500/20 flex justify-center items-center gap-2 mt-2">
+                        Entrar no App <i data-lucide="log-in" class="w-4 h-4"></i>
+                    </button>
+                </form>
+
+                <!-- Toggle para Cadastro -->
+                <div class="mt-6 text-center">
+                    <span class="text-[11px] text-gray-500 dark:text-gray-400">Novo por aqui?</span>
+                    <button type="button" onclick="alternarTelas()" class="text-[11px] text-blue-600 font-bold hover:text-blue-500 dark:text-blue-400 dark:hover:text-blue-300 ml-1 transition-colors focus:outline-none">
+                        Crie sua conta Grátis
+                    </button>
                 </div>
 
-                <!-- Campo: Senha -->
-                <div class="space-y-3">
+                <!-- Instalar como App -->
+                <div class="flex items-center gap-4 my-6 sm:my-8">
+                    <div class="flex-grow border-t border-gray-200 dark:border-gray-700"></div>
+                    <span class="text-[10px] font-bold text-gray-400 uppercase tracking-widest">Instalar como App</span>
+                    <div class="flex-grow border-t border-gray-200 dark:border-gray-700"></div>
+                </div>
+
+                <div class="text-[10px] sm:text-[11px] text-gray-500 dark:text-gray-400 space-y-2 text-center">
+                    <p><strong>iOS:</strong> Compartilhar <i data-lucide="share" class="inline w-3 h-3"></i> → Adicionar à Tela de Início</p>
+                    <p><strong>Android:</strong> Menu <i data-lucide="more-vertical" class="inline w-3 h-3"></i> → Instalar App / Adicionar à Tela Inicial</p>
+                </div>
+            </div>
+
+            <!-- ========================================== -->
+            <!-- BLOCO 2: FORMULÁRIO DE CADASTRO (Oculto) -->
+            <!-- ========================================== -->
+            <div id="bloco-cadastro" class="w-full hidden transition-all duration-300">
+                <h2 class="text-gray-800 dark:text-gray-100 font-bold text-lg text-center mb-5 tracking-wide">Cadastro Grátis</h2>
+
+                <form action="{{ url_for('cadastro_clientes') }}" method="POST" class="w-full space-y-4">
+
+                    <!-- Campo: Usuário Cadastro -->
+                    <div>
+                        <label class="block text-[10px] font-bold text-gray-400 dark:text-gray-500 uppercase tracking-widest mb-1.5 ml-1">Usuário</label>
+                        <div class="relative">
+                            <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                                <i data-lucide="user" class="w-4 h-4 text-gray-400"></i>
+                            </div>
+                            <input type="text" name="usuario" placeholder="Escolha um usuário" required
+                                   class="w-full pl-10 pr-3 py-3 bg-gray-50 dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-2xl text-sm text-gray-800 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-emerald-500 transition-all">
+                        </div>
+                    </div>
+
+                    <!-- Campo: Email Cadastro -->
+                    <div>
+                        <label class="block text-[10px] font-bold text-gray-400 dark:text-gray-500 uppercase tracking-widest mb-1.5 ml-1">E-mail</label>
+                        <div class="relative">
+                            <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                                <i data-lucide="mail" class="w-4 h-4 text-gray-400"></i>
+                            </div>
+                            <input type="email" name="email" placeholder="Seu melhor e-mail" required
+                                   class="w-full pl-10 pr-3 py-3 bg-gray-50 dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-2xl text-sm text-gray-800 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-emerald-500 transition-all">
+                        </div>
+                    </div>
+
+                    <!-- Campo: Senha Cadastro -->
                     <div>
                         <label class="block text-[10px] font-bold text-gray-400 dark:text-gray-500 uppercase tracking-widest mb-1.5 ml-1">Senha</label>
                         <div class="relative">
                             <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
                                 <i data-lucide="lock" class="w-4 h-4 text-gray-400"></i>
                             </div>
-                            <input type="password" id="senha" name="senha" placeholder="••••••••" required
-                                   class="w-full pl-10 pr-12 py-3.5 bg-gray-50 dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-2xl text-sm text-gray-800 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all">
-                            
-                            <!-- Botão do Olhinho -->
-                            <button type="button" onclick="togglePassword()" class="absolute inset-y-0 right-0 pr-4 flex items-center text-gray-400 hover:text-blue-500 dark:hover:text-blue-400 focus:outline-none transition-colors">
-                                <i data-lucide="eye" id="eye-icon" class="w-4 h-4"></i>
+                            <input type="password" id="senha_cad" name="senha" placeholder="Crie uma senha forte" required
+                                   class="w-full pl-10 pr-12 py-3 bg-gray-50 dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-2xl text-sm text-gray-800 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-emerald-500 transition-all">
+
+                            <button type="button" onclick="togglePassword('senha_cad', 'eye-icon-cad')" class="absolute inset-y-0 right-0 pr-4 flex items-center text-gray-400 hover:text-emerald-500 focus:outline-none transition-colors">
+                                <i data-lucide="eye" id="eye-icon-cad" class="w-4 h-4"></i>
                             </button>
                         </div>
                     </div>
 
-                    <!-- Opções: Manter conectado & Esqueceu a senha -->
-                    <div class="flex items-center justify-between px-1">
-                        <div class="flex items-center">
-                            <input type="checkbox" id="lembrar" name="lembrar" 
-                                   class="w-4 h-4 text-blue-600 bg-gray-50 border-gray-300 rounded focus:ring-blue-500 dark:focus:ring-blue-600 dark:ring-offset-gray-900 focus:ring-2 dark:bg-gray-800 dark:border-gray-600 cursor-pointer">
-                            <label for="lembrar" class="ml-2 text-[11px] font-medium text-gray-500 dark:text-gray-400 cursor-pointer">Manter conectado</label>
+                    <!-- Campo: Confirmar Senha -->
+                    <div>
+                        <label class="block text-[10px] font-bold text-gray-400 dark:text-gray-500 uppercase tracking-widest mb-1.5 ml-1">Confirmar Senha</label>
+                        <div class="relative">
+                            <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                                <i data-lucide="lock" class="w-4 h-4 text-gray-400"></i>
+                            </div>
+                            <input type="password" id="senha_cad_conf" name="senha_confirmacao" placeholder="Repita a senha" required
+                                   class="w-full pl-10 pr-12 py-3 bg-gray-50 dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-2xl text-sm text-gray-800 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-emerald-500 transition-all">
+
+                            <button type="button" onclick="togglePassword('senha_cad_conf', 'eye-icon-cad-conf')" class="absolute inset-y-0 right-0 pr-4 flex items-center text-gray-400 hover:text-emerald-500 focus:outline-none transition-colors">
+                                <i data-lucide="eye" id="eye-icon-cad-conf" class="w-4 h-4"></i>
+                            </button>
                         </div>
-                        <a href="/recuperar_senha" class="text-[11px] font-bold text-blue-600 hover:text-blue-500 dark:text-blue-400 dark:hover:text-blue-300 transition-colors">
-                            Esqueceu a senha?
-                        </a>
                     </div>
+
+                    <button type="submit" class="w-full bg-gradient-to-r from-emerald-500 to-teal-500 hover:from-emerald-600 hover:to-teal-600 text-white font-bold py-3.5 rounded-2xl shadow-lg shadow-emerald-500/20 transition-all active:scale-95 flex justify-center items-center gap-2 mt-4">
+                        Criar Conta <i data-lucide="check-circle" class="w-4 h-4"></i>
+                    </button>
+                </form>
+
+                <!-- Toggle para Login -->
+                <div class="mt-6 text-center pt-2">
+                    <span class="text-[11px] text-gray-500 dark:text-gray-400">Já tem uma conta?</span>
+                    <button type="button" onclick="alternarTelas()" class="text-[11px] text-emerald-600 font-bold hover:text-emerald-500 dark:text-emerald-400 dark:hover:text-emerald-300 ml-1 transition-colors focus:outline-none">
+                        Faça Login
+                    </button>
                 </div>
-
-                <!-- Botão de Submit -->
-                <button type="submit" class="w-full bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white font-bold py-4 rounded-2xl transition-all shadow-lg shadow-blue-500/20 flex justify-center items-center gap-2 mt-2">
-                    Entrar no App <i data-lucide="log-in" class="w-4 h-4"></i>
-                </button>
-            </form>
-
-            <div class="flex items-center gap-4 my-8">
-                <div class="flex-grow border-t border-gray-200 dark:border-gray-700"></div>
-                <span class="text-[10px] font-bold text-gray-400 uppercase tracking-widest">Instalar como App</span>
-                <div class="flex-grow border-t border-gray-200 dark:border-gray-700"></div>
-            </div>
-
-            <div class="text-[11px] text-gray-500 dark:text-gray-400 space-y-2 text-center">
-                <p><strong>iOS:</strong> Compartilhar <i data-lucide="share" class="inline w-3 h-3"></i> → Adicionar à Tela de Início</p>
-                <p><strong>Android:</strong> Menu <i data-lucide="more-vertical" class="inline w-3 h-3"></i> → Instalar App / Adicionar à Tela Inicial</p>
             </div>
 
         </div>
@@ -87,11 +180,21 @@
     <script>
         lucide.createIcons();
 
-        // Script para alternar a visibilidade da senha
-        function togglePassword() {
-            const passwordInput = document.getElementById('senha');
-            const eyeIcon = document.getElementById('eye-icon');
-            
+        // Script para alternar entre Login e Cadastro
+        function alternarTelas() {
+            const login = document.getElementById('bloco-login');
+            const cadastro = document.getElementById('bloco-cadastro');
+
+            // Alterna a visibilidade dos blocos
+            login.classList.toggle('hidden');
+            cadastro.classList.toggle('hidden');
+        }
+
+        // Script atualizado para alternar a visibilidade de múltiplas senhas
+        function togglePassword(inputId, iconId) {
+            const passwordInput = document.getElementById(inputId);
+            const eyeIcon = document.getElementById(iconId);
+
             if (passwordInput.type === 'password') {
                 passwordInput.type = 'text';
                 eyeIcon.setAttribute('data-lucide', 'eye-off');

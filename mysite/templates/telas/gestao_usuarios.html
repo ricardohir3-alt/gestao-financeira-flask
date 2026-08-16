@@ -77,7 +77,15 @@
                                 <i data-lucide="user" class="w-4 h-4 md:w-5 md:h-5 text-blue-500 dark:text-blue-400"></i>
                             </div>
                             <div class="flex flex-col min-w-0">
-                                <h4 class="font-bold text-gray-800 dark:text-gray-100 text-sm md:text-lg truncate" title="{{ u[1] }}">{{ u[1] }}</h4>
+                                <!-- STATUS ONLINE INDICATOR -->
+                                <div class="flex items-center gap-1.5">
+                                    {% if u|length > 7 and u[7] %}
+                                        <span class="w-2 h-2 rounded-full bg-green-500 shadow-[0_0_8px_rgba(34,197,94,0.8)] animate-pulse shrink-0" title="Online Agora"></span>
+                                    {% else %}
+                                        <span class="w-2 h-2 rounded-full bg-gray-400 dark:bg-gray-600 shrink-0" title="Offline"></span>
+                                    {% endif %}
+                                    <h4 class="font-bold text-gray-800 dark:text-gray-100 text-sm md:text-lg truncate" title="{{ u[1] }}">{{ u[1] }}</h4>
+                                </div>
                                 <span class="text-[9px] md:text-[10px] font-black {% if u[2] == 'Premium' %}text-indigo-600 dark:text-indigo-400{% else %}text-blue-600 dark:text-blue-400{% endif %} uppercase tracking-widest mt-0.5">
                                     {{ u[2] }}
                                 </span>
@@ -101,8 +109,8 @@
                                         </button>
                                     </form>
                                     
-                                    <!-- Editar -->
-                                    <button type="button" onclick="abrirEdicaoUsuario('{{ u[0] }}', '{{ u[1] }}', '{{ u[2] }}', '{{ u[3] }}', '{{ u[4] }}', '{{ u[5] if u|length > 5 else '' }}')" class="flex items-center justify-center p-1.5 md:p-2 rounded-lg md:rounded-xl bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 text-amber-500 hover:bg-amber-50 dark:hover:bg-amber-900/20 hover:border-amber-200 transition-colors shadow-sm" title="Editar Usuário / Contrato">
+                                    <!-- Editar (AGORA PASSA O EMAIL TAMBÉM) -->
+                                    <button type="button" onclick="abrirEdicaoUsuario('{{ u[0] }}', '{{ u[1] }}', '{{ u[2] }}', '{{ u[3] }}', '{{ u[4] }}', '{{ u[5] if u|length > 5 else '' }}', '{{ u[6] if u|length > 6 else '' }}')" class="flex items-center justify-center p-1.5 md:p-2 rounded-lg md:rounded-xl bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 text-amber-500 hover:bg-amber-50 dark:hover:bg-amber-900/20 hover:border-amber-200 transition-colors shadow-sm" title="Editar Usuário / Contrato">
                                         <i data-lucide="edit-3" class="w-3.5 h-3.5 md:w-4 md:h-4"></i>
                                     </button>
                                     
@@ -334,10 +342,6 @@
             showTab('cobrancas');
         }
 
-        // =========================================================================
-        // NOVAS FUNÇÕES SPA VIA SWEETALERT2 (INATIVAR E EDITAR)
-        // =========================================================================
-
         function confirmarInativacao(idUsuario, nomeUsuario) {
             Swal.fire({
                 title: 'Inativar Usuário?',
@@ -372,21 +376,19 @@
             });
         }
 
-        // Função de Edição adaptada para Contratos com responsividade mobile
-        function abrirEdicaoUsuario(idUsuario, nomeAtual, licencaAtual, valorAtual, modulosAtual, validadeAtual) {
+        // Função de Edição atualizada com Email e Flag Dia/Mês
+        function abrirEdicaoUsuario(idUsuario, nomeAtual, licencaAtual, valorAtual, modulosAtual, validadeAtual, emailAtual) {
             const mods = (modulosAtual && modulosAtual !== 'None') ? modulosAtual.split(',').map(m => m.trim()) : ['Todos'];
             const chk = (m) => (mods.includes('Todos') || mods.includes(m)) ? 'checked' : '';
             
-            // Tratamento de Data para exibição
             let dataBaseBR = '';
             if (validadeAtual && validadeAtual !== 'None' && validadeAtual !== '') {
-                const partes = validadeAtual.split('-'); // Espera YYYY-MM-DD do SQLite
+                const partes = validadeAtual.split('-');
                 if (partes.length === 3) {
                     dataBaseBR = `${partes[2]}/${partes[1]}/${partes[0]}`;
                 }
             }
             
-            // Fallback caso a data seja vazia ou falhe
             if(!dataBaseBR) {
                 const h = new Date();
                 dataBaseBR = `${String(h.getDate()).padStart(2,'0')}/${String(h.getMonth()+1).padStart(2,'0')}/${h.getFullYear()}`;
@@ -394,38 +396,59 @@
 
             const htmlFormulario = `
                 <div class="text-left space-y-3 md:space-y-4 mt-1 md:mt-2">
-                    <!-- Linha 1: Nome e Licença -->
-                    <div class="grid grid-cols-2 gap-3 md:gap-4">
-                        <div>
-                            <label class="block text-[10px] md:text-xs font-semibold text-gray-700 dark:text-gray-300 mb-1">Nome de Usuário</label>
-                            <input id="swal-nome" class="w-full px-2 py-1.5 md:px-3 md:py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-gray-50 dark:bg-gray-700 text-gray-800 dark:text-gray-100 outline-none text-xs md:text-sm" value="${nomeAtual}">
+                    <!-- Linha 1: Nome, Email e Licença -->
+                    <div class="grid grid-cols-1 gap-3 md:gap-4">
+                        <div class="grid grid-cols-2 gap-3 md:gap-4">
+                            <div>
+                                <label class="block text-[10px] md:text-xs font-semibold text-gray-700 dark:text-gray-300 mb-1">Nome de Usuário</label>
+                                <input id="swal-nome" class="w-full px-2 py-1.5 md:px-3 md:py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-gray-50 dark:bg-gray-700 text-gray-800 dark:text-gray-100 outline-none text-xs md:text-sm" value="${nomeAtual}">
+                            </div>
+                            <div>
+                                <label class="block text-[10px] md:text-xs font-semibold text-gray-700 dark:text-gray-300 mb-1">Tipo de Licença</label>
+                                <select id="swal-licenca" class="w-full px-2 py-1.5 md:px-3 md:py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-gray-50 dark:bg-gray-700 text-gray-800 dark:text-gray-100 outline-none cursor-pointer text-xs md:text-sm">
+                                    <option value="Básica" ${licencaAtual === 'Básica' ? 'selected' : ''}>Básica (Free)</option>
+                                    <option value="Premium" ${licencaAtual === 'Premium' ? 'selected' : ''}>Premium</option>
+                                </select>
+                            </div>
                         </div>
                         <div>
-                            <label class="block text-[10px] md:text-xs font-semibold text-gray-700 dark:text-gray-300 mb-1">Tipo de Licença</label>
-                            <select id="swal-licenca" class="w-full px-2 py-1.5 md:px-3 md:py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-gray-50 dark:bg-gray-700 text-gray-800 dark:text-gray-100 outline-none cursor-pointer text-xs md:text-sm">
-                                <option value="Básica" ${licencaAtual === 'Básica' ? 'selected' : ''}>Básica (Free)</option>
-                                <option value="Premium" ${licencaAtual === 'Premium' ? 'selected' : ''}>Premium</option>
-                            </select>
+                            <label class="block text-[10px] md:text-xs font-semibold text-gray-700 dark:text-gray-300 mb-1">E-mail do Cliente</label>
+                            <input id="swal-email" type="email" class="w-full px-2 py-1.5 md:px-3 md:py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-gray-50 dark:bg-gray-700 text-gray-800 dark:text-gray-100 outline-none text-xs md:text-sm" value="${(emailAtual && emailAtual !== 'None') ? emailAtual : ''}" placeholder="usuario@email.com">
                         </div>
                     </div>
 
-                    <!-- Linha 2: Calculadora Dinâmica (Total / Dias) -->
+                    <!-- Linha 2: Calculadora Dinâmica (Por Dia ou Mensal) -->
                     <div class="bg-indigo-50 dark:bg-indigo-900/20 p-2.5 md:p-3 rounded-lg md:rounded-xl border border-indigo-100 dark:border-indigo-800/50">
-                        <label class="block text-[9px] md:text-[10px] font-black text-indigo-700 dark:text-indigo-400 mb-1.5 md:mb-2 uppercase tracking-wide flex items-center gap-1">
-                            <i data-lucide="calculator" class="w-2.5 h-2.5 md:w-3 md:h-3"></i> Calculadora
-                        </label>
+                        <div class="flex justify-between items-center mb-1.5 md:mb-2">
+                            <label class="block text-[9px] md:text-[10px] font-black text-indigo-700 dark:text-indigo-400 uppercase tracking-wide flex items-center gap-1">
+                                <i data-lucide="calculator" class="w-2.5 h-2.5 md:w-3 md:h-3"></i> Calculadora
+                            </label>
+                            
+                            <!-- FLAG DE COBRANÇA -->
+                            <div class="flex bg-white dark:bg-gray-800 rounded p-0.5 border border-indigo-200 dark:border-indigo-700">
+                                <label class="cursor-pointer">
+                                    <input type="radio" name="tipo_periodo" value="dia" class="peer sr-only" checked onchange="calcularContrato()">
+                                    <span class="block px-2 py-0.5 text-[9px] md:text-[10px] text-gray-500 peer-checked:bg-indigo-600 peer-checked:text-white font-bold rounded-sm transition-all">Por Dia</span>
+                                </label>
+                                <label class="cursor-pointer">
+                                    <input type="radio" name="tipo_periodo" value="mes" class="peer sr-only" onchange="calcularContrato()">
+                                    <span class="block px-2 py-0.5 text-[9px] md:text-[10px] text-gray-500 peer-checked:bg-indigo-600 peer-checked:text-white font-bold rounded-sm transition-all">Mensal</span>
+                                </label>
+                            </div>
+                        </div>
+
                         <div class="grid grid-cols-3 gap-1.5 md:gap-2">
                             <div>
                                 <label class="block text-[8px] md:text-[10px] text-gray-600 dark:text-gray-400 mb-0.5 md:mb-1">Valor (R$)</label>
                                 <input id="swal-valor-total" type="number" step="0.01" min="0" oninput="calcularContrato()" class="w-full px-1.5 py-1 md:px-2 md:py-1.5 border border-indigo-200 dark:border-indigo-700 rounded bg-white dark:bg-gray-800 text-[10px] md:text-xs outline-none focus:ring-1 focus:ring-indigo-500 font-bold text-indigo-700 dark:text-indigo-300" value="${(valorAtual !== 'None' && valorAtual) ? valorAtual : '0.00'}">
                             </div>
                             <div>
-                                <label class="block text-[8px] md:text-[10px] text-gray-600 dark:text-gray-400 mb-0.5 md:mb-1">Dias</label>
-                                <input id="swal-dias" type="number" min="0" oninput="calcularContrato()" class="w-full px-1.5 py-1 md:px-2 md:py-1.5 border border-indigo-200 dark:border-indigo-700 rounded bg-white dark:bg-gray-800 text-[10px] md:text-xs outline-none focus:ring-1 focus:ring-indigo-500" value="30">
+                                <label id="lbl-tempo" class="block text-[8px] md:text-[10px] text-gray-600 dark:text-gray-400 mb-0.5 md:mb-1">Dias</label>
+                                <input id="swal-tempo" type="number" min="0" oninput="calcularContrato()" class="w-full px-1.5 py-1 md:px-2 md:py-1.5 border border-indigo-200 dark:border-indigo-700 rounded bg-white dark:bg-gray-800 text-[10px] md:text-xs outline-none focus:ring-1 focus:ring-indigo-500" value="30">
                             </div>
                             <div>
-                                <label class="block text-[8px] md:text-[10px] text-gray-600 dark:text-gray-400 mb-0.5 md:mb-1">Custo/Dia (R$)</label>
-                                <input id="swal-valor-dia" type="text" readonly class="w-full px-1.5 py-1 md:px-2 md:py-1.5 border border-indigo-200 dark:border-indigo-700 rounded bg-indigo-100 dark:bg-indigo-900 text-[10px] md:text-xs outline-none cursor-not-allowed">
+                                <label id="lbl-custo" class="block text-[8px] md:text-[10px] text-gray-600 dark:text-gray-400 mb-0.5 md:mb-1">Custo/Dia (R$)</label>
+                                <input id="swal-valor-custo" type="text" readonly class="w-full px-1.5 py-1 md:px-2 md:py-1.5 border border-indigo-200 dark:border-indigo-700 rounded bg-indigo-100 dark:bg-indigo-900 text-[10px] md:text-xs outline-none cursor-not-allowed">
                             </div>
                         </div>
                         <div class="mt-2 pt-1.5 md:pt-2 border-t border-indigo-200 dark:border-indigo-800 flex justify-between items-center">
@@ -469,8 +492,8 @@
 
                     return {
                         nome: document.getElementById('swal-nome').value,
+                        email: document.getElementById('swal-email').value,
                         licenca: document.getElementById('swal-licenca').value,
-                        // ATENÇÃO: Agora estamos enviando o Valor Total para salvar no banco!
                         valor: document.getElementById('swal-valor-total').value,
                         nova_validade: document.getElementById('txt-novo-vencimento').innerText.split('/').reverse().join('-'), 
                         modulos: modulosFinais
@@ -495,18 +518,31 @@
             });
         }
 
-        // Nova lógica invertida: Total e Dias definem o Custo por Dia
+        // Lógica de cálculo atualizada para suportar Dias e Meses
         function calcularContrato() {
             const valorTotal = parseFloat(document.getElementById('swal-valor-total').value) || 0;
-            const dias = parseInt(document.getElementById('swal-dias').value) || 0;
+            const tempo = parseInt(document.getElementById('swal-tempo').value) || 0;
+            const tipoPeriodo = document.querySelector('input[name="tipo_periodo"]:checked').value;
             
-            // Calcula o custo diário apenas para informação visual
-            const valorDia = dias > 0 ? (valorTotal / dias) : 0;
-            document.getElementById('swal-valor-dia').value = valorDia.toFixed(2).replace('.', ',');
-
-            // Calcula a data de vencimento
+            const lblTempo = document.getElementById('lbl-tempo');
+            const lblCusto = document.getElementById('lbl-custo');
+            const swalValorCusto = document.getElementById('swal-valor-custo');
+            
             const hoje = new Date();
-            hoje.setDate(hoje.getDate() + dias);
+
+            if (tipoPeriodo === 'dia') {
+                lblTempo.innerText = "Dias";
+                lblCusto.innerText = "Custo/Dia (R$)";
+                const custo = tempo > 0 ? (valorTotal / tempo) : 0;
+                swalValorCusto.value = custo.toFixed(2).replace('.', ',');
+                hoje.setDate(hoje.getDate() + tempo);
+            } else if (tipoPeriodo === 'mes') {
+                lblTempo.innerText = "Meses";
+                lblCusto.innerText = "Custo/Mês (R$)";
+                const custo = tempo > 0 ? (valorTotal / tempo) : 0;
+                swalValorCusto.value = custo.toFixed(2).replace('.', ',');
+                hoje.setMonth(hoje.getMonth() + tempo);
+            }
             
             const dia = String(hoje.getDate()).padStart(2, '0');
             const mes = String(hoje.getMonth() + 1).padStart(2, '0');

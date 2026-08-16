@@ -1,0 +1,46 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="max-w-4xl mx-auto mt-2 pb-12">
+    <!-- Botão Voltar -->
+    <a href="javascript:history.back()" class="flex items-center gap-1 text-gray-500 hover:text-indigo-600 dark:text-gray-400 dark:hover:text-indigo-400 mb-6 transition-colors text-sm font-medium w-fit">
+        <i data-lucide="arrow-left" class="w-4 h-4"></i>
+        <span>Voltar</span>
+    </a>
+
+    <div class="bg-white dark:bg-[#151a23] p-6 md:p-10 rounded-3xl shadow-sm border border-gray-100 dark:border-gray-800">
+        <h1 class="text-2xl md:text-3xl font-black text-gray-900 dark:text-white mb-2">Termos de Uso</h1>
+        <p class="text-sm text-gray-500 dark:text-gray-400 mb-8 border-b border-gray-100 dark:border-gray-800 pb-6">Última atualização: Agosto de 2026</p>
+
+        <div class="space-y-6 text-sm md:text-base text-gray-700 dark:text-gray-300 leading-relaxed">
+            
+            <section>
+                <h2 class="text-lg font-bold text-gray-900 dark:text-white mb-2">1. Aceitação dos Termos</h2>
+                <p>Ao acessar e utilizar o sistema <em>Meu Controle Financeiro</em>, disponibilizado pela <strong>HIR3 SOLUTIONS</strong>, você concorda expressamente com estes Termos de Uso. Se você não concorda com qualquer parte destes termos, não deve utilizar o sistema.</p>
+            </section>
+
+            <section>
+                <h2 class="text-lg font-bold text-gray-900 dark:text-white mb-2">2. Descrição do Serviço</h2>
+                <p>O sistema é um SaaS (Software as a Service) focado em gestão financeira pessoal e empresarial, oferecendo ferramentas para acompanhamento de despesas, controle de contratos, relatórios e análises preditivas amparadas por inteligência artificial.</p>
+            </section>
+
+            <section>
+                <h2 class="text-lg font-bold text-gray-900 dark:text-white mb-2">3. Responsabilidades do Usuário</h2>
+                <p>Você é o único responsável por manter a confidencialidade da sua senha e conta. Você também é responsável por garantir que as informações financeiras inseridas no sistema (valores, descrições) sejam reais e atualizadas, visto que os relatórios matemáticos dependem da precisão destes dados.</p>
+            </section>
+
+            <section class="bg-indigo-50 dark:bg-indigo-900/20 p-5 rounded-2xl border border-indigo-100 dark:border-indigo-800/50">
+                <h2 class="text-lg font-bold text-indigo-900 dark:text-indigo-300 mb-2 flex items-center gap-2"><i data-lucide="bot" class="w-5 h-5"></i> 4. Aviso Legal sobre Inteligência Artificial (IA Hir3)</h2>
+                <p class="text-indigo-800 dark:text-indigo-200">A nossa mentora embutida, a <strong>IA Hir3</strong>, é uma ferramenta tecnológica projetada para fornecer resumos, análises algorítmicas e sugestões educacionais baseadas em linguagem natural. <strong>A IA Hir3 não é uma consultora financeira certificada.</strong> Nenhuma informação fornecida pelo Chatbot deve ser interpretada como um conselho de investimento legal, contábil ou financeiro absoluto. As decisões tomadas a partir do uso do software são de exclusiva responsabilidade do usuário.</p>
+            </section>
+
+            <section>
+                <h2 class="text-lg font-bold text-gray-900 dark:text-white mb-2">5. Modificações e Disponibilidade</h2>
+                <p>A HIR3 SOLUTIONS reserva-se o direito de atualizar o sistema, modificar funcionalidades, introduzir novas telas e alterar estes Termos a qualquer momento. Nos esforçamos para manter a plataforma online 24/7, mas não nos responsabilizamos por interrupções técnicas temporárias devido à manutenção nos servidores.</p>
+            </section>
+
+        </div>
+    </div>
+</div>
+<script>lucide.createIcons();</script>
+{% endblock %}

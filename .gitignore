@@ -1,2 +1,19 @@
+# Credenciais do Git
 .git-credentials
-.git-credentials
+
+# Ambientes Virtuais e Senhas
+venv/
+env/
+.env
+
+# Banco de Dados SQLite (MUITO IMPORTANTE PARA NÃO VAZAR DADOS DOS USUÁRIOS)
+*.db
+*.sqlite3
+
+# Arquivos de Cache do Python (Arquivos inúteis que o Python gera)
+__pycache__/
+*.pyc
+
+# Arquivos do Sistema Operacional
+.DS_Store
+Thumbs.db

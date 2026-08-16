@@ -1,0 +1,56 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="max-w-4xl mx-auto mt-2 pb-12">
+    <!-- Botão Voltar -->
+    <a href="javascript:history.back()" class="flex items-center gap-1 text-gray-500 hover:text-indigo-600 dark:text-gray-400 dark:hover:text-indigo-400 mb-6 transition-colors text-sm font-medium w-fit">
+        <i data-lucide="arrow-left" class="w-4 h-4"></i>
+        <span>Voltar</span>
+    </a>
+
+    <div class="bg-white dark:bg-[#151a23] p-6 md:p-10 rounded-3xl shadow-sm border border-gray-100 dark:border-gray-800">
+        <h1 class="text-2xl md:text-3xl font-black text-gray-900 dark:text-white mb-2">Política de Privacidade</h1>
+        <p class="text-sm text-gray-500 dark:text-gray-400 mb-8 border-b border-gray-100 dark:border-gray-800 pb-6">Última atualização: Agosto de 2026</p>
+
+        <div class="space-y-6 text-sm md:text-base text-gray-700 dark:text-gray-300 leading-relaxed">
+            
+            <section>
+                <h2 class="text-lg font-bold text-gray-900 dark:text-white mb-2 flex items-center gap-2"><i data-lucide="shield-check" class="w-5 h-5 text-indigo-500"></i> 1. Coleta de Dados</h2>
+                <p>A <strong>HIR3 SOLUTIONS</strong>, desenvolvedora do sistema <em>Meu Controle Financeiro</em>, valoriza a sua privacidade. Coletamos apenas as informações necessárias para o funcionamento da plataforma, incluindo:</p>
+                <ul class="list-disc ml-6 mt-2 space-y-1">
+                    <li>Dados de Cadastro: Nome, e-mail e senha (criptografada).</li>
+                    <li>Dados Financeiros: Valores de renda, gastos, descrições, categorias e metas registradas voluntariamente por você.</li>
+                    <li>Interações com IA: Histórico de comunicação com a nossa assistente inteligente (IA Hir3) para fornecer respostas contextualizadas.</li>
+                </ul>
+            </section>
+
+            <section>
+                <h2 class="text-lg font-bold text-gray-900 dark:text-white mb-2 flex items-center gap-2"><i data-lucide="database" class="w-5 h-5 text-indigo-500"></i> 2. Uso das Informações</h2>
+                <p>Seus dados são utilizados estritamente para:</p>
+                <ul class="list-disc ml-6 mt-2 space-y-1">
+                    <li>Fornecer os serviços de gestão financeira, relatórios e métricas.</li>
+                    <li>Permitir que a Inteligência Artificial processe análises e emita alertas sobre a sua saúde financeira.</li>
+                    <li>Melhorar continuamente a segurança e a experiência de uso da plataforma (UX/UI).</li>
+                </ul>
+            </section>
+
+            <section>
+                <h2 class="text-lg font-bold text-gray-900 dark:text-white mb-2 flex items-center gap-2"><i data-lucide="lock" class="w-5 h-5 text-indigo-500"></i> 3. Proteção e Segurança</h2>
+                <p>Implementamos rigorosas medidas de segurança em nível de código e infraestrutura. Suas senhas são convertidas em <em>Hash</em> (um código irreversível) antes de serem salvas no banco de dados. Nunca comercializamos ou cedemos seus dados financeiros para empresas terceiras com fins publicitários sem sua autorização.</p>
+            </section>
+
+            <section>
+                <h2 class="text-lg font-bold text-gray-900 dark:text-white mb-2 flex items-center gap-2"><i data-lucide="cookie" class="w-5 h-5 text-indigo-500"></i> 4. Cookies e Armazenamento Local</h2>
+                <p>Utilizamos tecnologias como <em>Cookies</em> e <em>LocalStorage</em> apenas para funções vitais do sistema, como: manter sua sessão ativa (login), lembrar sua preferência de idioma, salvar a escolha do Tema (Claro/Escuro) e registrar se você já visualizou os nossos tutoriais.</p>
+            </section>
+
+            <section>
+                <h2 class="text-lg font-bold text-gray-900 dark:text-white mb-2 flex items-center gap-2"><i data-lucide="mail" class="w-5 h-5 text-indigo-500"></i> 5. Contato</h2>
+                <p>Caso tenha dúvidas sobre como seus dados são manipulados, queira solicitar a exclusão permanente de sua conta ou exportar seus dados, entre em contato através do nosso suporte oficial.</p>
+            </section>
+
+        </div>
+    </div>
+</div>
+<script>lucide.createIcons();</script>
+{% endblock %}

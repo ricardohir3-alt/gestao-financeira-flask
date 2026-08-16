@@ -35,9 +35,48 @@
         ::view-transition-new(root) { z-index: 1; }
         .dark::view-transition-old(root) { z-index: 1; }
         .dark::view-transition-new(root) { z-index: 999; }
+
+        /* ESTILOS DO TUTORIAL (INTRO.JS) ADAPTADOS AO TEMA */
+        .introjs-tooltip {
+            border-radius: 16px !important;
+            background-color: #ffffff !important;
+            box-shadow: 0 10px 25px rgba(0,0,0,0.1) !important;
+            font-family: inherit !important;
+        }
+        .dark .introjs-tooltip {
+            background-color: #1a1b26 !important;
+            color: #e5e7eb !important;
+            border: 1px solid rgba(255,255,255,0.05) !important;
+            box-shadow: 0 10px 25px rgba(0,0,0,0.5) !important;
+        }
+        .introjs-tooltiptitle { font-weight: 900 !important; color: #4f46e5 !important; font-size: 16px !important; }
+        .introjs-tooltiptext { font-size: 13px !important; line-height: 1.5 !important; }
+        .introjs-button { border-radius: 8px !important; text-shadow: none !important; font-weight: bold !important; font-size: 12px !important; }
+        .introjs-nextbutton { background-color: #4f46e5 !important; color: white !important; text-shadow: none !important; }
+        .introjs-prevbutton { color: #6b7280 !important; }
+        .introjs-skipbutton { color: #ef4444 !important; }
+        .dark .introjs-arrow.top { border-bottom-color: #1a1b26 !important; }
+        .dark .introjs-arrow.bottom { border-top-color: #1a1b26 !important; }
+        .dark .introjs-arrow.left { border-right-color: #1a1b26 !important; }
+        .dark .introjs-arrow.right { border-left-color: #1a1b26 !important; }
     </style>
+    
+    <!-- CSS DO INTRO.JS -->
+    <link rel="stylesheet" href="https://unpkg.com/intro.js/minified/introjs.min.css">
 </head>
 <body class="bg-gray-50 text-gray-800 dark:bg-[#0b1120] dark:text-gray-100 font-sans transition-colors duration-500 ease-in-out min-h-screen flex overflow-x-hidden">
+
+    <!-- ========================================== -->
+    <!-- TELA DE CARREGAMENTO GLOBAL (MINIMALISTA)  -->
+    <!-- ========================================== -->
+    <div id="global-loader" class="fixed inset-0 z-[9999] flex items-center justify-center bg-white/90 dark:bg-[#1a1b26]/90 backdrop-blur-sm transition-opacity duration-300">
+        <div class="flex flex-col items-center gap-3">
+            <div class="p-3 bg-indigo-50 dark:bg-indigo-900/30 rounded-2xl animate-pulse">
+                <i data-lucide="loader-2" class="w-8 h-8 text-indigo-600 dark:text-indigo-400 animate-spin"></i>
+            </div>
+            <span class="text-[10px] font-black text-gray-500 dark:text-gray-400 uppercase tracking-widest">Carregando...</span>
+        </div>
+    </div>
 
     {% if request.endpoint not in ['login', 'recuperar', 'recuperar_senha'] %}
         <div id="overlay" class="fixed inset-0 bg-black/60 backdrop-blur-sm z-[90] hidden transition-opacity duration-300"></div>
@@ -59,14 +98,14 @@
             </div>
 
             <nav class="flex flex-col py-6 gap-1.5 flex-grow overflow-y-auto sidebar-scroll overflow-x-hidden">
-                <a href="/" class="flex items-center h-11 mx-2 rounded-xl {% if request.endpoint == 'home' %}bg-indigo-50 dark:bg-indigo-500/10 text-indigo-600 dark:text-indigo-400 shadow-sm{% else %}text-gray-500 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-white/5 hover:text-gray-900 dark:hover:text-white{% endif %} transition-all group relative" title="Dashboard Inicial">
+                <a href="/" id="tour-dashboard" class="flex items-center h-11 mx-2 rounded-xl {% if request.endpoint == 'home' %}bg-indigo-50 dark:bg-indigo-500/10 text-indigo-600 dark:text-indigo-400 shadow-sm{% else %}text-gray-500 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-white/5 hover:text-gray-900 dark:hover:text-white{% endif %} transition-all group relative" title="Dashboard Inicial">
                     <div class="w-10 flex justify-center shrink-0">
                         <i data-lucide="layout-dashboard" class="w-5 h-5 {% if request.endpoint != 'home' %}group-hover:scale-110 transition-transform{% endif %}"></i>
                     </div>
                     <span data-i18n="nav_dashboard" class="menu-texto hidden ml-1 text-[13px] {% if request.endpoint == 'home' %}font-bold{% else %}font-medium{% endif %} whitespace-nowrap">Dashboard Inicial</span>
                 </a>
 
-                <a href="/novo_gasto" class="flex items-center h-11 mx-2 rounded-xl text-gray-500 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-white/5 hover:text-gray-900 dark:hover:text-white transition-all group relative" title="Registrar Gasto">
+                <a href="/novo_gasto" id="tour-lancamentos" class="flex items-center h-11 mx-2 rounded-xl text-gray-500 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-white/5 hover:text-gray-900 dark:hover:text-white transition-all group relative" title="Registrar Gasto">
                     <div class="w-10 flex justify-center shrink-0">
                         <i data-lucide="plus-circle" class="w-5 h-5 group-hover:scale-110 transition-transform"></i>
                     </div>
@@ -80,7 +119,7 @@
                     <span data-i18n="nav_compras" class="menu-texto hidden ml-1 text-[13px] font-medium whitespace-nowrap">Lista de Compras</span>
                 </a>
 
-                <a href="/dividas" class="flex items-center h-11 mx-2 rounded-xl text-gray-500 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-white/5 hover:text-purple-600 dark:hover:text-purple-400 transition-all group relative" title="Planejamento Financeiro">
+                <a href="/dividas" id="tour-planejamento" class="flex items-center h-11 mx-2 rounded-xl text-gray-500 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-white/5 hover:text-purple-600 dark:hover:text-purple-400 transition-all group relative" title="Planejamento Financeiro">
                     <div class="w-10 flex justify-center shrink-0">
                         <i data-lucide="compass" class="w-5 h-5 group-hover:scale-110 transition-transform"></i>
                     </div>
@@ -109,6 +148,14 @@
                     </div>
                     <span class="menu-texto hidden ml-1 text-[13px] font-medium whitespace-nowrap"><span data-i18n="nav_novidades">Novidades</span></span>
                 </a>
+
+                <!-- BOTÃO APOIE O PROJETO (DESKTOP) -->
+                <button onclick="abrirModalApoio()" class="flex items-center h-11 mx-2 rounded-xl text-gray-500 dark:text-gray-400 hover:bg-red-50 dark:hover:bg-red-500/10 hover:text-red-600 dark:hover:text-red-400 transition-all group relative" title="Apoie o Projeto">
+                    <div class="w-10 flex justify-center shrink-0">
+                        <i data-lucide="heart" class="w-5 h-5 group-hover:scale-110 transition-transform group-hover:fill-current"></i>
+                    </div>
+                    <span class="menu-texto hidden ml-1 text-[13px] font-medium whitespace-nowrap">Apoie o Projeto</span>
+                </button>
             </nav>
         </aside>
     {% endif %}
@@ -131,7 +178,7 @@
                 <!-- Lado Direito -->
                 <div class="flex items-center gap-3">
                     <div class="relative">
-                        <button onclick="toggleNotificacoes()" class="relative p-2.5 text-gray-400 hover:text-indigo-500 dark:hover:text-indigo-400 bg-gray-100 dark:bg-[#1a1b26] rounded-full transition-colors focus:outline-none shadow-sm border border-transparent dark:border-white/5">
+                        <button onclick="toggleNotificacoes()" id="tour-notificacoes" class="relative p-2.5 text-gray-400 hover:text-indigo-500 dark:hover:text-indigo-400 bg-gray-100 dark:bg-[#1a1b26] rounded-full transition-colors focus:outline-none shadow-sm border border-transparent dark:border-white/5">
                             <i data-lucide="bell" class="w-4 h-4 md:w-5 md:h-5"></i>
                             {% if total_notificacoes and total_notificacoes > 0 %}
                             <span id="ping-notificacoes" class="absolute top-0 right-0 flex h-2.5 w-2.5">
@@ -195,7 +242,7 @@
                                     <i data-lucide="user" class="w-4 h-4"></i> Meu Perfil
                                 </button>
 
-                                <!-- CICLO DE IDIOMAS (Função no main.js) -->
+                                <!-- CICLO DE IDIOMAS -->
                                 <button onclick="cicloIdioma()" class="w-full flex items-center justify-between px-3 py-2.5 rounded-xl text-xs font-semibold text-gray-600 dark:text-gray-300 hover:bg-indigo-50 dark:hover:bg-indigo-500/10 hover:text-indigo-600 dark:hover:text-indigo-400 transition-colors focus:outline-none">
                                     <div class="flex items-center gap-3">
                                         <i data-lucide="globe" class="w-4 h-4"></i> Idioma
@@ -232,6 +279,7 @@
             </header>
             {% endif %}
 
+            <!-- CONTEÚDO PRINCIPAL -->
             <div class="flex-grow w-full">
                 {% block content %}{% endblock %}
             </div>
@@ -239,8 +287,13 @@
             <!-- RODAPÉ - AGORA OCULTO NA TELA DE LOGIN -->
             {% if request.endpoint not in ['login', 'recuperar', 'recuperar_senha'] %}
             <footer class="mt-8 md:mt-12 pt-6 border-t border-gray-200 dark:border-gray-800/50 text-center pb-28 md:pb-6 w-full opacity-60 hover:opacity-100 transition-opacity">
-                <p class="text-[11px] text-gray-500 dark:text-gray-400 font-medium">Meu Controle Financeiro v{{ versao_atual }}</p>
-                <p class="text-[10px] text-gray-400 dark:text-gray-500 mt-1 uppercase tracking-widest font-black">© 2026 HIR3 SOLUTIONS</p>
+                <p class="text-[11px] text-gray-500 dark:text-gray-400 font-medium mb-2">Meu Controle Financeiro v{{ versao_atual }}</p>
+                <div class="flex items-center justify-center gap-4 text-[10px] font-bold text-gray-400 dark:text-gray-500 mb-2">
+                    <a href="/termos_uso" class="hover:text-indigo-500 dark:hover:text-indigo-400 transition-colors uppercase tracking-wider">Termos de Uso</a>
+                    <span>•</span>
+                    <a href="/politica_privacidade" class="hover:text-indigo-500 dark:hover:text-indigo-400 transition-colors uppercase tracking-wider">Política de Privacidade</a>
+                </div>
+                <p class="text-[10px] text-gray-400 dark:text-gray-500 uppercase tracking-widest font-black">© 2026 HIR3 SOLUTIONS</p>
             </footer>
             {% endif %}
 
@@ -263,6 +316,12 @@
         <a href="/atualizacoes" class="flex items-center gap-3 p-3 rounded-xl hover:bg-gray-50 dark:hover:bg-gray-800 text-gray-700 dark:text-gray-200 transition-colors group">
             <div class="w-10 h-10 rounded-full bg-green-100 dark:bg-green-900/30 flex items-center justify-center text-green-600 dark:text-green-400 group-hover:scale-105 transition-transform"><i data-lucide="megaphone" class="w-5 h-5"></i></div>
             <span class="font-medium text-sm"><span data-i18n="nav_novidades">Atualizações</span> (v{{ versao_atual }})</span>
+        </a>
+        
+        <!-- BOTÃO APOIE O PROJETO (MOBILE) -->
+        <a href="#" onclick="abrirModalApoio(); toggleMobileMenu();" class="flex items-center gap-3 p-3 rounded-xl hover:bg-gray-50 dark:hover:bg-gray-800 text-gray-700 dark:text-gray-200 transition-colors group">
+            <div class="w-10 h-10 rounded-full bg-red-100 dark:bg-red-900/30 flex items-center justify-center text-red-500 group-hover:scale-105 transition-transform"><i data-lucide="heart" class="w-5 h-5 group-hover:fill-current"></i></div>
+            <span class="font-medium text-sm">Apoie o Projeto</span>
         </a>
     </div>
 
@@ -288,7 +347,7 @@
             <span data-i18n="mob_mais" class="text-[9px] font-medium">Mais</span>
         </button>
     </nav>
-    <a href="https://wa.me/5586900007237?text=Olá!%20Preciso%20de%20ajuda%20com%20o%20Meu%20Controle%20Financeiro." target="_blank" class="lg:hidden fixed bottom-24 md:bottom-6 left-4 md:left-6 z-[60] bg-green-500/95 backdrop-blur-md text-white p-3 md:p-3.5 rounded-full shadow-[0_8px_30px_rgba(34,197,94,0.4)] hover:scale-105 active:scale-95 transition-all flex items-center justify-center border border-green-400/30 group">
+    <a href="https://wa.me/5586900007237?text=Olá!%20Preciso%20de%20ajuda%20com%20o%20Meu%20Controle%20Financeiro." target="_blank" class="lg:hidden fixed bottom-[104px] md:bottom-24 left-4 md:left-6 z-[60] bg-green-500/95 backdrop-blur-md text-white p-3 md:p-3.5 rounded-full shadow-[0_8px_30px_rgba(34,197,94,0.4)] hover:scale-105 active:scale-95 transition-all flex items-center justify-center border border-green-400/30 group">
         <i data-lucide="message-circle" class="w-5 h-5 md:w-6 md:h-6"></i>
     </a>
     {% endif %}
@@ -409,28 +468,274 @@
         </div>
     </div>
 
+    <!-- ============================================== -->
+    <!-- MODAL APOIE O PROJETO                          -->
+    <!-- ============================================== -->
+    <div id="modal-apoio" class="hidden fixed inset-0 z-[160] flex items-center justify-center bg-black/60 backdrop-blur-sm p-2 sm:p-4 opacity-0 transition-opacity duration-300">
+        <div class="bg-white dark:bg-[#151a23] rounded-3xl shadow-2xl w-full max-w-sm transform scale-95 transition-transform duration-300 border border-gray-100 dark:border-gray-800 flex flex-col relative overflow-hidden text-center" id="card-apoio">
+            
+            <button onclick="fecharModalApoio()" class="absolute top-4 right-4 text-gray-400 hover:text-gray-600 dark:hover:text-gray-200 transition-colors focus:outline-none z-[200]">
+                <i data-lucide="x" class="w-5 h-5"></i>
+            </button>
+            
+            <div class="p-6 md:p-8">
+                <div class="w-16 h-16 bg-red-100 dark:bg-red-900/30 text-red-500 rounded-full flex items-center justify-center mx-auto mb-4 animate-bounce">
+                    <i data-lucide="heart" class="w-8 h-8 fill-current"></i>
+                </div>
+                
+                <h3 class="text-xl font-black text-gray-900 dark:text-white mb-2">Apoie o Desenvolvimento</h3>
+                <p class="text-xs text-gray-500 dark:text-gray-400 mb-6 leading-relaxed">Este sistema é mantido de forma independente. Sua doação ajuda a pagar os servidores e me motiva a trazer novas atualizações incríveis!</p>
+
+                <!-- QR Code (Substitua a imagem por meu_pix.png na pasta static) -->
+                <div class="bg-gray-50 dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-2xl p-4 mb-4 flex justify-center">
+                    <img src="{{ url_for('static', filename='meu_pix.png') }}" alt="QR Code PIX" class="w-32 h-32 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700">
+                </div>
+
+                <!-- Chave PIX Copiável -->
+                <div class="text-left">
+                    <label class="block text-[10px] font-bold text-gray-500 dark:text-gray-400 uppercase mb-1 ml-1">Chave PIX</label>
+                    <div class="flex items-center gap-2">
+                        <input type="text" id="chave-pix" value="ricardo.hir3@gmail.com" readonly class="w-full bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl px-4 py-3 text-sm font-bold text-gray-800 dark:text-white outline-none cursor-pointer" onclick="copiarPix()">
+                        <button onclick="copiarPix()" class="w-12 h-[46px] bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl flex items-center justify-center shrink-0 transition-colors shadow-sm focus:outline-none">
+                            <i data-lucide="copy" class="w-4 h-4"></i>
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- ========================================================= -->
+    <!-- MODAL TERMOS DE USO E PRIVACIDADE (OBRIGATÓRIO / INICIAL) -->
+    <!-- ========================================================= -->
+    {% if session.get('logado') and request.endpoint not in ['termos_uso', 'politica_privacidade'] %}
+    <div id="modal-termos" class="hidden fixed inset-0 z-[9999] items-center justify-center bg-black/80 backdrop-blur-md p-4 opacity-0 transition-opacity duration-300">
+        <div class="bg-white dark:bg-[#151a23] rounded-3xl shadow-2xl w-full max-w-lg transform scale-95 transition-transform duration-300 border border-gray-100 dark:border-gray-800 flex flex-col relative overflow-hidden">
+            
+            <!-- Barra superior decorativa -->
+            <div class="h-2 w-full bg-gradient-to-r from-indigo-500 to-purple-600"></div>
+
+            <div class="p-6 md:p-8 flex flex-col items-center text-center">
+                <div class="w-16 h-16 bg-indigo-100 dark:bg-indigo-900/30 text-indigo-600 dark:text-indigo-400 rounded-full flex items-center justify-center mb-4">
+                    <i data-lucide="shield-check" class="w-8 h-8"></i>
+                </div>
+                
+                <h3 class="text-xl font-black text-gray-900 dark:text-white mb-2">Termos e Privacidade</h3>
+                <p class="text-xs md:text-sm text-gray-500 dark:text-gray-400 mb-6 leading-relaxed">Para continuar usando o <strong>Meu Controle Financeiro</strong>, precisamos que você leia e concorde com nossos termos atualizados de uso e política de privacidade.</p>
+
+                <!-- Botões para leitura -->
+                <div class="flex gap-4 mb-6 w-full">
+                    <a href="/termos_uso" class="flex-1 py-2.5 px-4 bg-gray-50 dark:bg-gray-800 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-xl text-xs font-bold text-indigo-600 dark:text-indigo-400 transition-colors border border-gray-200 dark:border-gray-700 flex items-center justify-center gap-2">
+                        <i data-lucide="file-text" class="w-4 h-4"></i> Ler Termos
+                    </a>
+                    <a href="/politica_privacidade" class="flex-1 py-2.5 px-4 bg-gray-50 dark:bg-gray-800 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-xl text-xs font-bold text-indigo-600 dark:text-indigo-400 transition-colors border border-gray-200 dark:border-gray-700 flex items-center justify-center gap-2">
+                        <i data-lucide="lock" class="w-4 h-4"></i> Ler Política
+                    </a>
+                </div>
+
+                <!-- Checkbox -->
+                <label class="flex items-start gap-3 cursor-pointer group mb-6 w-full text-left bg-indigo-50/50 dark:bg-indigo-900/10 p-4 rounded-xl border border-indigo-100 dark:border-indigo-800/30">
+                    <div class="relative flex items-center justify-center mt-0.5 shrink-0">
+                        <input type="checkbox" id="check-aceite-termos" class="peer appearance-none w-5 h-5 border-2 border-gray-300 dark:border-gray-600 rounded bg-white dark:bg-gray-800 checked:bg-indigo-600 checked:border-indigo-600 transition-colors cursor-pointer">
+                        <i data-lucide="check" class="absolute w-3.5 h-3.5 text-white opacity-0 peer-checked:opacity-100 pointer-events-none transition-opacity"></i>
+                    </div>
+                    <span class="text-xs text-gray-700 dark:text-gray-300 font-medium select-none">
+                        Eu li, entendi e <strong>concordo</strong> com os Termos de Uso e com a Política de Privacidade do sistema.
+                    </span>
+                </label>
+
+                <!-- Botão de Aceite -->
+                <button id="btn-aceitar-termos" disabled onclick="aceitarTermosGlobais()" class="w-full bg-gray-300 dark:bg-gray-700 text-gray-500 dark:text-gray-400 font-bold py-3.5 px-4 rounded-xl transition-all flex items-center justify-center gap-2 text-sm cursor-not-allowed">
+                    Aceitar e Continuar <i data-lucide="arrow-right" class="w-4 h-4"></i>
+                </button>
+            </div>
+        </div>
+    </div>
+    {% endif %}
+
+    <!-- ========================================== -->
+    <!-- CHATBOT INTELIGENTE HIR3 (BOTÃO E JANELA)  -->
+    <!-- ========================================== -->
+    {% if request.endpoint not in ['login', 'recuperar', 'recuperar_senha'] %}
+    <button onclick="toggleChatHir3()" class="fixed bottom-24 md:bottom-6 right-4 md:right-6 z-[90] w-12 h-12 md:w-14 md:h-14 bg-gradient-to-tr from-indigo-600 to-purple-600 rounded-full shadow-[0_8px_30px_rgba(79,70,229,0.4)] flex items-center justify-center text-white hover:scale-110 transition-transform focus:outline-none">
+        <i data-lucide="bot" class="w-6 h-6 md:w-7 md:h-7"></i>
+        <span class="absolute top-0 right-0 w-3 h-3 md:w-3.5 md:h-3.5 bg-green-500 border-2 border-white dark:border-[#0b1120] rounded-full"></span>
+    </button>
+
+    <div id="janela-chat-hir3" class="fixed bottom-40 md:bottom-24 right-4 md:right-6 w-[calc(100vw-2rem)] md:w-96 h-[450px] md:h-[500px] max-h-[65vh] bg-white dark:bg-[#151a23] rounded-2xl shadow-2xl border border-gray-200 dark:border-gray-800 z-[100] flex flex-col overflow-hidden transition-all duration-300 origin-bottom-right scale-0 opacity-0 pointer-events-none">
+        <!-- Header -->
+        <div class="p-3 md:p-4 bg-gradient-to-r from-indigo-600 to-purple-600 text-white flex justify-between items-center shrink-0">
+            <div class="flex items-center gap-2.5 md:gap-3">
+                <div class="w-8 h-8 bg-white/20 rounded-full flex items-center justify-center backdrop-blur-sm shadow-inner">
+                    <i data-lucide="sparkles" class="w-4 h-4 text-yellow-300"></i>
+                </div>
+                <div>
+                    <h4 class="font-bold text-xs md:text-sm">IA Hir3</h4>
+                    <p class="text-[9px] md:text-[10px] text-indigo-100 flex items-center gap-1"><span class="w-1.5 h-1.5 bg-green-400 rounded-full inline-block animate-pulse"></span> Mentor Online</p>
+                </div>
+            </div>
+            <button onclick="toggleChatHir3()" class="text-white/80 hover:text-white transition-colors focus:outline-none bg-white/10 p-1.5 rounded-lg hover:bg-white/20">
+                <i data-lucide="x" class="w-4 h-4 md:w-5 md:h-5"></i>
+            </button>
+        </div>
+        
+        <!-- Area de Mensagens -->
+        <div id="chat-messages" class="flex-grow p-3 md:p-4 overflow-y-auto bg-gray-50/50 dark:bg-[#0b1120]/50 flex flex-col gap-3 md:gap-4 scroll-smooth">
+            <div class="flex gap-2 w-full max-w-[85%]">
+                <div class="w-6 h-6 rounded-full bg-gradient-to-tr from-indigo-600 to-purple-600 shrink-0 flex items-center justify-center mt-1 shadow-sm"><i data-lucide="bot" class="w-3 h-3 text-white"></i></div>
+                <div class="bg-white dark:bg-gray-800 p-2.5 md:p-3 rounded-2xl rounded-tl-sm shadow-sm border border-gray-100 dark:border-gray-700 text-[11px] md:text-xs text-gray-700 dark:text-gray-300 leading-relaxed">
+                    Olá! Sou o <b>Hir3</b>, sua inteligência artificial. Como posso ajudar você hoje?<br><br>
+                    <span class="text-gray-400 dark:text-gray-500 text-[9px] md:text-[10px]">Tente perguntar: "Qual meu maior gasto?" ou "Como crio uma meta?"</span>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Input -->
+        <div class="p-2.5 md:p-3 bg-white dark:bg-[#151a23] border-t border-gray-100 dark:border-gray-800 shrink-0">
+            <form id="form-chat-hir3" onsubmit="enviarMensagemHir3(event)" class="flex items-center gap-2">
+                <input type="text" id="input-msg-hir3" placeholder="Pergunte ao Hir3..." autocomplete="off" class="flex-grow bg-gray-100 dark:bg-gray-900 border border-transparent rounded-xl px-3 py-2 md:py-2.5 text-xs text-gray-800 dark:text-gray-200 focus:bg-white dark:focus:bg-gray-800 focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/20 outline-none transition-all">
+                <button type="submit" class="w-9 h-9 md:w-10 md:h-10 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl flex items-center justify-center shrink-0 transition-all hover:scale-105 active:scale-95 shadow-sm shadow-indigo-500/30">
+                    <i data-lucide="send" class="w-4 h-4 ml-0.5"></i>
+                </button>
+            </form>
+        </div>
+    </div>
+    {% endif %}
+
     <!-- SCRIPTS GLOBAIS -->
     <script src="https://unpkg.com/lucide@latest"></script>
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    <!-- SCRIPT DO TUTORIAL (INTRO.JS) -->
+    <script src="https://unpkg.com/intro.js/minified/intro.min.js"></script>
 
-    <!-- LÓGICA DO MENU DO PERFIL E MODAIS GLOBAIS -->
+    <!-- SCRIPT DO CHAT E MODAIS -->
+    <script>
+        function toggleChatHir3() {
+            const chat = document.getElementById('janela-chat-hir3');
+            if (chat.classList.contains('scale-0')) {
+                chat.classList.remove('scale-0', 'opacity-0', 'pointer-events-none');
+                chat.classList.add('scale-100', 'opacity-100');
+                setTimeout(() => document.getElementById('input-msg-hir3').focus(), 300);
+            } else {
+                chat.classList.remove('scale-100', 'opacity-100');
+                chat.classList.add('scale-0', 'opacity-0', 'pointer-events-none');
+            }
+        }
+
+        function appendMessage(sender, text) {
+            const chatMessages = document.getElementById('chat-messages');
+            const isHir3 = sender === 'hir3';
+            
+            const msgDiv = document.createElement('div');
+            msgDiv.className = `flex gap-2 w-full max-w-[90%] md:max-w-[85%] ${isHir3 ? 'self-start' : 'self-end flex-row-reverse'}`;
+            
+            const avatar = isHir3 
+                ? `<div class="w-6 h-6 rounded-full bg-gradient-to-tr from-indigo-600 to-purple-600 shrink-0 flex items-center justify-center mt-1 shadow-sm"><i data-lucide="bot" class="w-3 h-3 text-white"></i></div>`
+                : `<div class="w-6 h-6 rounded-full bg-gray-200 dark:bg-gray-700 shrink-0 flex items-center justify-center mt-1 shadow-sm"><i data-lucide="user" class="w-3 h-3 text-gray-500 dark:text-gray-400"></i></div>`;
+                
+            const bubbleClass = isHir3
+                ? 'bg-white dark:bg-gray-800 rounded-tl-sm border-gray-100 dark:border-gray-700 text-gray-700 dark:text-gray-300'
+                : 'bg-indigo-600 text-white rounded-tr-sm border-transparent';
+                
+            msgDiv.innerHTML = `
+                ${avatar}
+                <div class="p-2.5 md:p-3 rounded-2xl shadow-sm border text-[11px] md:text-xs leading-relaxed ${bubbleClass}">
+                    ${text}
+                </div>
+            `;
+            
+            chatMessages.appendChild(msgDiv);
+            chatMessages.scrollTop = chatMessages.scrollHeight;
+            if(typeof lucide !== 'undefined') lucide.createIcons();
+        }
+
+        function enviarMensagemHir3(e) {
+            e.preventDefault();
+            const input = document.getElementById('input-msg-hir3');
+            const msg = input.value.trim();
+            if (!msg) return;
+            
+            appendMessage('user', msg);
+            input.value = '';
+            
+            const typingId = 'typing-' + Date.now();
+            const chatMessages = document.getElementById('chat-messages');
+            chatMessages.insertAdjacentHTML('beforeend', `
+                <div id="${typingId}" class="flex gap-2 w-full max-w-[85%] self-start">
+                    <div class="w-6 h-6 rounded-full bg-gradient-to-tr from-indigo-600 to-purple-600 shrink-0 flex items-center justify-center mt-1"><i data-lucide="bot" class="w-3 h-3 text-white"></i></div>
+                    <div class="bg-white dark:bg-gray-800 p-3 rounded-2xl rounded-tl-sm shadow-sm border border-gray-100 dark:border-gray-700 flex items-center gap-1.5 h-9">
+                        <span class="w-1.5 h-1.5 bg-gray-400 rounded-full animate-bounce"></span>
+                        <span class="w-1.5 h-1.5 bg-gray-400 rounded-full animate-bounce" style="animation-delay: 0.2s"></span>
+                        <span class="w-1.5 h-1.5 bg-gray-400 rounded-full animate-bounce" style="animation-delay: 0.4s"></span>
+                    </div>
+                </div>
+            `);
+            chatMessages.scrollTop = chatMessages.scrollHeight;
+            if(typeof lucide !== 'undefined') lucide.createIcons();
+            
+            fetch('/api/chat_hir3', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ mensagem: msg })
+            })
+            .then(res => res.json())
+            .then(data => {
+                document.getElementById(typingId).remove();
+                appendMessage('hir3', data.resposta);
+            })
+            .catch(err => {
+                document.getElementById(typingId).remove();
+                appendMessage('hir3', 'Desculpe, a conexão falhou. Poderia tentar novamente?');
+            });
+        }
+
+        /* --- MODAL APOIO --- */
+        function abrirModalApoio() {
+            const m = document.getElementById('modal-apoio'), c = document.getElementById('card-apoio');
+            m.classList.remove('hidden'); m.classList.add('flex');
+            setTimeout(() => { m.classList.remove('opacity-0'); c.classList.remove('scale-95'); }, 10);
+        }
+
+        function fecharModalApoio() {
+            const m = document.getElementById('modal-apoio'), c = document.getElementById('card-apoio');
+            m.classList.add('opacity-0'); c.classList.add('scale-95');
+            setTimeout(() => { m.classList.add('hidden'); m.classList.remove('flex'); }, 300);
+        }
+
+        function copiarPix() {
+            const input = document.getElementById('chave-pix');
+            input.select();
+            input.setSelectionRange(0, 99999);
+            navigator.clipboard.writeText(input.value);
+            
+            Swal.fire({
+                icon: 'success',
+                title: 'PIX Copiado!',
+                text: 'Muito obrigado pelo seu apoio! ❤️',
+                timer: 2500,
+                showConfirmButton: false,
+                background: document.documentElement.classList.contains('dark') ? '#1a1b26' : '#ffffff',
+                color: document.documentElement.classList.contains('dark') ? '#ffffff' : '#1f2937',
+                customClass: { popup: 'rounded-2xl border border-gray-100 dark:border-gray-800' }
+            });
+        }
+    </script>
+
+    <!-- LÓGICA DO MENU DO PERFIL E GLOBAIS -->
     <script>
         let contagemNotificacoes = parseInt("{{ total_notificacoes | default(0) }}") || 0;
 
         document.addEventListener("DOMContentLoaded", function() {
-            // 1. Inicia o Tema CORRETAMENTE antes de renderizar os ícones
             if (localStorage.getItem('tema') === 'dark') {
                 document.documentElement.classList.add('dark');
             }
             const isDark = document.documentElement.classList.contains('dark');
             atualizarIconesTema(isDark);
 
-            // 2. Garante que o texto do botão mostre o idioma correto salvo no main.js
             const idiomaSalvo = localStorage.getItem('idioma_sistema') || 'PT-BR';
             const textoIdiomaEl = document.getElementById('texto-idioma');
             if(textoIdiomaEl) textoIdiomaEl.innerText = idiomaSalvo;
 
-            // 3. Monitora a linha divisória do menu lateral
             const menuLateral = document.getElementById('menu-lateral');
             const menuDivisor = document.querySelector('.menu-divisor');
             if(menuLateral && menuDivisor) {
@@ -447,7 +752,6 @@
             }
         });
 
-        // --- FUNÇÕES DE TELA CHEIA ---
         function toggleFullScreenMenu() {
             if (!document.fullscreenElement) {
                 document.documentElement.requestFullscreen().catch((err) => console.log(`Erro ao tentar tela cheia: ${err.message}`));
@@ -457,7 +761,6 @@
             toggleProfileMenu();
         }
 
-        // Detecta se a tela cheia foi fechada pelo teclado (ESC)
         document.addEventListener('fullscreenchange', (event) => {
             const text = document.getElementById('text-fullscreen');
             const icon = document.getElementById('icon-fullscreen');
@@ -472,7 +775,6 @@
             if(typeof lucide !== 'undefined') lucide.createIcons();
         });
 
-        // --- FUNÇÕES DE TEMA (MODO ESCURO TELEGRAM) ---
         function atualizarIconesTema(isDark) {
             const iconeTema = document.getElementById('icone-tema');
             const textoTema = document.getElementById('texto-tema');
@@ -486,12 +788,10 @@
         function toggleDarkModeMenu() {
             const alternarTemaVisual = () => {
                 const isDark = document.documentElement.classList.toggle('dark');
-                // CORREÇÃO: Agora salva com a mesma chave ('tema') que o main.js usa!
                 localStorage.setItem('tema', isDark ? 'dark' : 'light');
                 atualizarIconesTema(isDark);
             };
 
-            // Transição Nativa suave sem piscar/recarregar a página
             if (document.startViewTransition) {
                 document.startViewTransition(() => alternarTemaVisual());
             } else {
@@ -499,10 +799,9 @@
             }
         }
 
-        // --- FUNÇÕES DE LOGOUT ---
         function confirmarLogout(e) {
             e.preventDefault();
-            toggleProfileMenu(); // Fecha o menu primeiro
+            toggleProfileMenu();
 
             if(typeof Swal !== 'undefined') {
                 Swal.fire({
@@ -527,7 +826,6 @@
             }
         }
 
-        // --- FUNÇÕES DE NOTIFICAÇÃO E MODAIS ---
         function marcarNotificacaoLida(id) {
             fetch('/notificacao/lida/' + id, { method: 'POST' }).then(res => res.json()).then(data => {
                 if(data.sucesso) {
@@ -562,7 +860,7 @@
             setTimeout(() => { m.classList.add('hidden'); m.classList.remove('flex'); }, 300);
         }
 
-        // Fechar Dropdown ou Modal ao clicar fora
+        // Fechar Dropdowns e Modais ao clicar fora
         document.addEventListener('click', function(e) {
             const profileMenu = document.getElementById('profile-menu');
             const profileBtn = document.getElementById('btn-avatar-perfil');
@@ -575,6 +873,192 @@
             if (mPerfil && !mPerfil.classList.contains('hidden') && e.target === mPerfil && !cPerfil.contains(e.target)) {
                 fecharModalPerfil();
             }
+
+            const mApoio = document.getElementById('modal-apoio');
+            const cApoio = document.getElementById('card-apoio');
+            if (mApoio && !mApoio.classList.contains('hidden') && e.target === mApoio && !cApoio.contains(e.target)) {
+                fecharModalApoio();
+            }
+        });
+    </script>
+
+    <!-- SCRIPT GLOBAL (TERMOS, LOADER BLINDADO E TRANSIÇÕES) -->
+    <script>
+        // 1. Função para gravar o aceite dos termos
+        function aceitarTermosGlobais() {
+            const userId = "{{ session.get('user_id', '') }}";
+            if (userId) {
+                localStorage.setItem('termos_aceitos_' + userId, 'sim');
+            }
+            
+            const mTermos = document.getElementById('modal-termos');
+            if (mTermos) {
+                mTermos.classList.add('opacity-0');
+                const card = mTermos.querySelector('.transform');
+                if(card) card.classList.add('scale-95');
+                
+                setTimeout(() => { 
+                    mTermos.classList.add('hidden'); 
+                    mTermos.classList.remove('flex'); 
+                    
+                    if (!localStorage.getItem('tutorial_hir3_visto_v1')) {
+                        if (typeof iniciarTourGuiado === 'function') {
+                            iniciarTourGuiado();
+                        }
+                        localStorage.setItem('tutorial_hir3_visto_v1', 'sim');
+                    }
+                }, 300);
+            }
+        }
+
+        // 2. Função à prova de falhas para esconder o Loader
+        function esconderLoader() {
+            const loader = document.getElementById('global-loader');
+            if (loader && loader.style.display !== 'none') {
+                loader.style.opacity = '0';
+                setTimeout(() => { loader.style.display = 'none'; }, 300);
+            }
+            if (typeof lucide !== 'undefined') lucide.createIcons();
+        }
+
+        // --- INICIALIZAÇÃO DA PÁGINA ---
+        document.addEventListener("DOMContentLoaded", function() {
+            
+            // A) Forçar esconder o loader assim que a página é montada
+            esconderLoader();
+
+            // B) Lógica do Modal de Termos Obrigatório
+            const userId = "{{ session.get('user_id', '') }}";
+            const modalTermos = document.getElementById('modal-termos');
+            
+            if (userId && modalTermos && !localStorage.getItem('termos_aceitos_' + userId)) {
+                modalTermos.classList.remove('hidden');
+                modalTermos.classList.add('flex');
+                setTimeout(() => {
+                    modalTermos.classList.remove('opacity-0');
+                    const card = modalTermos.querySelector('.transform');
+                    if(card) card.classList.remove('scale-95');
+                }, 50);
+
+                const checkTermos = document.getElementById('check-aceite-termos');
+                const btnAceitar = document.getElementById('btn-aceitar-termos');
+                
+                if (checkTermos && btnAceitar) {
+                    checkTermos.addEventListener('change', function() {
+                        if(this.checked) {
+                            btnAceitar.removeAttribute('disabled');
+                            btnAceitar.classList.remove('bg-gray-300', 'dark:bg-gray-700', 'text-gray-500', 'dark:text-gray-400', 'cursor-not-allowed');
+                            btnAceitar.classList.add('bg-indigo-600', 'hover:bg-indigo-700', 'text-white', 'shadow-md', 'shadow-indigo-500/30');
+                        } else {
+                            btnAceitar.setAttribute('disabled', 'true');
+                            btnAceitar.classList.add('bg-gray-300', 'dark:bg-gray-700', 'text-gray-500', 'dark:text-gray-400', 'cursor-not-allowed');
+                            btnAceitar.classList.remove('bg-indigo-600', 'hover:bg-indigo-700', 'text-white', 'shadow-md', 'shadow-indigo-500/30');
+                        }
+                    });
+                }
+            }
+        });
+
+        // C) Salva-vidas para o cache do navegador (Botão Voltar)
+        window.addEventListener("pageshow", function(event) {
+            // Se a página foi carregada da memória do navegador (usuário clicou em voltar)
+            if (event.persisted) {
+                esconderLoader();
+            }
+        });
+
+        // D) Gatilho do Loader ao clicar em links válidos
+        document.addEventListener('click', function(e) {
+            const link = e.target.closest('a');
+            if (link) {
+                const href = link.getAttribute('href');
+                const target = link.getAttribute('target');
+                const isDownload = link.hasAttribute('download');
+                
+                if (href && !href.startsWith('#') && !href.startsWith('javascript:') && target !== '_blank' && !isDownload) {
+                    const loader = document.getElementById('global-loader');
+                    if (loader) {
+                        loader.style.display = 'flex';
+                        void loader.offsetWidth; // Força renderização imediata do CSS
+                        loader.style.opacity = '1';
+                        
+                        // FALLBACK DE SEGURANÇA: Desliga o loader forçadamente após 6 segundos 
+                        // Isso previne que a tela fique preta caso a internet caia ou o link falhe
+                        setTimeout(esconderLoader, 6000);
+                    }
+                }
+            }
+        });
+    </script>
+
+    <!-- SCRIPT DO TUTORIAL GUIADO (INTRO.JS) -->
+    <script>
+        function iniciarTourGuiado() {
+            if(window.location.pathname.includes('login') || window.location.pathname.includes('recuperar')) return;
+
+            const isDark = document.documentElement.classList.contains('dark') || localStorage.theme === 'dark';
+            
+            const tour = introJs();
+            tour.setOptions({
+                nextLabel: 'Próximo',
+                prevLabel: 'Voltar',
+                doneLabel: 'Começar!',
+                showBullets: true,
+                showProgress: true,
+                tooltipClass: isDark ? 'dark' : '',
+                steps: [
+                    {
+                        title: "👋 Olá, sou o Hir3!",
+                        intro: "Bem-vindo ao <b>Meu Controle Financeiro</b>! Serei sua IA mentora por aqui. Vamos fazer um tour rápido para você dominar suas finanças?"
+                    },
+                    {
+                        element: document.querySelector('#tour-lancamentos') || document.querySelector('a[href="/novo_gasto"]'),
+                        title: "💸 Lançamentos Rápidos",
+                        intro: "Tudo começa aqui. É por este atalho que você vai registrar suas despesas do dia a dia de forma super rápida.",
+                        position: 'right'
+                    },
+                    {
+                        element: document.querySelector('#tour-planejamento') || document.querySelector('a[href="/dividas"]'),
+                        title: "🎯 Suas Metas e Contratos",
+                        intro: "Neste módulo, você cria suas <b>Caixinhas de Reservas</b> e gerencia as amortizações dos seus <b>Contratos a Longo Prazo</b>.",
+                        position: 'right'
+                    },
+                    {
+                        element: document.querySelector('#tour-notificacoes'),
+                        title: "🔔 Inteligência Artificial",
+                        intro: "Fique de olho no sino! É por aqui que eu vou te mandar relatórios automáticos, dicas de economia e alertas de vencimentos.",
+                        position: 'bottom-right-aligned'
+                    },
+                    {
+                        element: document.querySelector('#btn-avatar-perfil'),
+                        title: "⚙️ Seu Painel",
+                        intro: "Aqui no seu perfil você consegue ativar o Modo Escuro, mudar o idioma, colocar o sistema em Tela Cheia e ajustar sua Renda.",
+                        position: 'left'
+                    },
+                    {
+                        title: "🚀 Tudo Pronto!",
+                        intro: "Você já está pronto para começar. Qualquer dúvida, é só me chamar clicando no <b>botão roxo de Chat</b> no canto da tela. Boas finanças!"
+                    }
+                ]
+            });
+
+            tour.onchange(function() {
+                setTimeout(() => { if (typeof lucide !== 'undefined') lucide.createIcons(); }, 50);
+            });
+
+            tour.start();
+        }
+
+        document.addEventListener("DOMContentLoaded", function() {
+            setTimeout(() => {
+                const userId = "{{ session.get('user_id', '') }}";
+                // O tutorial guiado AGORA SÓ RODA automaticamente se os Termos já tiverem sido aceitos (ou se a pessoa logou e já tinha aceitado antes).
+                // Caso contrário, quem chama o tutorial é a função aceitarTermosGlobais() quando o usuário clica no botão "Aceitar".
+                if (!localStorage.getItem('tutorial_hir3_visto_v1') && localStorage.getItem('termos_aceitos_' + userId)) {
+                    iniciarTourGuiado();
+                    localStorage.setItem('tutorial_hir3_visto_v1', 'sim');
+                }
+            }, 1500);
         });
     </script>
 

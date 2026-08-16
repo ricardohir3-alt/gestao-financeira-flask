@@ -9,15 +9,15 @@
   "icons": [
     {
       "src": "/static/img_home_final.png",
-      "sizes": "512x512",
+      "sizes": "192x192",
       "type": "image/png",
       "purpose": "any"
     },
     {
-      "src": "/static/img_splash_final.png",
+      "src": "/static/img_home_final.png",
       "sizes": "512x512",
       "type": "image/png",
-      "purpose": "maskable"
+      "purpose": "any maskable"
     }
   ]
 }

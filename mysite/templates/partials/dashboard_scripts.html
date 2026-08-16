@@ -204,16 +204,19 @@
                 }
             },
             dataLabels: { enabled: false },
-            stroke: { show: true, colors: isDark ? ['#1a1b26'] : ['#ffffff'], width: 6 },
+            stroke: { width: 0 }, 
+            // ATUALIZAÇÃO AQUI: LEGENDA CORRIGIDA E ESPAÇADA
             legend: {
                 position: 'bottom',
-                horizontalAlign: 'left',
+                horizontalAlign: 'center',
                 fontSize: '12px',
-                markers: { radius: 12, width: 8, height: 8 },
-                itemMargin: { horizontal: 0, vertical: 4 },
+                fontWeight: 600,
+                markers: { radius: 12, width: 8, height: 8, offsetX: -2 },
+                itemMargin: { horizontal: 12, vertical: 6 },
                 labels: { colors: textColor },
                 formatter: function(seriesName, opts) {
-                    return seriesName + " <span style='float: right; font-weight: bold; color: " + titleColor + "'>R$ " + opts.w.globals.seriesTotals[opts.seriesIndex].toLocaleString('pt-BR', {minimumFractionDigits: 2, maximumFractionDigits: 2}) + "</span>";
+                    const valor = opts.w.globals.seriesTotals[opts.seriesIndex];
+                    return seriesName + " : R$ " + valor.toLocaleString('pt-BR', {minimumFractionDigits: 2, maximumFractionDigits: 2});
                 }
             }
         }).render();

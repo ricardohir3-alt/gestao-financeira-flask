@@ -24,6 +24,8 @@ import google.generativeai as genai
 # ==============================================================================
 # 2. CONFIGURAÇÕES INICIAIS DO FLASK E BANCO DE DADOS
 # ==============================================================================
+from datetime import datetime # Importação necessária para o rastreador de atividade
+
 app = Flask(__name__)
 app.secret_key = os.environ.get('SECRET_KEY', 'chave_super_secreta_rafael_local')
 app.permanent_session_lifetime = timedelta(days=30) # Mantém conectado por mais tempo
@@ -36,6 +38,40 @@ def get_db_connection():
     conn = sqlite3.connect(DB_PATH)
     conn.row_factory = sqlite3.Row
     return conn
+
+# ==============================================================================
+# RASTREADOR DE ATIVIDADE E TRAVA DE SEGURANÇA GLOBAIS
+# ==============================================================================
+@app.before_request
+def verificacoes_globais():
+    rotas_livres = ['login', 'static', 'recuperar', 'recuperar_senha']
+
+    # Verifica se existe um usuário logado na sessão atual
+    if 'logado' in session and 'usuario' in session:
+
+        # 1. TRAVA B2B/SEGURANÇA: Se o usuário logado estiver marcado com senha fraca,
+        # impede que ele acesse qualquer outra página além de forcar_troca_senha ou logout.
+        if session.get('precisa_trocar_senha') and request.endpoint not in ['forcar_troca_senha', 'logout', 'static']:
+            return redirect(url_for('forcar_troca_senha'))
+
+        # 2. RASTREADOR DE ATIVIDADE (Último Acesso / Online)
+        usuario_logado = session['usuario']
+        agora = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
+
+        try:
+            conn = get_db_connection()
+            cursor = conn.cursor()
+            # Atualiza a coluna ultimo_acesso silenciosamente
+            cursor.execute("UPDATE usuarios SET ultimo_acesso = ? WHERE usuario = ?", (agora, usuario_logado))
+            conn.commit()
+            conn.close()
+        except:
+            # Se der algum erro (ex: banco trancado temporariamente), ignora para não afetar o uso
+            pass
+
+    # 3. VERIFICAÇÃO DE LOGIN: Bloqueia não-logados de acessarem rotas protegidas
+    elif request.endpoint not in rotas_livres and 'static' not in request.path:
+        return redirect(url_for('login'))
 
 # ==============================================================================
 # 3. CONFIGURAÇÃO DA IA (GEMINI - HIR3)
@@ -120,6 +156,21 @@ def iniciar_banco():
 # ==============================================================================
 # ROTA DE LOGIN E LOGOUT
 # ==============================================================================
+import re # Certifique-se de que isso está no topo do seu arquivo, junto com os outros imports!
+
+def is_senha_forte(senha):
+    """
+    Verifica se a senha contém pelo menos:
+    - 1 letra maiúscula
+    - 1 letra minúscula
+    - 1 número
+    """
+    if len(senha) < 6: return False # Mínimo de 6 caracteres é recomendado
+    if not re.search(r'[A-Z]', senha): return False
+    if not re.search(r'[a-z]', senha): return False
+    if not re.search(r'\d', senha): return False
+    return True
+
 @app.route('/login', methods=['GET', 'POST'])
 def login():
     erro = None
@@ -152,6 +203,7 @@ def login():
                     if hoje > validade:
                         return redirect(url_for('assinatura_vencida'))
 
+            # Inicia a Sessão
             session['logado'] = True
             session['user_id'] = usuario_banco['id']
             session['usuario'] = usuario_banco['usuario']
@@ -161,6 +213,14 @@ def login():
             session['is_admin'] = (usuario_banco['id'] == 1 or is_admin_db == 1)
             session.permanent = bool(manter_conectado)
 
+            # CHECAGEM DE FORÇA DA SENHA
+            if not is_senha_forte(senha_digitada):
+                # Se a senha for fraca, ele loga, mas é travado nesta tela
+                session['precisa_trocar_senha'] = True
+                return redirect(url_for('forcar_troca_senha'))
+
+            # Se a senha for segura, limpa a flag (caso exista) e vai pro Dashboard
+            session.pop('precisa_trocar_senha', None)
             return redirect(url_for('home'))
         else:
             erro = "Usuário ou senha inválidos!"
@@ -187,17 +247,126 @@ def recuperar():
 
         if usuario_banco:
             if check_password_hash(usuario_banco['senha'], senha_atual):
-                nova_senha_hash = generate_password_hash(nova_senha)
-                cursor.execute('UPDATE usuarios SET senha = ? WHERE usuario = ?', (nova_senha_hash, usuario_banco['usuario']))
-                conexao.commit()
-                conexao.close()
-                return redirect(url_for('login', sucesso="Senha alterada com sucesso!"))
+                # Validar se a NOVA senha é forte
+                if not is_senha_forte(nova_senha):
+                    erro = "Sua nova senha deve ter pelo menos 6 caracteres, contendo letras maiúsculas, minúsculas e números."
+                else:
+                    nova_senha_hash = generate_password_hash(nova_senha)
+                    cursor.execute('UPDATE usuarios SET senha = ? WHERE usuario = ?', (nova_senha_hash, usuario_banco['usuario']))
+                    conexao.commit()
+                    conexao.close()
+                    return redirect(url_for('login', sucesso="Senha atualizada! Sua nova senha já atende aos padrões de segurança."))
             else:
                 erro = "A senha atual está incorreta. Operação cancelada!"
         else:
             erro = "Usuário não encontrado no sistema!"
         conexao.close()
     return render_template('telas/recuperar.html', erro=erro)
+
+@app.route('/forcar_troca_senha', methods=['GET', 'POST'])
+def forcar_troca_senha():
+    # Verifica se a pessoa realmente precisa estar aqui
+    if 'logado' not in session or not session.get('precisa_trocar_senha'):
+        return redirect(url_for('home'))
+
+    erro = None
+    if request.method == 'POST':
+        nova_senha = request.form.get('nova_senha')
+        confirmar_senha = request.form.get('confirmar_senha')
+
+        if nova_senha != confirmar_senha:
+            erro = "As senhas não coincidem. Tente novamente."
+        elif not is_senha_forte(nova_senha):
+            erro = "Sua senha deve ter no mínimo 6 caracteres, conter pelo menos 1 letra maiúscula, 1 minúscula e 1 número."
+        else:
+            # Senha forte! Atualiza no banco e libera o acesso.
+            conexao = get_db_connection()
+            cursor = conexao.cursor()
+            nova_senha_hash = generate_password_hash(nova_senha)
+            cursor.execute('UPDATE usuarios SET senha = ? WHERE id = ?', (nova_senha_hash, session['user_id']))
+            conexao.commit()
+            conexao.close()
+
+            # Remove a trava e manda pro Dashboard
+            session.pop('precisa_trocar_senha', None)
+            return redirect(url_for('home'))
+
+    return render_template('telas/forcar_senha.html', erro=erro)
+
+# ==============================================================================
+# PÁGINAS LEGAIS (Termos e Privacidade)
+# ==============================================================================
+@app.route('/politica_privacidade')
+def politica_privacidade():
+    # Se o usuário não estiver logado, base.html vai ocultar o menu automaticamente
+    return render_template('telas/politica.html')
+
+@app.route('/termos_uso')
+def termos_uso():
+    return render_template('telas/termos.html')
+
+# ==============================================================================
+# CADASTRO DE CLIENTES
+# ==============================================================================
+
+@app.route('/cadastro_clientes', methods=['POST'])
+def cadastro_clientes():
+    # Pega os dados enviados pelo formulário invisível
+    usuario = request.form.get('usuario')
+    email = request.form.get('email')
+    senha = request.form.get('senha')
+    senha_confirmacao = request.form.get('senha_confirmacao')
+
+    # Trata o e-mail: se vier vazio, transforma em None (Nulo no banco de dados)
+    if email:
+        email = email.strip()
+        if email == "":
+            email = None
+    else:
+        email = None
+
+    # 1. Validação básica (email retirado da obrigatoriedade)
+    if not usuario or not senha:
+        return render_template('login.html', erro="Preencha todos os campos obrigatórios do cadastro!")
+
+    if senha != senha_confirmacao:
+        return render_template('login.html', erro="As senhas digitadas não coincidem!")
+
+    # 2. Conectar ao banco de dados
+    conn = sqlite3.connect('/home/Hir3solutions/mysite/financas.db')
+    cursor = conn.cursor()
+
+    # 3. Verificar se o usuário já existe (e o e-mail também, se foi preenchido)
+    if email:
+        cursor.execute("SELECT id FROM usuarios WHERE usuario = ? OR email = ?", (usuario, email))
+        if cursor.fetchone():
+            conn.close()
+            return render_template('login.html', erro="Usuário ou E-mail já cadastrado!")
+    else:
+        cursor.execute("SELECT id FROM usuarios WHERE usuario = ?", (usuario,))
+        if cursor.fetchone():
+            conn.close()
+            return render_template('login.html', erro="Esse usuário já existe. Escolha outro nome!")
+
+    # 4. Criptografar a senha
+    from werkzeug.security import generate_password_hash
+    senha_hash = generate_password_hash(senha)
+
+    # 5. Inserir o novo cliente (passando a variável email, que pode ter texto ou ser nula)
+    try:
+        cursor.execute("""
+            INSERT INTO usuarios (usuario, email, senha, licenca, ativo, modulos_liberados)
+            VALUES (?, ?, ?, 'basica', 1, 'dashboard,extrato')
+        """, (usuario, email, senha_hash))
+        conn.commit()
+    except Exception as e:
+        conn.close()
+        return render_template('login.html', erro=f"Erro interno ao cadastrar: {str(e)}")
+
+    conn.close()
+
+    # 6. Se tudo der certo, recarrega a página de login limpa para ele entrar
+    return redirect(url_for('login'))
 
 # ==============================================================================
 # DASHBOARD PRINCIPAL
@@ -267,6 +436,29 @@ def home():
 
     total_gastos = sum(float(g['valor']) for g in lista_gastos)
 
+    # =====================================================================
+    # COMPARATIVO MENSAL (Cálculo do Mês Passado)
+    # =====================================================================
+    try:
+        ano_filtro = int(mes_filtro[:4])
+        mes_num = int(mes_filtro[5:7])
+
+        if mes_num == 1:
+            mes_passado_num = 12
+            ano_passado = ano_filtro - 1
+        else:
+            mes_passado_num = mes_num - 1
+            ano_passado = ano_filtro
+
+        mes_passado_str = f"{ano_passado}-{mes_passado_num:02d}"
+
+        cursor.execute("SELECT SUM(valor) as total FROM gastos WHERE data LIKE ? AND usuario_id = ?", (mes_passado_str + '%', user_id))
+        resultado_passado = cursor.fetchone()
+        total_passado = float(resultado_passado['total']) if resultado_passado and resultado_passado['total'] else 0.0
+    except Exception:
+        total_passado = 0.0
+    # =====================================================================
+
     cursor.execute('''SELECT substr(data, 9, 2) as dia, SUM(valor) as total FROM gastos
                       WHERE data LIKE ? AND usuario_id = ? GROUP BY dia ORDER BY dia''', (mes_filtro + '%', user_id))
     dados_grafico = cursor.fetchall()
@@ -317,6 +509,16 @@ def home():
     # Formatações
     def fmt(v): return f"{v:,.2f}".replace(",", "X").replace(".", ",").replace("X", ".")
 
+    # Fechamento do Comparativo Mensal
+    diferenca_mensal = total_passado - total_gastos
+    comparativo = {
+        'total_atual': fmt(total_gastos),
+        'total_passado': fmt(total_passado),
+        'diferenca_absoluta': fmt(abs(diferenca_mensal)),
+        'economizou': diferenca_mensal > 0,
+        'excedeu': diferenca_mensal < 0
+    }
+
     return render_template('index.html',
                            renda_total=fmt(renda_atual), gastos_totais=fmt(total_gastos),
                            valor_disponivel=fmt(disponivel_geral), gastos=lista_gastos,
@@ -327,7 +529,8 @@ def home():
                            total_pago=fmt(total_pago), total_pendente=fmt(total_pendente),
                            top3_gastos=top3_gastos, notificacoes=notificacoes,
                            total_notificacoes=total_notificacoes, fatura_pendente=fatura_pendente,
-                           versao_atual="1.6.2")
+                           comparativo=comparativo,
+                           versao_atual="1.6.4")
 
 @app.route('/historico_notificacoes')
 def historico_notificacoes():
@@ -338,7 +541,6 @@ def historico_notificacoes():
     notificacoes_historico = cursor.fetchall()
     conexao.close()
     return render_template('telas/historico_notificacoes.html', notificacoes=notificacoes_historico)
-
 
 # ==============================================================================
 # GAMIFICAÇÃO E JORNADA IA
@@ -434,10 +636,11 @@ def api_jornada_rpg():
         print(f"Erro RPG: {e}")
         return jsonify({'status': 'erro'}), 500
 
-
 # ==============================================================================
 # GESTÃO DE USUÁRIOS E ADMINISTRAÇÃO
 # ==============================================================================
+from datetime import datetime, timedelta
+
 @app.route('/usuarios', methods=['GET', 'POST'])
 def usuarios():
     if 'logado' not in session: return redirect(url_for('login'))
@@ -476,8 +679,36 @@ def usuarios():
                 conexao.commit()
             except: pass
 
-    cursor.execute("SELECT id, usuario, licenca, valor_licencas, modulos_liberados FROM usuarios WHERE ativo = 1 OR ativo IS NULL")
-    lista_users = cursor.fetchall()
+    # Trazendo as novas colunas: validade_licenca, email e ultimo_acesso
+    cursor.execute("SELECT id, usuario, licenca, valor_licencas, modulos_liberados, validade_licenca, email, ultimo_acesso FROM usuarios WHERE ativo = 1 OR ativo IS NULL")
+    rows = cursor.fetchall()
+
+    agora = datetime.now()
+    lista_users = []
+
+    for r in rows:
+        # Garantindo leitura independente se o banco retornar Tupla ou Dicionário (sqlite3.Row)
+        is_dict = hasattr(r, 'keys')
+        uid = r['id'] if is_dict else r[0]
+        unome = r['usuario'] if is_dict else r[1]
+        ulic = r['licenca'] if is_dict else r[2]
+        uval = r['valor_licencas'] if is_dict else r[3]
+        umod = r['modulos_liberados'] if is_dict else r[4]
+        uvalid = r['validade_licenca'] if is_dict else r[5]
+        uemail = r['email'] if is_dict else r[6]
+        u_acesso = r['ultimo_acesso'] if is_dict else r[7]
+
+        is_online = False
+        if u_acesso:
+            try:
+                data_acesso = datetime.strptime(u_acesso, '%Y-%m-%d %H:%M:%S')
+                # Considera ONLINE se a última atividade foi há menos de 5 minutos
+                if (agora - data_acesso) < timedelta(minutes=5):
+                    is_online = True
+            except: pass
+
+        # O HTML espera exatamente essa ordem (0 ao 7)
+        lista_users.append((uid, unome, ulic, uval, umod, uvalid, uemail, is_online))
 
     try:
         cursor.execute("SELECT * FROM logs_sistema ORDER BY id DESC LIMIT 50")
@@ -491,9 +722,13 @@ def usuarios():
     except: disk_percent = 0
 
     sys_info = {
-        'db_size': str(db_size_mb).replace('.', ','), 'disk_percent': disk_percent,
-        'python_version': platform.python_version(), 'flask_version': flask.__version__, 'app_version': 'v1.6.2'
+        'db_size': str(db_size_mb).replace('.', ','),
+        'disk_percent': disk_percent,
+        'python_version': platform.python_version(),
+        'flask_version': flask.__version__,
+        'app_version': f"v{VERSAO_SISTEMA}" # <--- Agora ele puxa a versão oficial automaticamente!
     }
+
     return render_template('telas/gestao_usuarios.html', usuarios=lista_users, logs=logs, sys_info=sys_info)
 
 @app.route('/api/inativar_usuario/<int:id_usuario>', methods=['POST'])
@@ -516,11 +751,18 @@ def api_editar_usuario(id_usuario):
     except ValueError: novo_valor = 0.00
     nova_validade = dados.get('nova_validade', '2099-12-31')
 
+    # Trata o e-mail (para não salvar vazio)
+    email = dados.get('email')
+    if email:
+        email = email.strip()
+        if email == "": email = None
+
     try:
         conexao = get_db_connection()
         cursor = conexao.cursor()
-        cursor.execute("""UPDATE usuarios SET usuario=?, licenca=?, valor_licencas=?, modulos_liberados=?, validade_licenca=? WHERE id=?""",
-                       (dados['nome'], dados['licenca'], novo_valor, dados['modulos'], nova_validade, id_usuario))
+        # Adicionado o e-mail na query de atualização
+        cursor.execute("""UPDATE usuarios SET usuario=?, email=?, licenca=?, valor_licencas=?, modulos_liberados=?, validade_licenca=? WHERE id=?""",
+                       (dados['nome'], email, dados['licenca'], novo_valor, dados['modulos'], nova_validade, id_usuario))
         conexao.commit()
         conexao.close()
         return jsonify({'status': 'sucesso'})
@@ -835,17 +1077,40 @@ def duplicar_gastos_lote():
 
 @app.route('/atualizar_status/<int:id_gasto>', methods=['POST'])
 def atualizar_status(id_gasto):
-    if 'logado' not in session: return redirect(url_for('login'))
+    if 'logado' not in session and 'user_id' not in session: return redirect(url_for('login'))
     conexao = get_db_connection()
     cursor = conexao.cursor()
-    status = cursor.execute('SELECT status FROM gastos WHERE id = ? AND usuario_id = ?', (id_gasto, session['user_id'])).fetchone()
-    if status:
-        cursor.execute('UPDATE gastos SET status = ? WHERE id = ?', ('PAGO' if status[0] == 'PENDENTE' else 'PENDENTE', id_gasto))
+
+    # Busca o status e o id do contrato (se ele existir)
+    gasto = cursor.execute('SELECT status, divida_id FROM gastos WHERE id = ? AND usuario_id = ?', (id_gasto, session['user_id'])).fetchone()
+
+    if gasto:
+        status_atual = gasto['status']
+        novo_status = 'PAGO' if status_atual == 'PENDENTE' else 'PENDENTE'
+
+        # 1. Atualiza o status do gasto na tabela
+        cursor.execute('UPDATE gastos SET status = ? WHERE id = ?', (novo_status, id_gasto))
+
+        # =========================================================
+        # MOTOR INTELIGENTE: SINCRONIZAÇÃO DE CONTRATOS A LONGO PRAZO
+        # =========================================================
+        try:
+            divida_id = gasto['divida_id']
+            if divida_id:
+                if novo_status == 'PAGO':
+                    # Avança o progresso da dívida
+                    cursor.execute("UPDATE dividas SET parcelas_pagas = parcelas_pagas + 1 WHERE id = ?", (divida_id,))
+                elif novo_status == 'PENDENTE':
+                    # Recua o progresso se o usuário desmarcar
+                    cursor.execute("UPDATE dividas SET parcelas_pagas = parcelas_pagas - 1 WHERE id = ?", (divida_id,))
+        except Exception as e:
+            print(f"[SYNC DIVIDA] Erro: {e}")
+        # =========================================================
+
         conexao.commit()
     conexao.close()
     mes_filtro = request.args.get('mes')
     return redirect(url_for('home', mes=mes_filtro) if mes_filtro else url_for('home'))
-
 
 # ==============================================================================
 # DÍVIDAS E PLANEJAMENTO
@@ -966,6 +1231,42 @@ def excluir_reserva(id):
     conexao.close()
     return redirect('/reservas')
 
+from datetime import datetime
+from flask import jsonify
+
+@app.route('/lancar_parcela/<int:id_divida>', methods=['POST'])
+def lancar_parcela(id_divida):
+    if 'logado' not in session and 'usuario' not in session:
+        return jsonify({'status': 'erro', 'mensagem': 'Sessão expirada'}), 401
+
+    user_id = session.get('user_id')
+    conexao = get_db_connection()
+    cursor = conexao.cursor()
+
+    # 1. Puxa os dados do contrato
+    cursor.execute("SELECT descricao, valor_parcela FROM dividas WHERE id = ? AND usuario_id = ?", (id_divida, user_id))
+    divida = cursor.fetchone()
+
+    if not divida:
+        conexao.close()
+        return jsonify({'status': 'erro', 'mensagem': 'Contrato não encontrado'}), 404
+
+    # 2. Prepara os dados automáticos
+    descricao_gasto = f"Parcela: {divida['descricao']}"
+    valor = divida['valor_parcela']
+    data_atual = datetime.now().strftime('%Y-%m-%d')
+    quinzena = 1 if datetime.now().day <= 15 else 2
+
+    # 3. Injera no fluxo de caixa (amarrado ao divida_id)
+    cursor.execute('''
+        INSERT INTO gastos (descricao, categoria, valor, quinzena, status, data, usuario_id, divida_id)
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+    ''', (descricao_gasto, 'Contratos/Dívidas', valor, quinzena, 'PENDENTE', data_atual, user_id, id_divida))
+
+    conexao.commit()
+    conexao.close()
+
+    return jsonify({'status': 'sucesso', 'mensagem': 'Parcela adicionada aos gastos do mês!'})
 
 # ==============================================================================
 # COMPRAS (LISTA)
@@ -1045,6 +1346,71 @@ def exportar_compras_csv():
     if len(itens) > 0: writer.writerow(['', '', 'TOTAL GERAL:', f'=SOMA(D2:D{len(itens)+1})'])
     return Response(output.getvalue(), mimetype="text/csv; charset=utf-8", headers={"Content-Disposition": f"attachment;filename=lista_{mes}.csv"})
 
+# ==============================================================================
+# CHAT BOT - IA HIR3
+# ==============================================================================
+
+@app.route('/api/chat_hir3', methods=['POST'])
+def chat_hir3():
+    if 'user_id' not in session:
+        return jsonify({'resposta': 'Sua sessão expirou. Faça login novamente!'}), 401
+
+    dados = request.get_json()
+    mensagem_usuario = dados.get('mensagem', '').lower()
+
+    conexao = get_db_connection()
+    cursor = conexao.cursor()
+
+    # Prepara o Contexto Financeiro do Mês (AGORA INCLUINDO O STATUS)
+    mes_atual = datetime.now().strftime('%Y-%m')
+    cursor.execute("SELECT descricao, valor, categoria, status FROM gastos WHERE usuario_id = ? AND data LIKE ?", (session['user_id'], f"{mes_atual}%"))
+    gastos_mes = cursor.fetchall()
+    conexao.close()
+
+    # Matemática Dinâmica do Mês
+    total_gastos = sum(g['valor'] for g in gastos_mes)
+    maior_gasto = max(gastos_mes, key=lambda x: x['valor']) if gastos_mes else None
+
+    # Matemática Exclusiva para Pendências
+    gastos_pendentes = [g for g in gastos_mes if g['status'] == 'PENDENTE']
+    total_pendente = sum(g['valor'] for g in gastos_pendentes)
+    qtd_pendentes = len(gastos_pendentes)
+
+    # =======================================================
+    # LÓGICA DE INTERPRETAÇÃO (Motor do Chatbot Hir3)
+    # =======================================================
+    resposta = ""
+
+    if "maior gasto" in mensagem_usuario or "mais gastei" in mensagem_usuario:
+        if maior_gasto:
+            resposta = f"Seu maior gasto neste mês foi com **{maior_gasto['descricao']}** na categoria <i>{maior_gasto['categoria']}</i>, totalizando **R$ {maior_gasto['valor']:.2f}**. O total do seu mês já está em R$ {total_gastos:.2f}."
+        else:
+            resposta = "Você ainda não registrou nenhum gasto neste mês. Quer que eu te ensine como fazer um lançamento?"
+
+    # NOVA REGRA: IDENTIFICAÇÃO DE CONTAS PENDENTES
+    elif "pendente" in mensagem_usuario or "pendentes" in mensagem_usuario or "falta pagar" in mensagem_usuario or "a pagar" in mensagem_usuario:
+        if qtd_pendentes > 0:
+            resposta = f"Você tem **{qtd_pendentes} conta(s) pendente(s)** neste mês, totalizando **R$ {total_pendente:.2f}**. Fique de olho no vencimento para evitar multas!"
+        else:
+            resposta = "Ótima notícia! Você não tem nenhuma conta pendente registrada para este mês. Tudo no azul! 🚀"
+
+    elif "como" in mensagem_usuario and ("meta" in mensagem_usuario or "caixinha" in mensagem_usuario):
+        resposta = "Para criar uma meta, vá no menu lateral em <b>Planejamento Financeiro</b> e escolha a aba <b>Caixinhas</b>. Lá você pode dar um nome, definir o valor e eu te ajudo a acompanhar o progresso!"
+
+    elif "suporte" in mensagem_usuario or "ajuda" in mensagem_usuario or "feedback" in mensagem_usuario or "falo com" in mensagem_usuario:
+        resposta = "Para falar com suporte humano, você pode usar o botão flutuante verde (WhatsApp) no canto inferior esquerdo da tela, ou enviar um email para a equipe da HIR3 SOLUTIONS. Adoramos receber feedbacks!"
+
+    elif "total" in mensagem_usuario or "resumo" in mensagem_usuario:
+        resposta = f"Neste mês, você tem um total de <b>R$ {total_gastos:.2f}</b> em saídas registradas (entre pagas e pendentes). Fique de olho no seu gráfico de fechamento!"
+
+    elif "olá" in mensagem_usuario or "oi" in mensagem_usuario or "tudo bem" in mensagem_usuario:
+        resposta = "Olá! Tudo ótimo por aqui. Sou o Hir3, sua IA financeira. Como posso facilitar sua vida hoje?"
+
+    else:
+        # Resposta de fallback atualizada com a nova sugestão
+        resposta = "Interessante! Como sou uma IA mentora em evolução, ainda estou processando esse tipo de solicitação. Tente me perguntar: <i>'Qual meu maior gasto esse mês?'</i>, <i>'Quanto tenho de contas pendentes?'</i> ou <i>'Como falo com o suporte?'</i>"
+
+    return jsonify({'resposta': resposta})
 
 # ==============================================================================
 # RELATÓRIOS E WEBHOOK WHATSAPP
@@ -1132,9 +1498,11 @@ def webhook_whatsapp():
 # ==============================================================================
 # CONTEXTOS GLOBAIS E INICIALIZAÇÃO
 # ==============================================================================
+VERSAO_SISTEMA = "1.6.4" # <--- No futuro, você altera a versão APENAS nesta linha!
+
 @app.context_processor
 def inject_global_vars():
-    return dict(versao_atual="1.6.2", data_atual=datetime.now().strftime('%B %Y').capitalize())
+    return dict(versao_atual=VERSAO_SISTEMA, data_atual=datetime.now().strftime('%B %Y').capitalize())
 
 # Garante que o banco seja criado e configurado logo antes do app rodar
 iniciar_banco()
