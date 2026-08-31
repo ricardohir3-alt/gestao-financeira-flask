@@ -6,17 +6,28 @@
         <span>Voltar</span>
     </a>
 
-    <div class="w-full bg-white dark:bg-gray-800 p-6 rounded-xl shadow-sm border border-gray-100 dark:border-gray-700">
+    <div class="w-full bg-white dark:bg-gray-800 p-6 rounded-xl shadow-sm border border-gray-100 dark:border-gray-700 relative">
         
-        <!-- TÍTULO DINÂMICO (Global vs Extrato) -->
-        <h2 class="text-xl font-bold mb-6 text-gray-800 dark:text-gray-200 flex items-center gap-2">
-            <i data-lucide="receipt" class="w-6 h-6 text-indigo-600 dark:text-indigo-400"></i> 
-            {% if fin_data.modo_extrato %}
-                Extrato Financeiro: <span class="text-indigo-500">{{ fin_data.nome_cliente }}</span>
-            {% else %}
-                Painel Financeiro Global
+        <!-- HEADER COM TÍTULO E BOTÃO PIX LADO A LADO -->
+        <div class="flex flex-col md:flex-row justify-between items-start md:items-center mb-6 gap-4">
+            <!-- TÍTULO DINÂMICO -->
+            <h2 class="text-xl font-bold text-gray-800 dark:text-gray-200 flex items-center gap-2">
+                <i data-lucide="receipt" class="w-6 h-6 text-indigo-600 dark:text-indigo-400"></i> 
+                {% if fin_data.modo_extrato %}
+                    Extrato Financeiro: <span class="text-indigo-500">{{ fin_data.nome_cliente }}</span>
+                {% else %}
+                    Painel Financeiro Global
+                {% endif %}
+            </h2>
+
+            <!-- BOTÃO GERAR PIX (Visível apenas no Extrato Individual) -->
+            {% if session.get('is_admin') and fin_data.modo_extrato %}
+            <button onclick="abrirModalCobranca()" class="bg-indigo-600 hover:bg-indigo-700 text-white px-4 py-2.5 rounded-xl text-sm font-bold shadow-md shadow-indigo-500/30 flex items-center gap-2 transition-all hover:scale-105 active:scale-95 whitespace-nowrap">
+                <i data-lucide="qrcode" class="w-4 h-4"></i>
+                Gerar Cobrança PIX
+            </button>
             {% endif %}
-        </h2>
+        </div>
 
         <!-- TABS DE NAVEGAÇÃO FINANCEIRA -->
         <div class="flex gap-4 border-b border-gray-200 dark:border-gray-700 mb-6 overflow-x-auto pb-1">
@@ -175,7 +186,7 @@
                 </div>
             </div>
 
-            <!-- ABA: HISTÓRICO DE PAGAMENTOS (AGORA É REAL!) -->
+            <!-- ABA: HISTÓRICO DE PAGAMENTOS -->
             <div id="div-historico" class="hidden">
                 <div class="flex justify-between items-center mb-4">
                     <h3 class="text-sm font-bold text-gray-600 dark:text-gray-300 uppercase tracking-wider">Faturas Pagas</h3>
@@ -233,8 +244,10 @@
                 </div>
             </div>
 
+            <!-- ============================================== -->
             <!-- MODAL DE RENOVAÇÃO -->
-            <div id="modal-renovacao" class="fixed inset-0 z-50 hidden flex items-center justify-center bg-black/50 backdrop-blur-sm transition-opacity">
+            <!-- ============================================== -->
+            <div id="modal-renovacao" class="fixed inset-0 z-[150] hidden flex items-center justify-center bg-black/50 backdrop-blur-sm transition-opacity">
                 <div class="bg-white dark:bg-gray-800 p-6 rounded-3xl shadow-2xl w-full max-w-md border border-gray-100 dark:border-gray-700 transform transition-all">
                     <h3 class="text-xl font-bold text-gray-800 dark:text-gray-100 mb-2 flex items-center gap-2">
                         <i data-lucide="refresh-cw" class="w-5 h-5 text-indigo-500"></i> Renovar Assinatura
@@ -263,6 +276,59 @@
                             </button>
                         </div>
                     </form>
+                </div>
+            </div>
+
+            <!-- ============================================== -->
+            <!-- MODAL GERAR COBRANÇA PIX (NOVO)                -->
+            <!-- ============================================== -->
+            <div id="modal-cobranca" class="hidden fixed inset-0 z-[160] flex items-center justify-center bg-black/60 backdrop-blur-sm p-4 opacity-0 transition-opacity duration-300">
+                <div class="bg-white dark:bg-[#151a23] rounded-3xl shadow-2xl w-full max-w-sm transform scale-95 transition-transform duration-300 border border-gray-100 dark:border-gray-800 flex flex-col relative overflow-hidden" id="card-cobranca">
+                    
+                    <!-- Header -->
+                    <div class="p-5 border-b border-gray-100 dark:border-gray-800 flex justify-between items-center bg-gray-50 dark:bg-gray-800/40">
+                        <h3 class="text-lg font-black text-gray-900 dark:text-white flex items-center gap-2">
+                            <i data-lucide="wallet" class="w-5 h-5 text-indigo-500"></i> Faturar Cliente
+                        </h3>
+                        <button onclick="fecharModalCobranca()" class="text-gray-400 hover:text-gray-600 dark:hover:text-gray-200 transition-colors focus:outline-none">
+                            <i data-lucide="x" class="w-5 h-5"></i>
+                        </button>
+                    </div>
+                    
+                    <div class="p-6">
+                        <!-- Formulário de Geração -->
+                        <div id="form-gerar-pix" class="space-y-4">
+                            <div>
+                                <label class="block text-[10px] font-bold text-gray-500 dark:text-gray-400 uppercase mb-1">Valor da Fatura (R$)</label>
+                                <input type="number" id="valor-cobranca" step="0.01" placeholder="Ex: 50,00" class="w-full bg-gray-50 dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-xl px-4 py-3 text-sm font-bold text-gray-800 dark:text-white outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 transition-colors">
+                            </div>
+                            <button onclick="processarPix()" class="w-full bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700 text-white font-bold py-3 rounded-xl text-sm transition-all shadow-md shadow-indigo-500/30 flex justify-center items-center gap-2">
+                                <i data-lucide="loader-2" id="pix-spinner" class="w-4 h-4 animate-spin hidden"></i>
+                                Gerar Código PIX
+                            </button>
+                        </div>
+
+                        <!-- Área de Resultado (Oculta até gerar) -->
+                        <div id="resultado-pix" class="hidden flex flex-col items-center mt-2 animate-[fadeIn_0.5s_ease-out]">
+                            <div class="bg-gray-50 dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-2xl p-4 mb-4">
+                                <img id="img-qrcode-dinamico" src="" alt="QR Code PIX Dinâmico" class="w-40 h-40 rounded-xl shadow-sm">
+                            </div>
+                            
+                            <div class="w-full text-left mb-4">
+                                <label class="block text-[10px] font-bold text-gray-500 dark:text-gray-400 uppercase mb-1">PIX Copia e Cola</label>
+                                <div class="flex items-center gap-2">
+                                    <input type="text" id="pix-copia-cola" readonly class="w-full bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl px-3 py-2 text-[11px] font-medium text-gray-800 dark:text-gray-300 outline-none cursor-pointer" onclick="copiarPixDinamico()">
+                                    <button onclick="copiarPixDinamico()" class="w-10 h-[38px] bg-indigo-100 hover:bg-indigo-200 dark:bg-indigo-900/40 dark:hover:bg-indigo-800/60 text-indigo-600 dark:text-indigo-400 rounded-xl flex items-center justify-center shrink-0 transition-colors focus:outline-none">
+                                        <i data-lucide="copy" class="w-4 h-4"></i>
+                                    </button>
+                                </div>
+                            </div>
+
+                            <a href="#" id="btn-whatsapp" target="_blank" class="w-full bg-green-500 hover:bg-green-600 text-white font-bold py-3 rounded-xl text-sm transition-colors shadow-sm flex justify-center items-center gap-2">
+                                <i data-lucide="message-circle" class="w-4 h-4"></i> Enviar por WhatsApp
+                            </a>
+                        </div>
+                    </div>
                 </div>
             </div>
 
@@ -325,6 +391,125 @@
 
         function fecharModalRenovacao() {
             document.getElementById('modal-renovacao').classList.add('hidden');
+        }
+
+        // --- SCRIPTS DO NOVO GERADOR DE PIX (CRC16) COM CONEXÃO AO BACK-END ---
+        
+        /* ATENÇÃO: SUBSTITUA ESTES DADOS PELOS SEUS REAIS */
+        const CHAVE_PIX = "ricardo.hir3@gmail.com"; 
+        const NOME_RECEBEDOR = "Ricardo Hir3";
+        const CIDADE_RECEBEDOR = "Teresina";
+
+        function abrirModalCobranca() {
+            const m = document.getElementById('modal-cobranca'), c = document.getElementById('card-cobranca');
+            m.classList.remove('hidden'); m.classList.add('flex');
+            document.getElementById('form-gerar-pix').classList.remove('hidden');
+            document.getElementById('resultado-pix').classList.add('hidden');
+            document.getElementById('valor-cobranca').value = '';
+            setTimeout(() => { m.classList.remove('opacity-0'); c.classList.remove('scale-95'); }, 10);
+        }
+
+        function fecharModalCobranca() {
+            const m = document.getElementById('modal-cobranca'), c = document.getElementById('card-cobranca');
+            m.classList.add('opacity-0'); c.classList.add('scale-95');
+            setTimeout(() => { m.classList.add('hidden'); m.classList.remove('flex'); }, 300);
+        }
+
+        function processarPix() {
+            const valorInput = document.getElementById('valor-cobranca').value;
+            // Pega o ID do usuário diretamente do backend (jinja) para faturar a pessoa certa
+            const usuarioId = "{{ fin_data.usuario_id if fin_data else '' }}";
+
+            if(!valorInput || valorInput <= 0) {
+                alert('Digite um valor válido para a cobrança.'); return;
+            }
+            if(!usuarioId) {
+                alert('Erro: ID do cliente não encontrado. Gere a cobrança dentro do extrato individual do usuário.'); return;
+            }
+
+            const spinner = document.getElementById('pix-spinner');
+            spinner.classList.remove('hidden');
+
+            const valorFormatado = parseFloat(valorInput).toFixed(2);
+            
+            // CONEXÃO COM O PYTHON (CRIA A FATURA NO BANCO DE DADOS)
+            fetch('/api/salvar_fatura', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ usuario_id: usuarioId, valor: valorFormatado })
+            })
+            .then(res => res.json())
+            .then(data => {
+                if(data.sucesso) {
+                    // SE A FATURA FOI SALVA, GERA O PIX NA TELA
+                    const payload = gerarPayloadPixOficial(CHAVE_PIX, valorFormatado, NOME_RECEBEDOR, CIDADE_RECEBEDOR);
+                    
+                    document.getElementById('pix-copia-cola').value = payload;
+                    document.getElementById('img-qrcode-dinamico').src = `https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=${encodeURIComponent(payload)}`;
+                    
+                    const nomeCliente = "{{ fin_data.nome_cliente if fin_data.modo_extrato else 'Cliente' }}";
+                    const textoWhats = `Olá ${nomeCliente}! Segue o PIX para pagamento da sua fatura no *Meu Controle Financeiro*.\n\n*Valor:* R$ ${valorFormatado.replace('.', ',')}\n\n*PIX Copia e Cola:*\n${payload}`;
+                    document.getElementById('btn-whatsapp').href = `https://wa.me/?text=${encodeURIComponent(textoWhats)}`;
+
+                    spinner.classList.add('hidden');
+                    document.getElementById('form-gerar-pix').classList.add('hidden');
+                    document.getElementById('resultado-pix').classList.remove('hidden');
+                    document.getElementById('resultado-pix').classList.add('flex');
+                    
+                    // Recarrega a página levemente em 3 segundos para a nova fatura aparecer na tabela atrás do modal
+                    setTimeout(() => {
+                        window.location.reload();
+                    }, 3500);
+
+                    if(typeof Swal !== 'undefined') {
+                        Swal.fire({ icon: 'success', title: 'Fatura Criada!', text: 'A cobrança já consta como pendente.', timer: 2500, showConfirmButton: false });
+                    } else {
+                        alert('Cobrança PIX gerada e salva nas Faturas Pendentes do cliente!');
+                    }
+                } else {
+                    alert('Erro ao salvar fatura: ' + data.erro);
+                    spinner.classList.add('hidden');
+                }
+            })
+            .catch(err => {
+                alert('Falha na comunicação com o servidor.');
+                spinner.classList.add('hidden');
+            });
+        }
+
+        function copiarPixDinamico() {
+            const input = document.getElementById('pix-copia-cola');
+            input.select(); input.setSelectionRange(0, 99999);
+            navigator.clipboard.writeText(input.value);
+            if(typeof Swal !== 'undefined') {
+                Swal.fire({ icon: 'success', title: 'PIX Copiado!', timer: 1500, showConfirmButton: false });
+            } else {
+                alert('PIX Copiado com sucesso!');
+            }
+        }
+
+        function gerarPayloadPixOficial(chave, valor, nome, cidade) {
+            nome = nome.normalize("NFD").replace(/[\u0300-\u036f]/g, "").substring(0, 25).toUpperCase();
+            cidade = cidade.normalize("NFD").replace(/[\u0300-\u036f]/g, "").substring(0, 15).toUpperCase();
+            
+            let p = "000201";
+            let merchantAccount = "0014BR.GOV.BCB.PIX01" + chave.length.toString().padStart(2, '0') + chave;
+            p += "26" + merchantAccount.length.toString().padStart(2, '0') + merchantAccount;
+            
+            p += "52040000530398654" + valor.length.toString().padStart(2, '0') + valor; 
+            p += "5802BR59" + nome.length.toString().padStart(2, '0') + nome;
+            p += "60" + cidade.length.toString().padStart(2, '0') + cidade;
+            p += "62070503***6304";
+
+            let crc = 0xFFFF;
+            for (let i = 0; i < p.length; i++) {
+                crc ^= p.charCodeAt(i) << 8;
+                for (let j = 0; j < 8; j++) {
+                    if ((crc & 0x8000) > 0) crc = (crc << 1) ^ 0x1021;
+                    else crc = crc << 1;
+                }
+            }
+            return p + (crc & 0xFFFF).toString(16).toUpperCase().padStart(4, '0');
         }
 
         window.addEventListener('DOMContentLoaded', () => {

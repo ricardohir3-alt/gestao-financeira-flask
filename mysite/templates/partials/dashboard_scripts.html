@@ -1,4 +1,4 @@
-<script src="https://cdn.jsdelivr.net/npm/apexcharts"></script>
+    <script src="https://cdn.jsdelivr.net/npm/apexcharts"></script>
 
 <!-- LÓGICA EXCLUSIVA DO DASHBOARD -->
 <script>
@@ -34,7 +34,7 @@
     }
 
     // JS Modais Básicos do Dashboard
-    function abrirModalExtrato() { const m = document.getElementById('modal-extrato'), c = document.getElementById('card-extrato'); m.classList.remove('hidden'); m.classList.add('flex'); setTimeout(() => { m.classList.remove('opacity-0'); c.classList.remove('scale-95'); }, 10); if(typeof ganharXP === 'function') ganharXP(2, 'xp_motivo_extrato'); }
+    function abrirModalExtrato() { const m = document.getElementById('modal-extrato'), c = document.getElementById('card-extrato'); m.classList.remove('hidden'); m.classList.add('flex'); setTimeout(() => { m.classList.remove('opacity-0'); c.classList.remove('scale-95'); filtrarGastos(window.tabAtivaExtrato || 'TODOS'); }, 10); if(typeof ganharXP === 'function') ganharXP(2, 'xp_motivo_extrato'); }
     function fecharModalExtrato() { const m = document.getElementById('modal-extrato'), c = document.getElementById('card-extrato'); m.classList.add('opacity-0'); c.classList.add('scale-95'); setTimeout(() => { m.classList.add('hidden'); m.classList.remove('flex'); }, 300); }
     function abrirModalRenda() { const m = document.getElementById('modal-renda'), c = document.getElementById('card-renda'); m.classList.remove('hidden'); m.classList.add('flex'); setTimeout(() => { m.classList.remove('opacity-0'); c.classList.remove('scale-95'); }, 10); }
     function fecharModalRenda() { const m = document.getElementById('modal-renda'), c = document.getElementById('card-renda'); m.classList.add('opacity-0'); c.classList.add('scale-95'); setTimeout(() => { m.classList.add('hidden'); m.classList.remove('flex'); }, 300); }
@@ -97,21 +97,33 @@
         if(typeof atualizarVisibilidade === "function") atualizarVisibilidade();
     }
 
+    // ===================================================================
+    // BARRA DE ALERTAS NO TOPO (COMPATÍVEL COM OPTIMISTIC UI)
+    // ===================================================================
     function verificarVencimentos() {
-        const itens = document.querySelectorAll('.item-gasto[data-status="PENDENTE"]');
-        const cont = document.getElementById('alertas-vencimento'); const w = document.getElementById('wrapper-alertas');
-        let tem = false; cont.innerHTML = ''; const h = new Date(); h.setHours(0,0,0,0);
+        const itens = document.querySelectorAll('.item-gasto');
+        const cont = document.getElementById('alertas-vencimento'); 
+        const w = document.getElementById('wrapper-alertas');
+        
+        if (!cont || !w) return; // Se a tela não tem alertas, sai
+        
+        let tem = false; 
+        cont.innerHTML = ''; 
+        const h = new Date(); h.setHours(0,0,0,0);
         
         const lang = localStorage.getItem('idioma_sistema') || 'PT-BR';
 
         itens.forEach(i => {
+            const s = i.getAttribute('data-status');
+            // Só lança aviso na home se o status NÃO for PAGO
+            if(s === 'PAGO') return;
+
             const ds = i.getAttribute('data-data'); if(!ds) return;
             const p = ds.split('-'); if(p.length !== 3) return;
             const dg = new Date(parseInt(p[0]), parseInt(p[1]) - 1, parseInt(p[2])); dg.setHours(0,0,0,0);
             const dd = Math.ceil((dg.getTime() - h.getTime()) / (1000 * 60 * 60 * 24));
             const d = i.getAttribute('data-descricao'), v = i.getAttribute('data-valor'), id = i.getAttribute('data-id');
             const c = i.getAttribute('data-categoria') || 'Gasto', q = i.getAttribute('data-quinzena') || '0';
-            const s = i.getAttribute('data-status') || 'PENDENTE';
             
             let msgAmanha = 'Vence Amanhã!'; let msgHoje = 'Vence HOJE!'; let msgAtraso = `Atrasado há ${Math.abs(dd)} dia(s)`;
             if(lang === 'EN-US') { msgAmanha = 'Due Tomorrow!'; msgHoje = 'Due TODAY!'; msgAtraso = `Overdue by ${Math.abs(dd)} day(s)`; }
@@ -121,11 +133,21 @@
             else if (dd === 0) { addAlerta(d, v, ds, c, q, s, msgHoje, 'text-orange-800 bg-orange-50 border-orange-200', 'bell', id); tem = true; }
             else if (dd < 0) { addAlerta(d, v, ds, c, q, s, msgAtraso, 'text-red-800 bg-red-50 border-red-200', 'alert-octagon', id); tem = true; }
         });
-        if(tem) { w.classList.remove('hidden'); if(typeof lucide !== 'undefined') lucide.createIcons(); if(typeof atualizarVisibilidade === "function") atualizarVisibilidade(); }
+        
+        // Se houver itens pendentes/vencidos, mostra o container, senão, esconde (para quando você pagar a última conta)
+        if(tem) { 
+            w.classList.remove('hidden'); 
+            if(typeof lucide !== 'undefined') lucide.createIcons(); 
+            if(typeof atualizarVisibilidade === "function") atualizarVisibilidade(); 
+        } else {
+            w.classList.add('hidden');
+        }
     }
 
     function addAlerta(desc, val, data, cat, q, st, msg, cls, ico, id) {
-        const html = `<div onclick="abrirModalEditarGasto('${id}', '${desc}', '${val.replace('R$ ', '').replace('.','').replace(',', '.')}', '${data}', '${cat}', '${q}', '${st}')" class="snap-center shrink-0 w-[85%] md:w-64 bg-white dark:bg-[#1a1b26] border border-gray-100 dark:border-white/5 rounded-2xl p-3 flex items-center gap-3 shadow-sm hover:border-indigo-500/30 cursor-pointer ${cls}">
+        // Validação defensiva caso val seja numérico ou string
+        let valorFmt = val.toString().replace('R$ ', '').replace('.','').replace(',', '.');
+        const html = `<div onclick="abrirModalEditarGasto('${id}', '${desc}', '${valorFmt}', '${data}', '${cat}', '${q}', '${st}')" class="snap-center shrink-0 w-[85%] md:w-64 bg-white dark:bg-[#1a1b26] border border-gray-100 dark:border-white/5 rounded-2xl p-3 flex items-center gap-3 shadow-sm hover:border-indigo-500/30 cursor-pointer ${cls}">
             <div class="bg-white/50 p-2 rounded-full pointer-events-none"><i data-lucide="${ico}" class="w-4 h-4"></i></div>
             <div class="flex flex-col w-full pointer-events-none flex-grow"><span class="text-[9px] font-bold uppercase tracking-wider opacity-90 truncate">${msg}</span><span class="text-[10px] font-bold truncate">${desc}</span><span class="text-xs font-black mt-0.5 opacity-90 valor-sensivel" data-valor="R$ ${val}">R$ ${val}</span></div>
         </div>`;
@@ -133,17 +155,57 @@
     }
 
     function filtrarGastos(st) {
+        // Memória da aba atual para a Interface Otimista saber para onde voltar
+        window.tabAtivaExtrato = st;
+
+        // 1. Estiliza as abas
         ['TODOS', 'PAGO', 'PENDENTE'].forEach(id => {
             const b = document.getElementById('tab-' + id);
             if(!b) return;
             if (id === st) b.className = "px-3 py-1.5 text-[10px] font-bold rounded-lg bg-indigo-100 dark:bg-indigo-900/30 text-indigo-800 dark:text-indigo-300 transition-all";
             else b.className = "px-3 py-1.5 text-[10px] font-bold rounded-lg text-gray-500 hover:bg-gray-200 dark:hover:bg-gray-800 transition-all";
         });
-        let v = 0;
+        
+        let qtdVisiveis = 0;
+        let valorTotal = 0;
+
+        // 2. Filtra os itens e soma os valores
         document.querySelectorAll('.item-gasto').forEach(i => {
-            if (st === 'TODOS' || i.getAttribute('data-status') === st) { i.style.display = 'flex'; v++; } else i.style.display = 'none';
+            const statusItem = i.getAttribute('data-status');
+            const valorItem = parseFloat(i.getAttribute('data-valor')) || 0;
+
+            const deveAparecer = (st === 'TODOS') || 
+                                 (st === 'PAGO' && statusItem === 'PAGO') || 
+                                 (st === 'PENDENTE' && statusItem !== 'PAGO');
+
+            if (deveAparecer) { 
+                i.style.display = 'flex'; 
+                qtdVisiveis++; 
+                valorTotal += valorItem;
+            } else { 
+                i.style.display = 'none'; 
+            }
         });
-        const m = document.getElementById('msg-filtro-vazio'); if (m) m.style.display = v === 0 ? 'block' : 'none';
+
+        // 3. Mostra ou Esconde a mensagem de Vazio
+        const msg = document.getElementById('msg-filtro-vazio'); 
+        if (msg) msg.style.display = qtdVisiveis === 0 ? 'block' : 'none';
+
+        // 4. Atualiza o Totalizador Dinâmico
+        const labelTot = document.getElementById('label-totalizador');
+        const valorTot = document.getElementById('valor-totalizador');
+        
+        if (labelTot && valorTot) {
+            let titulo = "Total Selecionado:";
+            if (st === 'PAGO') titulo = "Total Já Pago:";
+            if (st === 'PENDENTE') titulo = "Total a Pagar:";
+            
+            labelTot.innerText = titulo;
+            valorTot.innerText = "R$ " + valorTotal.toLocaleString('pt-BR', {minimumFractionDigits: 2, maximumFractionDigits: 2});
+            valorTot.setAttribute('data-valor', valorTot.innerText);
+            
+            if(typeof atualizarVisibilidade === "function") atualizarVisibilidade();
+        }
     }
 
     document.addEventListener("DOMContentLoaded", function() {
@@ -152,7 +214,9 @@
         verificarVencimentos();
         calcularFluxoMes();
 
-        // Adiciona escuta para re-rodar textos do mês e dia quando a pessoa clica no menu Idioma
+        // Inicializa aba TODOS
+        filtrarGastos('TODOS');
+
         window.addEventListener('themeChanged', () => {}); 
 
         const slider = document.getElementById('alertas-vencimento');
@@ -170,7 +234,6 @@
         const trackColor = isDark ? '#1f2937' : '#e5e7eb';
         const isMob = window.innerWidth < 768;
 
-        // Renderizar Gráfico de Ondas
         {% if valores_grafico %}
         new ApexCharts(document.querySelector("#grafico-ondas"), {
             series: [{ name: 'Gastos', data: {{ valores_grafico | tojson }} }],
@@ -183,7 +246,6 @@
         }).render();
         {% endif %}
 
-        // Renderizar Gráfico de Donut (Categorias)
         {% if valores_categorias and labels_categorias %}
         const vt = {{ valores_categorias | sum | round(2) }};
         new ApexCharts(document.querySelector("#grafico-donut-container"), {
@@ -205,7 +267,6 @@
             },
             dataLabels: { enabled: false },
             stroke: { width: 0 }, 
-            // ATUALIZAÇÃO AQUI: LEGENDA CORRIGIDA E ESPAÇADA
             legend: {
                 position: 'bottom',
                 horizontalAlign: 'center',
@@ -222,9 +283,6 @@
         }).render();
         {% endif %}
 
-        // ===================================================================
-        // MÁGICA: SALVAMOS O GRÁFICO NA WINDOW PARA ANIMÁ-LO DEPOIS
-        // ===================================================================
         const pagoPerc = parseFloat("{{ perc_pago }}".replace(',', '.')) || 0;
         const hasBills = parseFloat("{{ gastos_totais }}".replace(/\./g, '').replace(',', '.')) > 0;
         const scoreVal = hasBills ? (pagoPerc * 10) : 1000;
@@ -265,7 +323,6 @@
             stroke: { lineCap: 'round' }
         });
         window.graficoScoreChart.render();
-
     });
 
     // =======================================================
@@ -278,7 +335,6 @@
         const valoresAtuais = document.querySelectorAll('.valor-sensivel');
         const valoresNovos = novoDoc.querySelectorAll('.valor-sensivel');
         
-        // ATUALIZA APENAS OS 3 PRIMEIROS CARDS (Saldo, Entradas, Saídas)
         for(let i = 0; i < 3; i++) {
             if(valoresAtuais[i] && valoresNovos[i]) {
                 valoresAtuais[i].innerHTML = valoresNovos[i].innerHTML;
@@ -286,13 +342,9 @@
             }
         }
 
-        // =======================================================
-        // ATUALIZAÇÃO DINÂMICA DO SCORE DE PAGAMENTO
-        // =======================================================
         const secScoreNovo = novoDoc.getElementById('section-score');
         
         if (secScoreNovo) {
-            // 1. Atualiza os textinhos laterais com a porcentagem
             const textPagoAntigo = document.getElementById('texto-perc-pago');
             if (textPagoAntigo) textPagoAntigo.innerHTML = novoDoc.getElementById('texto-perc-pago').innerHTML;
             
@@ -303,17 +355,13 @@
                 textPendenteAntigo.className = textPendenteNovo.className;
             }
 
-            // 2. Extrai novos dados matemáticos direto do HTML gerado pelo Flask
             const novoPercPago = parseFloat(secScoreNovo.getAttribute('data-pago').replace(',', '.')) || 0;
             const novosGastosTotais = secScoreNovo.getAttribute('data-gastos');
             const hasBills = parseFloat(novosGastosTotais.replace(/\./g, '').replace(',', '.')) > 0;
             const novoScoreVal = hasBills ? (novoPercPago * 10) : 1000;
 
-            // 3. ANIMA O GRÁFICO (Magia acontecendo!)
             if (window.graficoScoreChart) {
-                // Preenche ou Esvazia a barra colorida
                 window.graficoScoreChart.updateSeries([novoPercPago]);
-                // Atualiza o numero gigante no centro do arco
                 window.graficoScoreChart.updateOptions({
                     plotOptions: {
                         radialBar: {
@@ -328,7 +376,7 @@
     }
 
     function excluirSemReload(event, form, id) {
-        event.preventDefault(); // Trava o recarregamento normal da página
+        event.preventDefault(); 
         
         const executarExclusaoAJAX = () => {
             const btn = form.querySelector('button');
@@ -343,7 +391,12 @@
                     card.style.transition = 'all 0.3s ease';
                     card.style.opacity = '0';
                     card.style.transform = 'scale(0.9)';
-                    setTimeout(() => card.remove(), 300);
+                    setTimeout(() => {
+                        card.remove();
+                        const tabAtiva = window.tabAtivaExtrato || 'TODOS';
+                        filtrarGastos(tabAtiva);
+                        verificarVencimentos(); // Atualiza a barra amarela
+                    }, 300);
                 }
                 extrairValoresDoFundo(html); 
             });
@@ -376,28 +429,68 @@
         }
     }
 
+    // ===================================================================
+    // TÉCNICA "OPTIMISTIC UI": MUDA NA HORA, SALVA NO FUNDO COM ANIMAÇÃO
+    // ===================================================================
     function statusSemReload(event, form, id) {
         event.preventDefault();
         
+        const card = document.querySelector(`.item-gasto[data-id="${id}"]`);
+        if (!card) return;
+
+        // 1. Toca o status no DOM instantaneamente
+        let currentStatus = card.getAttribute('data-status').toUpperCase();
+        let newStatus = currentStatus === 'PAGO' ? 'PENDENTE' : 'PAGO';
+        card.setAttribute('data-status', newStatus);
+
+        // 2. Muda o visual do botão instantaneamente
+        const btn = form.querySelector('button');
+        if (newStatus === 'PAGO') {
+            btn.className = "px-2.5 py-1.5 bg-emerald-50 dark:bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 rounded-lg text-[9px] font-bold flex items-center gap-1 transition-colors";
+            btn.innerHTML = '<i data-lucide="check-circle" class="w-3 h-3"></i> <span data-i18n="pago_min">Pago</span>';
+            if(typeof ganharXP === 'function') ganharXP(10, 'xp_motivo_pago');
+        } else {
+            btn.className = "px-2.5 py-1.5 bg-orange-50 dark:bg-orange-500/10 text-orange-600 dark:text-orange-400 rounded-lg text-[9px] font-bold flex items-center gap-1 transition-colors";
+            btn.innerHTML = '<i data-lucide="clock" class="w-3 h-3"></i> <span data-i18n="pend_min">Pend.</span>';
+        }
+        
+        if(typeof lucide !== 'undefined') lucide.createIcons();
+
+        // 3. Verifica se o card ainda deve continuar aparecendo na aba atual
+        const abaAtual = window.tabAtivaExtrato || 'TODOS';
+        const deveAparecer = (abaAtual === 'TODOS') || 
+                             (abaAtual === 'PAGO' && newStatus === 'PAGO') || 
+                             (abaAtual === 'PENDENTE' && newStatus !== 'PAGO');
+
+        if (!deveAparecer) {
+            // Faz o card sumir silenciosamente (fade out + encolher)
+            card.style.transition = 'all 0.3s ease';
+            card.style.opacity = '0';
+            card.style.transform = 'scale(0.95)';
+            
+            setTimeout(() => {
+                filtrarGastos(abaAtual); // Recalcula totais e dá display: none no card
+                verificarVencimentos(); // Atualiza a barra de alertas no topo
+                
+                // Restaura a opacidade para quando o usuário trocar de aba ele não estar invisível
+                card.style.opacity = '1';
+                card.style.transform = 'scale(1)';
+            }, 300);
+        } else {
+            // Se estiver na aba TODOS, apenas recalcula os totais instantaneamente
+            filtrarGastos(abaAtual);
+            verificarVencimentos(); // Atualiza a barra de alertas no topo
+        }
+
+        if(window.aplicarTraducao) window.aplicarTraducao(localStorage.getItem('idioma_sistema') || 'PT-BR');
+
+        // 4. Salva a requisição no servidor de forma invisível
         fetch(form.action, { method: 'POST', body: new FormData(form) })
         .then(() => fetch(window.location.href))
         .then(res => res.text())
         .then(html => {
-            const parser = new DOMParser();
-            const novoDoc = parser.parseFromString(html, 'text/html');
-            
-            const cardAntigo = document.querySelector(`.item-gasto[data-id="${id}"]`);
-            const cardNovo = novoDoc.querySelector(`.item-gasto[data-id="${id}"]`);
-            
-            if(cardAntigo && cardNovo) {
-                cardAntigo.innerHTML = cardNovo.innerHTML;
-                cardAntigo.setAttribute('data-status', cardNovo.getAttribute('data-status'));
-            }
-            
-            if(typeof lucide !== 'undefined') lucide.createIcons();
-            extrairValoresDoFundo(html);
-            if(window.aplicarTraducao) window.aplicarTraducao(localStorage.getItem('idioma_sistema') || 'PT-BR');
-        });
+            extrairValoresDoFundo(html); // Atualiza os números principais do Dashboard no fundo
+        }).catch(err => console.error("Erro ao salvar no banco:", err));
     }
 
     function editarSemReload(event, form) {
@@ -433,6 +526,11 @@
             btn.innerHTML = txtOriginal; 
             if(typeof lucide !== 'undefined') lucide.createIcons();
             extrairValoresDoFundo(html);
+            
+            const tabAtiva = window.tabAtivaExtrato || 'TODOS';
+            filtrarGastos(tabAtiva);
+            verificarVencimentos(); // Atualiza a barra de alertas do topo
+            
             if(window.aplicarTraducao) window.aplicarTraducao(localStorage.getItem('idioma_sistema') || 'PT-BR');
         })
         .catch(err => {

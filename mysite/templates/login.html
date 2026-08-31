@@ -1,22 +1,23 @@
 {% extends "base.html" %}
 
 {% block content %}
-    <div class="flex flex-col items-center justify-center min-h-[80vh] p-4 sm:p-6">
+    <!-- CORREÇÃO: min-h-screen garante altura total da tela e o justify-center alinha no meio exato -->
+    <div class="flex flex-col items-center justify-center min-h-screen p-4 sm:p-6 w-full absolute inset-0">
 
-        <!-- CAIXA PRINCIPAL: Ajustado com sm:max-w-md e sm:p-8 para melhor responsividade -->
-        <div class="w-full max-w-sm sm:max-w-md bg-white dark:bg-gray-800 p-6 sm:p-8 rounded-3xl shadow-2xl border border-gray-100 dark:border-gray-700">
+        <!-- CAIXA PRINCIPAL: Cores atualizadas para o WhatsApp Dark Mode -->
+        <div class="w-full max-w-sm sm:max-w-md bg-white dark:bg-[#111b21] p-6 sm:p-8 rounded-3xl shadow-2xl border border-gray-100 dark:border-gray-800 relative z-10">
 
             <!-- CABEÇALHO CLEAN: Apenas a Logo (Fixo para ambas as telas) -->
             <div class="text-center mb-6 sm:mb-8">
                 <div class="flex justify-center">
                     <img src="{{ url_for('static', filename='img_home_final.png') }}"
                          alt="Logo"
-                         class="w-20 h-20 sm:w-24 sm:h-24 rounded-3xl shadow-xl border border-gray-100 dark:border-gray-700 object-cover">
+                         class="w-20 h-20 sm:w-24 sm:h-24 rounded-3xl shadow-xl border border-gray-100 dark:border-gray-800 object-cover">
                 </div>
             </div>
 
             {% if erro %}
-            <div class="bg-red-50 dark:bg-red-950/40 border border-red-200 dark:border-red-800 text-red-600 dark:text-red-400 text-xs px-3 py-2.5 rounded-lg mb-4 flex items-center gap-2 font-medium">
+            <div class="bg-red-50 dark:bg-red-950/40 border border-red-200 dark:border-red-800/50 text-red-600 dark:text-red-400 text-xs px-3 py-2.5 rounded-lg mb-4 flex items-center gap-2 font-medium">
                 <i data-lucide="alert-circle" class="w-4 h-4 shrink-0"></i> {{ erro }}
             </div>
             {% endif %}
@@ -33,8 +34,9 @@
                             <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
                                 <i data-lucide="user" class="w-4 h-4 text-gray-400"></i>
                             </div>
+                            <!-- Fundos atualizados para #0b141a -->
                             <input type="text" name="usuario" placeholder="Seu usuário" required
-                                   class="w-full pl-10 pr-3 py-3 sm:py-3.5 bg-gray-50 dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-2xl text-sm text-gray-800 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all">
+                                   class="w-full pl-10 pr-3 py-3 sm:py-3.5 bg-gray-50 dark:bg-[#0b141a] border border-gray-200 dark:border-gray-800 rounded-2xl text-sm text-gray-800 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all">
                         </div>
                     </div>
 
@@ -47,7 +49,7 @@
                                     <i data-lucide="lock" class="w-4 h-4 text-gray-400"></i>
                                 </div>
                                 <input type="password" id="senha" name="senha" placeholder="••••••••" required
-                                       class="w-full pl-10 pr-12 py-3 sm:py-3.5 bg-gray-50 dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-2xl text-sm text-gray-800 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all">
+                                       class="w-full pl-10 pr-12 py-3 sm:py-3.5 bg-gray-50 dark:bg-[#0b141a] border border-gray-200 dark:border-gray-800 rounded-2xl text-sm text-gray-800 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all">
 
                                 <!-- Botão do Olhinho -->
                                 <button type="button" onclick="togglePassword('senha', 'eye-icon')" class="absolute inset-y-0 right-0 pr-4 flex items-center text-gray-400 hover:text-blue-500 dark:hover:text-blue-400 focus:outline-none transition-colors">
@@ -60,7 +62,7 @@
                         <div class="flex items-center justify-between px-1">
                             <div class="flex items-center">
                                 <input type="checkbox" id="lembrar" name="lembrar"
-                                       class="w-4 h-4 text-blue-600 bg-gray-50 border-gray-300 rounded focus:ring-blue-500 dark:focus:ring-blue-600 dark:ring-offset-gray-900 focus:ring-2 dark:bg-gray-800 dark:border-gray-600 cursor-pointer">
+                                       class="w-4 h-4 text-blue-600 bg-gray-50 border-gray-300 rounded focus:ring-blue-500 dark:focus:ring-blue-600 dark:ring-offset-[#111b21] focus:ring-2 dark:bg-[#0b141a] dark:border-gray-700 cursor-pointer">
                                 <label for="lembrar" class="ml-2 text-[11px] font-medium text-gray-500 dark:text-gray-400 cursor-pointer">Manter conectado</label>
                             </div>
                             <a href="/recuperar_senha" class="text-[11px] font-bold text-blue-600 hover:text-blue-500 dark:text-blue-400 dark:hover:text-blue-300 transition-colors">
@@ -85,9 +87,9 @@
 
                 <!-- Instalar como App -->
                 <div class="flex items-center gap-4 my-6 sm:my-8">
-                    <div class="flex-grow border-t border-gray-200 dark:border-gray-700"></div>
-                    <span class="text-[10px] font-bold text-gray-400 uppercase tracking-widest">Instalar como App</span>
-                    <div class="flex-grow border-t border-gray-200 dark:border-gray-700"></div>
+                    <div class="flex-grow border-t border-gray-200 dark:border-gray-800"></div>
+                    <span class="text-[10px] font-bold text-gray-400 dark:text-gray-500 uppercase tracking-widest">Instalar como App</span>
+                    <div class="flex-grow border-t border-gray-200 dark:border-gray-800"></div>
                 </div>
 
                 <div class="text-[10px] sm:text-[11px] text-gray-500 dark:text-gray-400 space-y-2 text-center">
@@ -112,7 +114,7 @@
                                 <i data-lucide="user" class="w-4 h-4 text-gray-400"></i>
                             </div>
                             <input type="text" name="usuario" placeholder="Escolha um usuário" required
-                                   class="w-full pl-10 pr-3 py-3 bg-gray-50 dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-2xl text-sm text-gray-800 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-emerald-500 transition-all">
+                                   class="w-full pl-10 pr-3 py-3 bg-gray-50 dark:bg-[#0b141a] border border-gray-200 dark:border-gray-800 rounded-2xl text-sm text-gray-800 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-emerald-500 transition-all">
                         </div>
                     </div>
 
@@ -124,7 +126,7 @@
                                 <i data-lucide="mail" class="w-4 h-4 text-gray-400"></i>
                             </div>
                             <input type="email" name="email" placeholder="Seu melhor e-mail" required
-                                   class="w-full pl-10 pr-3 py-3 bg-gray-50 dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-2xl text-sm text-gray-800 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-emerald-500 transition-all">
+                                   class="w-full pl-10 pr-3 py-3 bg-gray-50 dark:bg-[#0b141a] border border-gray-200 dark:border-gray-800 rounded-2xl text-sm text-gray-800 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-emerald-500 transition-all">
                         </div>
                     </div>
 
@@ -136,7 +138,7 @@
                                 <i data-lucide="lock" class="w-4 h-4 text-gray-400"></i>
                             </div>
                             <input type="password" id="senha_cad" name="senha" placeholder="Crie uma senha forte" required
-                                   class="w-full pl-10 pr-12 py-3 bg-gray-50 dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-2xl text-sm text-gray-800 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-emerald-500 transition-all">
+                                   class="w-full pl-10 pr-12 py-3 bg-gray-50 dark:bg-[#0b141a] border border-gray-200 dark:border-gray-800 rounded-2xl text-sm text-gray-800 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-emerald-500 transition-all">
 
                             <button type="button" onclick="togglePassword('senha_cad', 'eye-icon-cad')" class="absolute inset-y-0 right-0 pr-4 flex items-center text-gray-400 hover:text-emerald-500 focus:outline-none transition-colors">
                                 <i data-lucide="eye" id="eye-icon-cad" class="w-4 h-4"></i>
@@ -152,7 +154,7 @@
                                 <i data-lucide="lock" class="w-4 h-4 text-gray-400"></i>
                             </div>
                             <input type="password" id="senha_cad_conf" name="senha_confirmacao" placeholder="Repita a senha" required
-                                   class="w-full pl-10 pr-12 py-3 bg-gray-50 dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-2xl text-sm text-gray-800 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-emerald-500 transition-all">
+                                   class="w-full pl-10 pr-12 py-3 bg-gray-50 dark:bg-[#0b141a] border border-gray-200 dark:border-gray-800 rounded-2xl text-sm text-gray-800 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-emerald-500 transition-all">
 
                             <button type="button" onclick="togglePassword('senha_cad_conf', 'eye-icon-cad-conf')" class="absolute inset-y-0 right-0 pr-4 flex items-center text-gray-400 hover:text-emerald-500 focus:outline-none transition-colors">
                                 <i data-lucide="eye" id="eye-icon-cad-conf" class="w-4 h-4"></i>

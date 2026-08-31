@@ -13,6 +13,10 @@
         tailwind.config = {
             darkMode: 'class',
         }
+        // SCRIPT ANTI-CLARÃO: Executa ANTES da tela renderizar
+        if (localStorage.getItem('tema') === 'dark') {
+            document.documentElement.classList.add('dark');
+        }
     </script>
     <style>
         .sidebar-scroll::-webkit-scrollbar { width: 4px; }
@@ -36,7 +40,7 @@
         .dark::view-transition-old(root) { z-index: 1; }
         .dark::view-transition-new(root) { z-index: 999; }
 
-        /* ESTILOS DO TUTORIAL (INTRO.JS) ADAPTADOS AO TEMA */
+        /* ESTILOS DO TUTORIAL (INTRO.JS) ADAPTADOS AO TEMA WHATSAPP */
         .introjs-tooltip {
             border-radius: 16px !important;
             background-color: #ffffff !important;
@@ -44,7 +48,7 @@
             font-family: inherit !important;
         }
         .dark .introjs-tooltip {
-            background-color: #1a1b26 !important;
+            background-color: #111b21 !important;
             color: #e5e7eb !important;
             border: 1px solid rgba(255,255,255,0.05) !important;
             box-shadow: 0 10px 25px rgba(0,0,0,0.5) !important;
@@ -55,21 +59,21 @@
         .introjs-nextbutton { background-color: #4f46e5 !important; color: white !important; text-shadow: none !important; }
         .introjs-prevbutton { color: #6b7280 !important; }
         .introjs-skipbutton { color: #ef4444 !important; }
-        .dark .introjs-arrow.top { border-bottom-color: #1a1b26 !important; }
-        .dark .introjs-arrow.bottom { border-top-color: #1a1b26 !important; }
-        .dark .introjs-arrow.left { border-right-color: #1a1b26 !important; }
-        .dark .introjs-arrow.right { border-left-color: #1a1b26 !important; }
+        .dark .introjs-arrow.top { border-bottom-color: #111b21 !important; }
+        .dark .introjs-arrow.bottom { border-top-color: #111b21 !important; }
+        .dark .introjs-arrow.left { border-right-color: #111b21 !important; }
+        .dark .introjs-arrow.right { border-left-color: #111b21 !important; }
     </style>
-    
+
     <!-- CSS DO INTRO.JS -->
     <link rel="stylesheet" href="https://unpkg.com/intro.js/minified/introjs.min.css">
 </head>
-<body class="bg-gray-50 text-gray-800 dark:bg-[#0b1120] dark:text-gray-100 font-sans transition-colors duration-500 ease-in-out min-h-screen flex overflow-x-hidden">
+<body class="bg-gray-50 text-gray-800 dark:bg-[#0b141a] dark:text-gray-100 font-sans transition-colors duration-500 ease-in-out min-h-screen flex flex-col md:flex-row overflow-x-hidden relative">
 
     <!-- ========================================== -->
     <!-- TELA DE CARREGAMENTO GLOBAL (MINIMALISTA)  -->
     <!-- ========================================== -->
-    <div id="global-loader" class="fixed inset-0 z-[9999] flex items-center justify-center bg-white/90 dark:bg-[#1a1b26]/90 backdrop-blur-sm transition-opacity duration-300">
+    <div id="global-loader" class="fixed inset-0 z-[9999] flex items-center justify-center bg-white/90 dark:bg-[#0b141a]/90 backdrop-blur-sm transition-opacity duration-300">
         <div class="flex flex-col items-center gap-3">
             <div class="p-3 bg-indigo-50 dark:bg-indigo-900/30 rounded-2xl animate-pulse">
                 <i data-lucide="loader-2" class="w-8 h-8 text-indigo-600 dark:text-indigo-400 animate-spin"></i>
@@ -78,232 +82,264 @@
         </div>
     </div>
 
-    {% if request.endpoint not in ['login', 'recuperar', 'recuperar_senha'] %}
-        <div id="overlay" class="fixed inset-0 bg-black/60 backdrop-blur-sm z-[90] hidden transition-opacity duration-300"></div>
+    <!-- ================= BANNER DE ALERTA GERAL ================= -->
+    {% if alerta_global %}
+    <div class="bg-gradient-to-r from-blue-600 to-indigo-600 text-white px-4 py-3 shadow-md relative z-[105] flex items-center justify-center text-xs md:text-sm font-bold animate-[fadeIn_0.5s_ease-out] w-full shrink-0">
+        <div class="flex items-center gap-2 text-center max-w-4xl w-full justify-center pr-8">
+            <i data-lucide="megaphone" class="w-4 h-4 md:w-5 md:h-5 shrink-0 animate-bounce"></i>
+            <span>{{ alerta_global }}</span>
+        </div>
 
-        <!-- ============================================================================== -->
-        <!-- MENU LATERAL (SIDEBAR) -->
-        <!-- ============================================================================== -->
-        <aside id="menu-lateral" class="hidden md:flex fixed top-0 left-0 h-full bg-white dark:bg-[#151a23] shadow-[4px_0_24px_rgba(0,0,0,0.05)] dark:shadow-[4px_0_24px_rgba(0,0,0,0.4)] border-r border-gray-100 dark:border-gray-800/50 z-[100] transition-all duration-300 ease-in-out flex-col overflow-hidden w-14 translate-x-0">
-
-            <div class="h-16 flex items-center border-b border-gray-100 dark:border-gray-800/50 shrink-0">
-                <div class="w-14 flex justify-center shrink-0">
-                    <button onclick="toggleMenu()" class="text-gray-500 hover:text-indigo-600 dark:text-gray-400 dark:hover:text-indigo-400 transition-colors focus:outline-none">
-                        <i data-lucide="menu" class="w-5 h-5"></i>
-                    </button>
-                </div>
-                <div class="menu-texto hidden flex items-center w-full">
-                    <span class="font-black text-gray-800 dark:text-gray-100 tracking-widest text-sm uppercase whitespace-nowrap" data-i18n="menu_titulo">MENU</span>
-                </div>
-            </div>
-
-            <nav class="flex flex-col py-6 gap-1.5 flex-grow overflow-y-auto sidebar-scroll overflow-x-hidden">
-                <a href="/" id="tour-dashboard" class="flex items-center h-11 mx-2 rounded-xl {% if request.endpoint == 'home' %}bg-indigo-50 dark:bg-indigo-500/10 text-indigo-600 dark:text-indigo-400 shadow-sm{% else %}text-gray-500 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-white/5 hover:text-gray-900 dark:hover:text-white{% endif %} transition-all group relative" title="Dashboard Inicial">
-                    <div class="w-10 flex justify-center shrink-0">
-                        <i data-lucide="layout-dashboard" class="w-5 h-5 {% if request.endpoint != 'home' %}group-hover:scale-110 transition-transform{% endif %}"></i>
-                    </div>
-                    <span data-i18n="nav_dashboard" class="menu-texto hidden ml-1 text-[13px] {% if request.endpoint == 'home' %}font-bold{% else %}font-medium{% endif %} whitespace-nowrap">Dashboard Inicial</span>
-                </a>
-
-                <a href="/novo_gasto" id="tour-lancamentos" class="flex items-center h-11 mx-2 rounded-xl text-gray-500 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-white/5 hover:text-gray-900 dark:hover:text-white transition-all group relative" title="Registrar Gasto">
-                    <div class="w-10 flex justify-center shrink-0">
-                        <i data-lucide="plus-circle" class="w-5 h-5 group-hover:scale-110 transition-transform"></i>
-                    </div>
-                    <span data-i18n="nav_gasto" class="menu-texto hidden ml-1 text-[13px] font-medium whitespace-nowrap">Registrar Gasto</span>
-                </a>
-
-                <a href="/compras" class="flex items-center h-11 mx-2 rounded-xl text-gray-500 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-white/5 hover:text-gray-900 dark:hover:text-white transition-all group relative" title="Lista de Compras">
-                    <div class="w-10 flex justify-center shrink-0">
-                        <i data-lucide="shopping-cart" class="w-5 h-5 group-hover:scale-110 transition-transform"></i>
-                    </div>
-                    <span data-i18n="nav_compras" class="menu-texto hidden ml-1 text-[13px] font-medium whitespace-nowrap">Lista de Compras</span>
-                </a>
-
-                <a href="/dividas" id="tour-planejamento" class="flex items-center h-11 mx-2 rounded-xl text-gray-500 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-white/5 hover:text-purple-600 dark:hover:text-purple-400 transition-all group relative" title="Planejamento Financeiro">
-                    <div class="w-10 flex justify-center shrink-0">
-                        <i data-lucide="compass" class="w-5 h-5 group-hover:scale-110 transition-transform"></i>
-                    </div>
-                    <span data-i18n="nav_metas" class="menu-texto hidden ml-1 text-[13px] font-medium whitespace-nowrap">Planejamento Financeiro</span>
-                </a>
-
-                <div class="w-8 h-[1px] bg-gray-100 dark:bg-gray-800/50 my-2 mx-auto transition-all duration-300 menu-divisor"></div>
-
-                <a href="/usuarios" class="flex items-center h-11 mx-2 rounded-xl text-gray-500 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-white/5 hover:text-indigo-600 dark:hover:text-indigo-400 transition-all group relative" title="Gestão de Usuários">
-                    <div class="w-10 flex justify-center shrink-0">
-                        <i data-lucide="users" class="w-5 h-5 group-hover:scale-110 transition-transform"></i>
-                    </div>
-                    <span data-i18n="nav_usuarios" class="menu-texto hidden ml-1 text-[13px] font-medium whitespace-nowrap">Gestão de Usuários</span>
-                </a>
-
-                <a href="/relatorios_avancados" class="flex items-center h-11 mx-2 rounded-xl text-gray-500 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-white/5 hover:text-purple-600 dark:hover:text-purple-400 transition-all group relative" title="Relatório Premium">
-                    <div class="w-10 flex justify-center shrink-0">
-                        <i data-lucide="bar-chart-2" class="w-5 h-5 group-hover:scale-110 transition-transform"></i>
-                    </div>
-                    <span data-i18n="nav_relatorios" class="menu-texto hidden ml-1 text-[13px] font-medium whitespace-nowrap">Relatório Premium</span>
-                </a>
-
-                <a href="/atualizacoes" class="flex items-center h-11 mx-2 rounded-xl text-gray-500 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-white/5 hover:text-emerald-600 dark:hover:text-emerald-400 transition-all group relative" title="Novidades (v{{ versao_atual }})">
-                    <div class="w-10 flex justify-center shrink-0">
-                        <i data-lucide="megaphone" class="w-5 h-5 group-hover:scale-110 transition-transform"></i>
-                    </div>
-                    <span class="menu-texto hidden ml-1 text-[13px] font-medium whitespace-nowrap"><span data-i18n="nav_novidades">Novidades</span></span>
-                </a>
-
-                <!-- BOTÃO APOIE O PROJETO (DESKTOP) -->
-                <button onclick="abrirModalApoio()" class="flex items-center h-11 mx-2 rounded-xl text-gray-500 dark:text-gray-400 hover:bg-red-50 dark:hover:bg-red-500/10 hover:text-red-600 dark:hover:text-red-400 transition-all group relative" title="Apoie o Projeto">
-                    <div class="w-10 flex justify-center shrink-0">
-                        <i data-lucide="heart" class="w-5 h-5 group-hover:scale-110 transition-transform group-hover:fill-current"></i>
-                    </div>
-                    <span class="menu-texto hidden ml-1 text-[13px] font-medium whitespace-nowrap">Apoie o Projeto</span>
-                </button>
-            </nav>
-        </aside>
+        <!-- Botão exclusivo para o Admin desligar o alerta -->
+        {% if session.get('is_admin') %}
+        <button onclick="limparAlertaGeral()" title="Desligar Alerta para todos" class="absolute right-4 text-white/70 hover:text-white hover:bg-white/20 p-1.5 rounded-lg transition-colors">
+            <i data-lucide="x-circle" class="w-4 h-4 md:w-5 md:h-5"></i>
+        </button>
+        {% endif %}
+    </div>
     {% endif %}
+    <!-- ========================================================== -->
 
-    <!-- ============================================================================== -->
-    <!-- ÁREA PRINCIPAL (MAIN CONTENT)                                                  -->
-    <!-- ============================================================================== -->
-    <div class="{% if request.endpoint not in ['login', 'recuperar', 'recuperar_senha'] %}md:ml-14{% endif %} flex-grow min-h-screen flex flex-col w-full transition-all duration-300 relative">
-        <div class="max-w-[1400px] mx-auto min-h-screen relative p-3 md:p-6 lg:p-8 flex flex-col w-full">
+    <!-- CONTAINER PRINCIPAL DO LAYOUT -->
+    <div class="flex flex-grow w-full min-h-screen relative">
+        {% if request.endpoint not in ['login', 'recuperar', 'recuperar_senha'] %}
+            <div id="overlay" class="fixed inset-0 bg-black/60 backdrop-blur-sm z-[90] hidden transition-opacity duration-300"></div>
 
-            <!-- HEADER MINIMALISTA GLOBAL -->
-            {% if request.endpoint not in ['login', 'recuperar', 'recuperar_senha'] %}
-            <header class="flex justify-between items-start mb-8 relative z-[70]">
+            <!-- ============================================================================== -->
+            <!-- MENU LATERAL (SIDEBAR) -->
+            <!-- ============================================================================== -->
+            <aside id="menu-lateral" class="hidden md:flex absolute top-0 left-0 h-full bg-white dark:bg-[#111b21] shadow-[4px_0_24px_rgba(0,0,0,0.05)] dark:shadow-[4px_0_24px_rgba(0,0,0,0.4)] border-r border-gray-100 dark:border-gray-800/50 z-[100] transition-all duration-300 ease-in-out flex-col overflow-hidden w-14 translate-x-0">
 
-                <!-- Lado Esquerdo -->
-                <div>
-                    {% block header_title %}{% endblock %}
+                <div class="h-16 flex items-center border-b border-gray-100 dark:border-gray-800/50 shrink-0">
+                    <div class="w-14 flex justify-center shrink-0">
+                        <button onclick="toggleMenu()" class="text-gray-500 hover:text-indigo-600 dark:text-gray-400 dark:hover:text-indigo-400 transition-colors focus:outline-none">
+                            <i data-lucide="menu" class="w-5 h-5"></i>
+                        </button>
+                    </div>
+                    <div class="menu-texto hidden flex items-center w-full">
+                        <span class="font-black text-gray-800 dark:text-gray-100 tracking-widest text-sm uppercase whitespace-nowrap" data-i18n="menu_titulo">MENU</span>
+                    </div>
                 </div>
 
-                <!-- Lado Direito -->
-                <div class="flex items-center gap-3">
-                    <div class="relative">
-                        <button onclick="toggleNotificacoes()" id="tour-notificacoes" class="relative p-2.5 text-gray-400 hover:text-indigo-500 dark:hover:text-indigo-400 bg-gray-100 dark:bg-[#1a1b26] rounded-full transition-colors focus:outline-none shadow-sm border border-transparent dark:border-white/5">
-                            <i data-lucide="bell" class="w-4 h-4 md:w-5 md:h-5"></i>
-                            {% if total_notificacoes and total_notificacoes > 0 %}
-                            <span id="ping-notificacoes" class="absolute top-0 right-0 flex h-2.5 w-2.5">
-                                <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-red-400 opacity-75"></span>
-                                <span class="relative inline-flex rounded-full h-2.5 w-2.5 bg-red-500 border border-white dark:border-[#1a1b26]"></span>
-                            </span>
-                            {% endif %}
-                        </button>
+                <nav class="flex flex-col py-6 gap-1.5 flex-grow overflow-y-auto sidebar-scroll overflow-x-hidden">
+                    <a href="/" id="tour-dashboard" class="flex items-center h-11 mx-2 rounded-xl {% if request.endpoint == 'home' %}bg-indigo-50 dark:bg-indigo-500/10 text-indigo-600 dark:text-indigo-400 shadow-sm{% else %}text-gray-500 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-white/5 hover:text-gray-900 dark:hover:text-white{% endif %} transition-all group relative" title="Dashboard Inicial">
+                        <div class="w-10 flex justify-center shrink-0">
+                            <i data-lucide="layout-dashboard" class="w-5 h-5 {% if request.endpoint != 'home' %}group-hover:scale-110 transition-transform{% endif %}"></i>
+                        </div>
+                        <span data-i18n="nav_dashboard" class="menu-texto hidden ml-1 text-[13px] {% if request.endpoint == 'home' %}font-bold{% else %}font-medium{% endif %} whitespace-nowrap">Dashboard Inicial</span>
+                    </a>
 
-                        <div id="painel-notificacoes" class="opacity-0 pointer-events-none scale-95 absolute right-0 mt-3 w-64 md:w-72 bg-white dark:bg-[#1a1b26] rounded-2xl shadow-xl border border-gray-100 dark:border-white/5 z-[100] overflow-hidden transform origin-top-right transition-all duration-200">
-                            <div class="bg-gray-50 dark:bg-gray-800/40 px-4 py-3 border-b border-gray-100 dark:border-white/5 flex justify-between items-center">
-                                <h3 class="text-xs font-bold text-gray-800 dark:text-gray-200 flex items-center gap-1.5"><i data-lucide="sparkles" class="w-3.5 h-3.5 text-indigo-500"></i> IA Hir3</h3>
-                                <span id="badge-contador" class="text-[9px] bg-indigo-100 text-indigo-800 dark:bg-indigo-900/30 dark:text-indigo-300 px-2 py-0.5 rounded-full font-bold">
-                                    {% if total_notificacoes and total_notificacoes > 0 %}{{ total_notificacoes }} Nova(s){% else %}Nenhuma{% endif %}
+                    <a href="/novo_gasto" id="tour-lancamentos" class="flex items-center h-11 mx-2 rounded-xl text-gray-500 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-white/5 hover:text-gray-900 dark:hover:text-white transition-all group relative" title="Registrar Gasto">
+                        <div class="w-10 flex justify-center shrink-0">
+                            <i data-lucide="plus-circle" class="w-5 h-5 group-hover:scale-110 transition-transform"></i>
+                        </div>
+                        <span data-i18n="nav_gasto" class="menu-texto hidden ml-1 text-[13px] font-medium whitespace-nowrap">Registrar Gasto</span>
+                    </a>
+
+                    <a href="/compras" class="flex items-center h-11 mx-2 rounded-xl text-gray-500 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-white/5 hover:text-gray-900 dark:hover:text-white transition-all group relative" title="Lista de Compras">
+                        <div class="w-10 flex justify-center shrink-0">
+                            <i data-lucide="shopping-cart" class="w-5 h-5 group-hover:scale-110 transition-transform"></i>
+                        </div>
+                        <span data-i18n="nav_compras" class="menu-texto hidden ml-1 text-[13px] font-medium whitespace-nowrap">Lista de Compras</span>
+                    </a>
+
+                    <a href="/dividas" id="tour-planejamento" class="flex items-center h-11 mx-2 rounded-xl text-gray-500 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-white/5 hover:text-purple-600 dark:hover:text-purple-400 transition-all group relative" title="Minhas Caixinhas">
+                        <div class="w-10 flex justify-center shrink-0">
+                            <i data-lucide="compass" class="w-5 h-5 group-hover:scale-110 transition-transform"></i>
+                        </div>
+                        <span data-i18n="nav_metas" class="menu-texto hidden ml-1 text-[13px] font-medium whitespace-nowrap">Minhas Caixinhas</span>
+                    </a>
+
+                    <div class="w-8 h-[1px] bg-gray-100 dark:bg-gray-800/50 my-2 mx-auto transition-all duration-300 menu-divisor"></div>
+
+                    <a href="/usuarios" class="flex items-center h-11 mx-2 rounded-xl text-gray-500 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-white/5 hover:text-indigo-600 dark:hover:text-indigo-400 transition-all group relative" title="Gestão de Usuários">
+                        <div class="w-10 flex justify-center shrink-0">
+                            <i data-lucide="users" class="w-5 h-5 group-hover:scale-110 transition-transform"></i>
+                        </div>
+                        <span data-i18n="nav_usuarios" class="menu-texto hidden ml-1 text-[13px] font-medium whitespace-nowrap">Gestão de Usuários</span>
+                    </a>
+
+                    <a href="/relatorios_avancados" class="flex items-center h-11 mx-2 rounded-xl text-gray-500 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-white/5 hover:text-purple-600 dark:hover:text-purple-400 transition-all group relative" title="Relatório Premium">
+                        <div class="w-10 flex justify-center shrink-0">
+                            <i data-lucide="bar-chart-2" class="w-5 h-5 group-hover:scale-110 transition-transform"></i>
+                        </div>
+                        <span data-i18n="nav_relatorios" class="menu-texto hidden ml-1 text-[13px] font-medium whitespace-nowrap">Relatório Premium</span>
+                    </a>
+
+                    <a href="/atualizacoes" class="flex items-center h-11 mx-2 rounded-xl text-gray-500 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-white/5 hover:text-emerald-600 dark:hover:text-emerald-400 transition-all group relative" title="Novidades (v{{ versao_atual }})">
+                        <div class="w-10 flex justify-center shrink-0">
+                            <i data-lucide="megaphone" class="w-5 h-5 group-hover:scale-110 transition-transform"></i>
+                        </div>
+                        <span class="menu-texto hidden ml-1 text-[13px] font-medium whitespace-nowrap"><span data-i18n="nav_novidades">Novidades</span></span>
+                    </a>
+
+                    <!-- BOTÃO APOIE O PROJETO (DESKTOP) -->
+                    <button onclick="abrirModalApoio()" class="flex items-center h-11 mx-2 rounded-xl text-gray-500 dark:text-gray-400 hover:bg-red-50 dark:hover:bg-red-500/10 hover:text-red-600 dark:hover:text-red-400 transition-all group relative" title="Apoie o Projeto">
+                        <div class="w-10 flex justify-center shrink-0">
+                            <i data-lucide="heart" class="w-5 h-5 group-hover:scale-110 transition-transform group-hover:fill-current"></i>
+                        </div>
+                        <span data-i18n="apoie_projeto" class="menu-texto hidden ml-1 text-[13px] font-medium whitespace-nowrap">Apoie o Projeto</span>
+                    </button>
+                </nav>
+            </aside>
+        {% endif %}
+
+        <!-- ============================================================================== -->
+        <!-- ÁREA PRINCIPAL (MAIN CONTENT)                                                  -->
+        <!-- ============================================================================== -->
+        <div class="{% if request.endpoint not in ['login', 'recuperar', 'recuperar_senha'] %}md:ml-14{% endif %} flex-grow min-h-full flex flex-col w-full transition-all duration-300 relative pb-20 md:pb-0">
+            <div class="max-w-[1400px] mx-auto relative p-3 md:p-6 lg:p-8 flex flex-col w-full flex-grow">
+
+                <!-- HEADER FIXO E MINIMALISTA GLOBAL -->
+                {% if request.endpoint not in ['login', 'recuperar', 'recuperar_senha'] %}
+                <header class="sticky top-0 z-[80] -mt-3 pt-3 pb-3 -mx-3 px-3 md:-mt-6 md:pt-6 md:pb-4 md:-mx-6 md:px-6 lg:-mt-8 lg:pt-8 lg:-mx-8 lg:px-8 bg-gray-50/90 dark:bg-[#0b141a]/90 backdrop-blur-md flex justify-between items-center mb-6 border-b border-gray-200/50 dark:border-gray-800/50 transition-all">
+
+                    <!-- Lado Esquerdo -->
+                    <div>
+                        {% block header_title %}{% endblock %}
+                    </div>
+
+                    <!-- Lado Direito -->
+                    <div class="flex items-center gap-3">
+                        <div class="relative">
+                            <button onclick="toggleNotificacoes()" id="tour-notificacoes" class="relative p-2.5 text-gray-400 hover:text-indigo-500 dark:hover:text-indigo-400 bg-gray-100 dark:bg-[#111b21] rounded-full transition-colors focus:outline-none shadow-sm border border-transparent dark:border-white/5">
+                                <i data-lucide="bell" class="w-4 h-4 md:w-5 md:h-5"></i>
+                                {% if total_notificacoes and total_notificacoes > 0 %}
+                                <span id="ping-notificacoes" class="absolute top-0 right-0 flex h-2.5 w-2.5">
+                                    <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-red-400 opacity-75"></span>
+                                    <span class="relative inline-flex rounded-full h-2.5 w-2.5 bg-red-500 border border-white dark:border-[#111b21]"></span>
                                 </span>
-                            </div>
-                            <div class="max-h-56 overflow-y-auto">
-                                {% if notificacoes %}
-                                    {% for notif in notificacoes %}
-                                    <div id="notif-{{ notif.id }}" {% if notif.lida == 0 %}onclick="marcarNotificacaoLida({{ notif.id }})"{% endif %} class="p-3 border-b border-gray-50 dark:border-white/5 hover:bg-gray-50 dark:hover:bg-white/5 transition-colors relative {% if notif.lida == 1 %}opacity-60{% else %}cursor-pointer{% endif %}">
-                                        {% if notif.lida == 0 %}<div class="indicador-nao-lido absolute left-0 top-0 h-full w-1 bg-indigo-500"></div>{% endif %}
-                                        <div class="flex gap-2.5">
-                                            <div class="mt-0.5"><div class="bg-{{ notif.cor }}-50 dark:bg-{{ notif.cor }}-900/20 p-1.5 rounded-md text-{{ notif.cor }}-600 dark:text-{{ notif.cor }}-400"><i data-lucide="{{ notif.icone }}" class="w-3.5 h-3.5"></i></div></div>
-                                            <div>
-                                                <p class="text-[9px] text-gray-400 mb-0.5 font-medium">{{ notif.data_criacao[8:10] }}/{{ notif.data_criacao[5:7] }} - {{ notif.data_criacao[11:16] }}</p>
-                                                <p class="text-[10px] md:text-xs text-gray-800 dark:text-gray-200 font-bold mb-0.5">{{ notif.titulo }}</p>
-                                                <p class="text-[9px] md:text-[10px] text-gray-500 dark:text-gray-400 leading-snug">{{ notif.mensagem }}</p>
+                                {% endif %}
+                            </button>
+
+                            <div id="painel-notificacoes" class="opacity-0 pointer-events-none scale-95 absolute right-0 mt-3 w-64 md:w-72 bg-white dark:bg-[#111b21] rounded-2xl shadow-xl border border-gray-100 dark:border-white/5 z-[100] overflow-hidden transform origin-top-right transition-all duration-200">
+                                <div class="bg-gray-50 dark:bg-gray-800/40 px-4 py-3 border-b border-gray-100 dark:border-white/5 flex justify-between items-center">
+                                    <h3 class="text-xs font-bold text-gray-800 dark:text-gray-200 flex items-center gap-1.5"><i data-lucide="sparkles" class="w-3.5 h-3.5 text-indigo-500"></i> IA Hir3</h3>
+                                    <span id="badge-contador" class="text-[9px] bg-indigo-100 text-indigo-800 dark:bg-indigo-900/30 dark:text-indigo-300 px-2 py-0.5 rounded-full font-bold">
+                                        {% if total_notificacoes and total_notificacoes > 0 %}{{ total_notificacoes }} Nova(s){% else %}Nenhuma{% endif %}
+                                    </span>
+                                </div>
+                                <div class="max-h-56 overflow-y-auto">
+                                    {% if notificacoes %}
+                                        {% for notif in notificacoes %}
+                                        <div id="notif-{{ notif.id }}" {% if notif.lida == 0 %}onclick="marcarNotificacaoLida({{ notif.id }})"{% endif %} class="p-3 border-b border-gray-50 dark:border-white/5 hover:bg-gray-50 dark:hover:bg-white/5 transition-colors relative {% if notif.lida == 1 %}opacity-60{% else %}cursor-pointer{% endif %}">
+                                            {% if notif.lida == 0 %}<div class="indicador-nao-lido absolute left-0 top-0 h-full w-1 bg-indigo-500"></div>{% endif %}
+                                            <div class="flex gap-2.5">
+                                                <div class="mt-0.5"><div class="bg-{{ notif.cor }}-50 dark:bg-{{ notif.cor }}-900/20 p-1.5 rounded-md text-{{ notif.cor }}-600 dark:text-{{ notif.cor }}-400"><i data-lucide="{{ notif.icone }}" class="w-3.5 h-3.5"></i></div></div>
+                                                <div>
+                                                    <p class="text-[9px] text-gray-400 mb-0.5 font-medium">{{ notif.data_criacao[8:10] }}/{{ notif.data_criacao[5:7] }} - {{ notif.data_criacao[11:16] }}</p>
+                                                    <p class="text-[10px] md:text-xs text-gray-800 dark:text-gray-200 font-bold mb-0.5">{{ notif.titulo }}</p>
+                                                    <p class="text-[9px] md:text-[10px] text-gray-500 dark:text-gray-400 leading-snug">{{ notif.mensagem }}</p>
+                                                </div>
                                             </div>
                                         </div>
-                                    </div>
-                                    {% endfor %}
-                                {% else %}
-                                    <div class="p-5 text-center text-gray-400 dark:text-gray-500 text-[10px]"><i data-lucide="check-circle-2" class="w-6 h-6 mx-auto mb-1.5 opacity-50 text-emerald-500"></i> Tudo limpo!</div>
-                                {% endif %}
+                                        {% endfor %}
+                                    {% else %}
+                                        <div class="p-5 text-center text-gray-400 dark:text-gray-500 text-[10px]"><i data-lucide="check-circle-2" class="w-6 h-6 mx-auto mb-1.5 opacity-50 text-emerald-500"></i> Tudo limpo!</div>
+                                    {% endif %}
+                                </div>
+                                <div class="bg-gray-50 dark:bg-gray-800/40 px-4 py-2.5 border-t border-gray-100 dark:border-white/5 flex justify-between items-center">
+                                    <a href="/historico_notificacoes" class="text-[10px] text-indigo-500 hover:text-indigo-400 font-semibold">Ver histórico</a>
+                                    {% if notificacoes %}
+                                    <form action="/limpar_notificacoes" method="POST" class="m-0" onsubmit="confirmarAcao(event, this, 'Limpar Painel?', 'Deseja apagar todas as notificações?', 'Sim, limpar!')">
+                                        <button type="submit" class="text-[10px] text-red-500 hover:text-red-400 font-semibold flex items-center gap-1 transition-colors"><i data-lucide="trash-2" class="w-3 h-3"></i> Limpar</button>
+                                    </form>
+                                    {% endif %}
+                                </div>
                             </div>
-                            <div class="bg-gray-50 dark:bg-gray-800/40 px-4 py-2.5 border-t border-gray-100 dark:border-white/5 flex justify-between items-center">
-                                <a href="/historico_notificacoes" class="text-[10px] text-indigo-500 hover:text-indigo-400 font-semibold">Ver histórico</a>
-                                {% if notificacoes %}
-                                <form action="/limpar_notificacoes" method="POST" class="m-0" onsubmit="confirmarAcao(event, this, 'Limpar Painel?', 'Deseja apagar todas as notificações?', 'Sim, limpar!')">
-                                    <button type="submit" class="text-[10px] text-red-500 hover:text-red-400 font-semibold flex items-center gap-1 transition-colors"><i data-lucide="trash-2" class="w-3 h-3"></i> Limpar</button>
-                                </form>
-                                {% endif %}
+                        </div>
+
+                        <!-- Avatar & Dropdown de Menu de Perfil -->
+                        <div class="relative">
+                            <button onclick="toggleProfileMenu()" id="btn-avatar-perfil" class="w-10 h-10 md:w-11 md:h-11 rounded-full bg-gradient-to-tr from-indigo-600 to-purple-500 flex items-center justify-center text-white font-bold text-sm shadow-md shadow-indigo-500/30 hover:scale-105 active:scale-95 transition-all focus:outline-none ring-2 ring-transparent focus:ring-indigo-500/50">
+                                {{ session.get('nome', session.get('usuario', 'Nerdz'))[:1].upper() }}
+                            </button>
+
+                            <div id="profile-menu" class="opacity-0 pointer-events-none scale-95 absolute right-0 mt-3 w-60 bg-white dark:bg-[#111b21] rounded-2xl shadow-xl border border-gray-100 dark:border-white/5 z-[100] overflow-hidden transform origin-top-right transition-all duration-200">
+                                <div class="px-4 py-3.5 border-b border-gray-100 dark:border-white/5 bg-gray-50 dark:bg-gray-800/40">
+                                    <p class="text-sm font-bold text-gray-800 dark:text-white" data-i18n="meu_painel">Meu Painel</p>
+                                    <p class="text-[10px] text-gray-500 dark:text-gray-400 mt-0.5" data-i18n="config_pref">Configurações e Preferências</p>
+                                </div>
+                                <div class="p-2 space-y-0.5">
+
+                                    <button onclick="abrirModalPerfil()" class="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-xs font-semibold text-gray-600 dark:text-gray-300 hover:bg-indigo-50 dark:hover:bg-indigo-500/10 hover:text-indigo-600 dark:hover:text-indigo-400 transition-colors focus:outline-none">
+                                        <i data-lucide="user" class="w-4 h-4"></i> <span data-i18n="meu_perfil">Meu Perfil</span>
+                                    </button>
+
+                                    <!-- CICLO DE IDIOMAS -->
+                                    <button onclick="cicloIdioma()" class="w-full flex items-center justify-between px-3 py-2.5 rounded-xl text-xs font-semibold text-gray-600 dark:text-gray-300 hover:bg-indigo-50 dark:hover:bg-indigo-500/10 hover:text-indigo-600 dark:hover:text-indigo-400 transition-colors focus:outline-none">
+                                        <div class="flex items-center gap-3">
+                                            <i data-lucide="globe" class="w-4 h-4"></i> <span data-i18n="idioma">Idioma</span>
+                                        </div>
+                                        <span id="texto-idioma" class="text-[9px] font-bold bg-gray-200 dark:bg-gray-700 px-2 py-0.5 rounded text-gray-700 dark:text-gray-300 transition-colors">PT-BR</span>
+                                    </button>
+
+                                    <button onclick="toggleFullScreenMenu()" class="w-full flex items-center justify-between px-3 py-2.5 rounded-xl text-xs font-semibold text-gray-600 dark:text-gray-300 hover:bg-indigo-50 dark:hover:bg-indigo-500/10 hover:text-indigo-600 dark:hover:text-indigo-400 transition-colors focus:outline-none">
+                                        <div class="flex items-center gap-3">
+                                            <i data-lucide="maximize" class="w-4 h-4" id="icon-fullscreen"></i> <span id="text-fullscreen" data-i18n="tela_cheia">Tela Cheia</span>
+                                        </div>
+                                    </button>
+
+                                    <!-- MODO ESCURO TELEGRAM -->
+                                    <button onclick="toggleDarkModeMenu()" class="w-full flex items-center justify-between px-3 py-2.5 rounded-xl text-xs font-semibold text-gray-600 dark:text-gray-300 hover:bg-indigo-50 dark:hover:bg-indigo-500/10 hover:text-indigo-600 dark:hover:text-indigo-400 transition-colors focus:outline-none group">
+                                        <div class="flex items-center gap-3">
+                                            <i id="icone-tema" data-lucide="moon" class="w-4 h-4 group-hover:rotate-12 transition-transform duration-500"></i>
+                                            <span id="texto-tema" data-i18n="modo_escuro">Modo Escuro</span>
+                                        </div>
+                                        <div class="w-8 h-4.5 bg-gray-300 dark:bg-indigo-500 rounded-full relative transition-colors duration-300 ease-in-out shadow-inner flex items-center">
+                                            <div class="w-3.5 h-3.5 bg-white rounded-full absolute left-0.5 dark:translate-x-3.5 transition-transform duration-300 ease-out shadow-sm"></div>
+                                        </div>
+                                    </button>
+
+                                </div>
+                                <div class="p-2 border-t border-gray-100 dark:border-white/5">
+                                    <a href="#" onclick="confirmarLogout(event)" class="flex items-center gap-3 px-3 py-2.5 rounded-xl text-xs font-semibold text-red-500 hover:bg-red-50 dark:hover:bg-red-500/10 transition-colors">
+                                        <i data-lucide="log-out" class="w-4 h-4"></i> <span data-i18n="sair_sistema">Sair do Sistema</span>
+                                    </a>
+                                </div>
                             </div>
                         </div>
                     </div>
+                </header>
+                {% endif %}
 
-                    <!-- Avatar & Dropdown de Menu de Perfil -->
-                    <div class="relative">
-                        <button onclick="toggleProfileMenu()" id="btn-avatar-perfil" class="w-10 h-10 md:w-11 md:h-11 rounded-full bg-gradient-to-tr from-indigo-600 to-purple-500 flex items-center justify-center text-white font-bold text-sm shadow-md shadow-indigo-500/30 hover:scale-105 active:scale-95 transition-all focus:outline-none ring-2 ring-transparent focus:ring-indigo-500/50">
-                            {{ session.get('nome', session.get('usuario', 'Nerdz'))[:1].upper() }}
-                        </button>
-
-                        <div id="profile-menu" class="opacity-0 pointer-events-none scale-95 absolute right-0 mt-3 w-60 bg-white dark:bg-[#1a1b26] rounded-2xl shadow-xl border border-gray-100 dark:border-white/5 z-[100] overflow-hidden transform origin-top-right transition-all duration-200">
-                            <div class="px-4 py-3.5 border-b border-gray-100 dark:border-white/5 bg-gray-50 dark:bg-gray-800/40">
-                                <p class="text-sm font-bold text-gray-800 dark:text-white">Meu Painel</p>
-                                <p class="text-[10px] text-gray-500 dark:text-gray-400 mt-0.5">Configurações e Preferências</p>
-                            </div>
-                            <div class="p-2 space-y-0.5">
-
-                                <button onclick="abrirModalPerfil()" class="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-xs font-semibold text-gray-600 dark:text-gray-300 hover:bg-indigo-50 dark:hover:bg-indigo-500/10 hover:text-indigo-600 dark:hover:text-indigo-400 transition-colors focus:outline-none">
-                                    <i data-lucide="user" class="w-4 h-4"></i> Meu Perfil
-                                </button>
-
-                                <!-- CICLO DE IDIOMAS -->
-                                <button onclick="cicloIdioma()" class="w-full flex items-center justify-between px-3 py-2.5 rounded-xl text-xs font-semibold text-gray-600 dark:text-gray-300 hover:bg-indigo-50 dark:hover:bg-indigo-500/10 hover:text-indigo-600 dark:hover:text-indigo-400 transition-colors focus:outline-none">
-                                    <div class="flex items-center gap-3">
-                                        <i data-lucide="globe" class="w-4 h-4"></i> Idioma
-                                    </div>
-                                    <span id="texto-idioma" class="text-[9px] font-bold bg-gray-200 dark:bg-gray-700 px-2 py-0.5 rounded text-gray-700 dark:text-gray-300 transition-colors">PT-BR</span>
-                                </button>
-
-                                <button onclick="toggleFullScreenMenu()" class="w-full flex items-center justify-between px-3 py-2.5 rounded-xl text-xs font-semibold text-gray-600 dark:text-gray-300 hover:bg-indigo-50 dark:hover:bg-indigo-500/10 hover:text-indigo-600 dark:hover:text-indigo-400 transition-colors focus:outline-none">
-                                    <div class="flex items-center gap-3">
-                                        <i data-lucide="maximize" class="w-4 h-4" id="icon-fullscreen"></i> <span id="text-fullscreen">Tela Cheia</span>
-                                    </div>
-                                </button>
-
-                                <!-- MODO ESCURO TELEGRAM -->
-                                <button onclick="toggleDarkModeMenu()" class="w-full flex items-center justify-between px-3 py-2.5 rounded-xl text-xs font-semibold text-gray-600 dark:text-gray-300 hover:bg-indigo-50 dark:hover:bg-indigo-500/10 hover:text-indigo-600 dark:hover:text-indigo-400 transition-colors focus:outline-none group">
-                                    <div class="flex items-center gap-3">
-                                        <i id="icone-tema" data-lucide="moon" class="w-4 h-4 group-hover:rotate-12 transition-transform duration-500"></i>
-                                        <span id="texto-tema">Modo Escuro</span>
-                                    </div>
-                                    <div class="w-8 h-4.5 bg-gray-300 dark:bg-indigo-500 rounded-full relative transition-colors duration-300 ease-in-out shadow-inner flex items-center">
-                                        <div class="w-3.5 h-3.5 bg-white rounded-full absolute left-0.5 dark:translate-x-3.5 transition-transform duration-300 ease-out shadow-sm"></div>
-                                    </div>
-                                </button>
-
-                            </div>
-                            <div class="p-2 border-t border-gray-100 dark:border-white/5">
-                                <a href="#" onclick="confirmarLogout(event)" class="flex items-center gap-3 px-3 py-2.5 rounded-xl text-xs font-semibold text-red-500 hover:bg-red-50 dark:hover:bg-red-500/10 transition-colors">
-                                    <i data-lucide="log-out" class="w-4 h-4"></i> Sair do Sistema
-                                </a>
-                            </div>
-                        </div>
-                    </div>
+                <!-- CONTEÚDO PRINCIPAL -->
+                <div class="flex-grow w-full">
+                    {% block content %}{% endblock %}
                 </div>
-            </header>
-            {% endif %}
 
-            <!-- CONTEÚDO PRINCIPAL -->
-            <div class="flex-grow w-full">
-                {% block content %}{% endblock %}
+                <!-- RODAPÉ - COM ALERTA DE BETA -->
+                {% if request.endpoint not in ['login', 'recuperar', 'recuperar_senha'] %}
+                <footer class="mt-auto pt-6 border-t border-gray-200 dark:border-gray-800/50 text-center w-full opacity-75 hover:opacity-100 transition-opacity pb-4">
+
+                    <!-- AVISO DE BETA -->
+                    <div class="flex justify-center mb-3">
+                        <div class="bg-amber-50 dark:bg-amber-500/10 border border-amber-200 dark:border-amber-500/20 text-amber-700 dark:text-amber-400 px-3 py-1.5 rounded-lg flex items-center gap-2 max-w-sm w-max shadow-sm">
+                            <i data-lucide="flask-conical" class="w-3.5 h-3.5 animate-pulse"></i>
+                            <span class="text-[10px] font-bold tracking-wide" data-i18n="aviso_beta">SISTEMA EM BETA: Funcionalidades em teste. Podem ocorrer instabilidades.</span>
+                        </div>
+                    </div>
+
+                    <p class="text-[11px] text-gray-500 dark:text-gray-400 font-medium mb-2 flex items-center justify-center gap-1.5">
+                        Meu Controle Financeiro <span class="bg-indigo-100 text-indigo-700 dark:bg-indigo-900/40 dark:text-indigo-400 px-1.5 py-0.5 rounded font-black text-[9px]">v{{ versao_atual }}</span>
+                    </p>
+                    <div class="flex items-center justify-center gap-4 text-[10px] font-bold text-gray-400 dark:text-gray-500 mb-2">
+                        <a href="/termos_uso" class="hover:text-indigo-500 dark:hover:text-indigo-400 transition-colors uppercase tracking-wider" data-i18n="ler_termos">Termos de Uso</a>
+                        <span>•</span>
+                        <a href="/politica_privacidade" class="hover:text-indigo-500 dark:hover:text-indigo-400 transition-colors uppercase tracking-wider" data-i18n="ler_politica">Política de Privacidade</a>
+                    </div>
+                    <p class="text-[10px] text-gray-400 dark:text-gray-500 uppercase tracking-widest font-black">© 2026 HIR3 SOLUTIONS</p>
+                </footer>
+                {% endif %}
+
             </div>
-
-            <!-- RODAPÉ - AGORA OCULTO NA TELA DE LOGIN -->
-            {% if request.endpoint not in ['login', 'recuperar', 'recuperar_senha'] %}
-            <footer class="mt-8 md:mt-12 pt-6 border-t border-gray-200 dark:border-gray-800/50 text-center pb-28 md:pb-6 w-full opacity-60 hover:opacity-100 transition-opacity">
-                <p class="text-[11px] text-gray-500 dark:text-gray-400 font-medium mb-2">Meu Controle Financeiro v{{ versao_atual }}</p>
-                <div class="flex items-center justify-center gap-4 text-[10px] font-bold text-gray-400 dark:text-gray-500 mb-2">
-                    <a href="/termos_uso" class="hover:text-indigo-500 dark:hover:text-indigo-400 transition-colors uppercase tracking-wider">Termos de Uso</a>
-                    <span>•</span>
-                    <a href="/politica_privacidade" class="hover:text-indigo-500 dark:hover:text-indigo-400 transition-colors uppercase tracking-wider">Política de Privacidade</a>
-                </div>
-                <p class="text-[10px] text-gray-400 dark:text-gray-500 uppercase tracking-widest font-black">© 2026 HIR3 SOLUTIONS</p>
-            </footer>
-            {% endif %}
-
         </div>
     </div>
 
     <!-- EXTRAS MOBILE -->
     {% if request.endpoint not in ['login', 'recuperar', 'recuperar_senha'] %}
     <div id="mobile-menu-overlay" class="md:hidden fixed inset-0 bg-black/50 z-[98] hidden transition-opacity duration-300 opacity-0 backdrop-blur-sm" onclick="toggleMobileMenu()"></div>
-    <div id="mobile-menu-mais" class="md:hidden fixed bottom-[68px] left-0 w-full bg-white dark:bg-gray-900 rounded-t-2xl shadow-[0_-10px_30px_rgba(0,0,0,0.15)] dark:shadow-[0_-10px_30px_rgba(0,0,0,0.4)] z-[99] transform translate-y-full transition-transform duration-300 ease-out p-4 flex flex-col gap-2 border-t border-gray-100 dark:border-gray-800">
+    <div id="mobile-menu-mais" class="md:hidden fixed bottom-[68px] left-0 w-full bg-white dark:bg-[#111b21] rounded-t-2xl shadow-[0_-10px_30px_rgba(0,0,0,0.15)] dark:shadow-[0_-10px_30px_rgba(0,0,0,0.4)] z-[99] transform translate-y-full transition-transform duration-300 ease-out p-4 flex flex-col gap-2 border-t border-gray-100 dark:border-gray-800">
         <div class="w-12 h-1.5 bg-gray-300 dark:bg-gray-700 rounded-full mx-auto mb-3"></div>
         <a href="/usuarios" class="flex items-center gap-3 p-3 rounded-xl hover:bg-gray-50 dark:hover:bg-gray-800 text-gray-700 dark:text-gray-200 transition-colors group">
             <div class="w-10 h-10 rounded-full bg-blue-100 dark:bg-blue-900/30 flex items-center justify-center text-blue-600 dark:text-blue-400 group-hover:scale-105 transition-transform"><i data-lucide="users" class="w-5 h-5"></i></div>
@@ -317,30 +353,31 @@
             <div class="w-10 h-10 rounded-full bg-green-100 dark:bg-green-900/30 flex items-center justify-center text-green-600 dark:text-green-400 group-hover:scale-105 transition-transform"><i data-lucide="megaphone" class="w-5 h-5"></i></div>
             <span class="font-medium text-sm"><span data-i18n="nav_novidades">Atualizações</span> (v{{ versao_atual }})</span>
         </a>
-        
+
         <!-- BOTÃO APOIE O PROJETO (MOBILE) -->
         <a href="#" onclick="abrirModalApoio(); toggleMobileMenu();" class="flex items-center gap-3 p-3 rounded-xl hover:bg-gray-50 dark:hover:bg-gray-800 text-gray-700 dark:text-gray-200 transition-colors group">
             <div class="w-10 h-10 rounded-full bg-red-100 dark:bg-red-900/30 flex items-center justify-center text-red-500 group-hover:scale-105 transition-transform"><i data-lucide="heart" class="w-5 h-5 group-hover:fill-current"></i></div>
-            <span class="font-medium text-sm">Apoie o Projeto</span>
+            <span data-i18n="apoie_projeto" class="font-medium text-sm">Apoie o Projeto</span>
         </a>
     </div>
 
-    <nav class="md:hidden fixed bottom-0 left-0 w-full bg-white dark:bg-gray-900 border-t border-gray-200 dark:border-gray-800 z-[100] flex justify-around items-end h-[68px] pb-2 px-2 shadow-[0_-4px_10px_rgba(0,0,0,0.03)] dark:shadow-[0_-4px_10px_rgba(0,0,0,0.2)] safe-bottom">
+    <!-- NAVBAR MOBILE ATUALIZADA E ALINHADA -->
+    <nav class="md:hidden fixed bottom-0 left-0 w-full bg-white dark:bg-[#111b21] border-t border-gray-200 dark:border-gray-800 z-[100] flex justify-around items-end h-[68px] pb-2 px-2 shadow-[0_-4px_10px_rgba(0,0,0,0.03)] dark:shadow-[0_-4px_10px_rgba(0,0,0,0.2)] safe-bottom">
         <a href="/" class="flex flex-col items-center justify-center w-full text-gray-500 hover:text-blue-600 dark:text-gray-400 dark:hover:text-blue-400 transition-colors pt-2">
             <i data-lucide="layout-dashboard" class="w-[22px] h-[22px] mb-1 {% if request.endpoint == 'home' %}text-blue-600 dark:text-blue-400{% endif %}"></i>
             <span data-i18n="mob_inicio" class="text-[9px] font-medium {% if request.endpoint == 'home' %}text-blue-600 dark:text-blue-400 font-bold{% endif %}">Início</span>
         </a>
         <a href="/compras" class="flex flex-col items-center justify-center w-full text-gray-500 hover:text-blue-600 dark:text-gray-400 dark:hover:text-blue-400 transition-colors pt-2">
-            <i data-lucide="shopping-cart" class="w-[22px] h-[22px] mb-1"></i>
-            <span data-i18n="mob_compras" class="text-[9px] font-medium">Compras</span>
+            <i data-lucide="shopping-cart" class="w-[22px] h-[22px] mb-1 {% if request.endpoint == 'compras' %}text-blue-600 dark:text-blue-400{% endif %}"></i>
+            <span data-i18n="mob_compras" class="text-[9px] font-medium {% if request.endpoint == 'compras' %}text-blue-600 dark:text-blue-400 font-bold{% endif %}">Compras</span>
         </a>
-        <a href="/novo_gasto" class="flex flex-col items-center justify-center w-full relative -top-5">
-            <div class="bg-gradient-to-r from-blue-600 to-indigo-600 text-white p-3.5 rounded-full shadow-[0_8px_20px_rgba(37,99,235,0.4)] border-4 border-gray-100 dark:border-gray-950 flex items-center justify-center hover:scale-105 active:scale-95 transition-transform"><i data-lucide="plus" class="w-6 h-6"></i></div>
-            <span data-i18n="mob_lancar" class="text-[10px] font-bold text-blue-600 dark:text-blue-400 mt-1">Lançar</span>
+        <a href="/novo_gasto" class="flex flex-col items-center justify-center w-full text-gray-500 hover:text-blue-600 dark:text-gray-400 dark:hover:text-blue-400 transition-colors pt-2">
+            <i data-lucide="plus-circle" class="w-[22px] h-[22px] mb-1 {% if request.endpoint in ['novo_gasto', 'editar_gasto'] %}text-blue-600 dark:text-blue-400{% endif %}"></i>
+            <span data-i18n="mob_lancar" class="text-[9px] font-medium {% if request.endpoint in ['novo_gasto', 'editar_gasto'] %}text-blue-600 dark:text-blue-400 font-bold{% endif %}">Lançar</span>
         </a>
-        <a href="/dividas" class="flex flex-col items-center justify-center w-full text-gray-500 hover:text-purple-600 dark:text-gray-400 dark:hover:text-purple-400 transition-colors pt-2">
-            <i data-lucide="compass" class="w-[22px] h-[22px] mb-1"></i>
-            <span data-i18n="mob_metas" class="text-[9px] font-medium">Metas</span>
+        <a href="/dividas" class="flex flex-col items-center justify-center w-full text-gray-500 hover:text-blue-600 dark:text-gray-400 dark:hover:text-blue-400 transition-colors pt-2">
+            <i data-lucide="compass" class="w-[22px] h-[22px] mb-1 {% if request.endpoint == 'dividas' %}text-blue-600 dark:text-blue-400{% endif %}"></i>
+            <span data-i18n="mob_metas" class="text-[9px] font-medium {% if request.endpoint == 'dividas' %}text-blue-600 dark:text-blue-400 font-bold{% endif %}">Metas</span>
         </a>
         <button onclick="toggleMobileMenu()" class="flex flex-col items-center justify-center w-full text-gray-500 hover:text-blue-600 dark:text-gray-400 dark:hover:text-blue-400 transition-colors pt-2 focus:outline-none">
             <i data-lucide="menu" class="w-[22px] h-[22px] mb-1"></i>
@@ -356,7 +393,7 @@
     <!-- MODAL DO PERFIL -->
     <!-- ============================================== -->
     <div id="modal-perfil" class="hidden fixed inset-0 z-[160] flex items-center justify-center bg-black/60 backdrop-blur-sm p-2 sm:p-4 opacity-0 transition-opacity duration-300">
-        <div class="bg-gray-50 dark:bg-[#0b1120] rounded-[24px] shadow-2xl w-full max-w-2xl transform scale-95 transition-transform duration-300 border border-gray-100 dark:border-gray-800 flex flex-col max-h-[90vh] relative overflow-hidden" id="card-perfil">
+        <div class="bg-gray-50 dark:bg-[#0b141a] rounded-[24px] shadow-2xl w-full max-w-2xl transform scale-95 transition-transform duration-300 border border-gray-100 dark:border-gray-800 flex flex-col max-h-[90vh] relative overflow-hidden" id="card-perfil">
 
             <button onclick="fecharModalPerfil()" class="absolute top-4 right-4 bg-black/20 hover:bg-black/40 text-white p-1.5 rounded-full transition-colors focus:outline-none backdrop-blur-sm z-[200]">
                 <i data-lucide="x" class="w-4 h-4"></i>
@@ -376,11 +413,11 @@
                             </form>
                             <label for="input-foto-modal" class="cursor-pointer block relative">
                                 {% if foto_perfil or session.get('foto_perfil') %}
-                                    <div class="w-24 h-24 md:w-28 md:h-28 rounded-full bg-gray-200 shadow-xl border-4 border-gray-50 dark:border-[#0b1120] overflow-hidden relative">
+                                    <div class="w-24 h-24 md:w-28 md:h-28 rounded-full bg-gray-200 shadow-xl border-4 border-gray-50 dark:border-[#0b141a] overflow-hidden relative">
                                         <img src="{{ foto_perfil or session.get('foto_perfil') }}" alt="Foto de Perfil" class="w-full h-full object-cover">
                                     </div>
                                 {% else %}
-                                    <div class="w-24 h-24 md:w-28 md:h-28 bg-gradient-to-br from-gray-800 to-gray-600 dark:from-gray-700 dark:to-gray-500 rounded-full flex items-center justify-center text-white text-3xl md:text-4xl font-black shadow-xl border-4 border-gray-50 dark:border-[#0b1120]">
+                                    <div class="w-24 h-24 md:w-28 md:h-28 bg-gradient-to-br from-gray-800 to-gray-600 dark:from-gray-700 dark:to-gray-500 rounded-full flex items-center justify-center text-white text-3xl md:text-4xl font-black shadow-xl border-4 border-gray-50 dark:border-[#0b141a]">
                                         {{ session.get('nome', session.get('usuario', 'U'))[:1].upper() }}
                                     </div>
                                 {% endif %}
@@ -405,9 +442,9 @@
 
                     <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
 
-                        <div class="bg-white dark:bg-[#151a23] rounded-2xl p-4 md:p-5 border border-gray-200 dark:border-gray-800 shadow-sm flex flex-col gap-4">
+                        <div class="bg-white dark:bg-[#111b21] rounded-2xl p-4 md:p-5 border border-gray-200 dark:border-gray-800 shadow-sm flex flex-col gap-4">
                             <div>
-                                <h4 class="text-xs font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wider mb-2">Seu Acesso</h4>
+                                <h4 class="text-xs font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wider mb-2" data-i18n="seu_acesso">Seu Acesso</h4>
                                 <div class="flex items-center justify-between p-3 bg-gray-50 dark:bg-gray-900/50 rounded-xl border border-gray-100 dark:border-gray-800">
                                     <span class="text-xs font-bold text-gray-800 dark:text-gray-200">{{ session.get('usuario', 'user') }}</span>
                                     <i data-lucide="user" class="w-4 h-4 text-gray-400"></i>
@@ -415,16 +452,16 @@
                             </div>
 
                             <div>
-                                <h4 class="text-xs font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wider mb-2">Detalhes do Plano</h4>
+                                <h4 class="text-xs font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wider mb-2" data-i18n="detalhes_plano">Detalhes do Plano</h4>
                                 <div class="bg-gradient-to-b from-gray-50 to-white dark:from-gray-900/50 dark:to-gray-800/30 rounded-xl p-3 border border-gray-200 dark:border-gray-800 space-y-2">
                                     <div class="flex justify-between items-center">
-                                        <span class="text-[10px] font-medium text-gray-600 dark:text-gray-400 flex items-center gap-1"><i data-lucide="award" class="w-3 h-3"></i> Licença</span>
+                                        <span class="text-[10px] font-medium text-gray-600 dark:text-gray-400 flex items-center gap-1"><i data-lucide="award" class="w-3 h-3"></i> <span data-i18n="licenca">Licença</span></span>
                                         <span class="text-[10px] font-bold px-1.5 py-0.5 rounded border {% if licenca_usuario == 'Premium' %}text-amber-600 bg-amber-50 border-amber-200 dark:bg-amber-900/20 dark:text-amber-400 dark:border-amber-800/50{% else %}text-blue-600 bg-blue-50 border-blue-200 dark:bg-blue-900/20 dark:text-blue-400 dark:border-blue-800/50{% endif %} uppercase tracking-wider">
                                             {{ licenca_usuario | default('Premium') }}
                                         </span>
                                     </div>
                                     <div class="flex justify-between items-center pt-2 border-t border-dashed border-gray-200 dark:border-gray-700">
-                                        <span class="text-[10px] font-medium text-gray-600 dark:text-gray-400 flex items-center gap-1"><i data-lucide="layout-grid" class="w-3 h-3"></i> Módulos</span>
+                                        <span class="text-[10px] font-medium text-gray-600 dark:text-gray-400 flex items-center gap-1"><i data-lucide="layout-grid" class="w-3 h-3"></i> <span data-i18n="modulos">Módulos</span></span>
                                         <span class="text-[10px] font-bold text-gray-700 dark:text-gray-300">{{ modulos_liberados | default('Completo') }}</span>
                                     </div>
                                 </div>
@@ -432,32 +469,32 @@
                         </div>
 
                         <div class="flex flex-col gap-4">
-                            <div class="bg-white dark:bg-[#151a23] rounded-2xl p-4 border border-gray-200 dark:border-gray-800 shadow-sm flex flex-col gap-3">
-                                <h4 class="text-xs font-bold text-gray-800 dark:text-gray-200 flex items-center gap-1.5"><div class="p-1 bg-purple-100 dark:bg-purple-900/40 rounded"><i data-lucide="lock" class="w-3 h-3 text-purple-600 dark:text-purple-400"></i></div> Segurança</h4>
+                            <div class="bg-white dark:bg-[#111b21] rounded-2xl p-4 border border-gray-200 dark:border-gray-800 shadow-sm flex flex-col gap-3">
+                                <h4 class="text-xs font-bold text-gray-800 dark:text-gray-200 flex items-center gap-1.5"><div class="p-1 bg-purple-100 dark:bg-purple-900/40 rounded"><i data-lucide="lock" class="w-3 h-3 text-purple-600 dark:text-purple-400"></i></div> <span data-i18n="seguranca">Segurança</span></h4>
                                 <form action="#" method="POST" class="space-y-2">
-                                    <div><input type="password" name="nova_senha" placeholder="Nova Senha" class="w-full px-3 py-2 bg-gray-50 dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-lg text-xs font-bold text-gray-800 dark:text-gray-100 focus:ring-1 focus:ring-purple-500 outline-none"></div>
-                                    <button type="button" onclick="alert('Funcionalidade de alteração de senha em desenvolvimento.')" class="w-full bg-gray-800 dark:bg-gray-100 text-white dark:text-gray-900 font-bold py-2 rounded-lg text-xs hover:bg-gray-900 dark:hover:bg-white transition-colors flex justify-center items-center gap-1.5"><i data-lucide="save" class="w-3 h-3"></i> Atualizar Senha</button>
+                                    <div><input type="password" name="nova_senha" data-i18n="ph_senha" placeholder="Nova Senha" class="w-full px-3 py-2 bg-gray-50 dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-lg text-xs font-bold text-gray-800 dark:text-gray-100 focus:ring-1 focus:ring-purple-500 outline-none"></div>
+                                    <button type="button" onclick="alert('Funcionalidade de alteração de senha em desenvolvimento.')" class="w-full bg-gray-800 dark:bg-gray-100 text-white dark:text-gray-900 font-bold py-2 rounded-lg text-xs hover:bg-gray-900 dark:hover:bg-white transition-colors flex justify-center items-center gap-1.5"><i data-lucide="save" class="w-3 h-3"></i> <span data-i18n="atualizar_senha">Atualizar Senha</span></button>
                                 </form>
                             </div>
 
-                            <div class="bg-white dark:bg-[#151a23] rounded-2xl p-4 border border-gray-200 dark:border-gray-800 shadow-sm flex flex-col gap-3">
-                                <h4 class="text-xs font-bold text-gray-800 dark:text-gray-200 flex items-center gap-1.5"><div class="p-1 bg-green-100 dark:bg-green-900/40 rounded"><i data-lucide="dollar-sign" class="w-3 h-3 text-green-600 dark:text-green-400"></i></div> Config. de Renda</h4>
+                            <div class="bg-white dark:bg-[#111b21] rounded-2xl p-4 border border-gray-200 dark:border-gray-800 shadow-sm flex flex-col gap-3">
+                                <h4 class="text-xs font-bold text-gray-800 dark:text-gray-200 flex items-center gap-1.5"><div class="p-1 bg-green-100 dark:bg-green-900/40 rounded"><i data-lucide="dollar-sign" class="w-3 h-3 text-green-600 dark:text-green-400"></i></div> <span data-i18n="config_renda">Config. de Renda</span></h4>
                                 <form action="/renda" method="POST" class="space-y-3">
-                                    <div><input type="number" step="0.01" name="renda" value="{{ renda_atual | default('') }}" placeholder="Renda Mensal (R$)" required class="w-full px-3 py-2 bg-gray-50 dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-lg text-xs font-bold text-gray-800 dark:text-gray-100 focus:ring-1 focus:ring-green-500 outline-none"></div>
+                                    <div><input type="number" step="0.01" name="renda" value="{{ renda_atual | default('') }}" data-i18n="ph_renda" placeholder="Renda Mensal (R$)" required class="w-full px-3 py-2 bg-gray-50 dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-lg text-xs font-bold text-gray-800 dark:text-gray-100 focus:ring-1 focus:ring-green-500 outline-none"></div>
                                     <div>
-                                        <label class="block text-[9px] font-bold text-gray-500 dark:text-gray-400 uppercase mb-1">É Variável?</label>
+                                        <label class="block text-[9px] font-bold text-gray-500 dark:text-gray-400 uppercase mb-1" data-i18n="e_variavel">É Variável?</label>
                                         <div class="flex gap-2">
                                             <label class="flex-1 text-center p-2 border border-gray-200 dark:border-gray-700 rounded-lg cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-900/50 has-[:checked]:bg-green-50 dark:has-[:checked]:bg-green-900/20 has-[:checked]:border-green-500">
                                                 <input type="radio" name="renda_variavel" value="sim" {% if renda_variavel == 'sim' %}checked{% endif %} class="sr-only">
-                                                <span class="text-[10px] font-bold">Sim</span>
+                                                <span class="text-[10px] font-bold" data-i18n="sim">Sim</span>
                                             </label>
                                             <label class="flex-1 text-center p-2 border border-gray-200 dark:border-gray-700 rounded-lg cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-900/50 has-[:checked]:bg-green-50 dark:has-[:checked]:bg-green-900/20 has-[:checked]:border-green-500">
                                                 <input type="radio" name="renda_variavel" value="nao" {% if renda_variavel != 'sim' %}checked{% endif %} class="sr-only">
-                                                <span class="text-[10px] font-bold">Não</span>
+                                                <span class="text-[10px] font-bold" data-i18n="nao">Não</span>
                                             </label>
                                         </div>
                                     </div>
-                                    <button type="submit" class="w-full bg-gradient-to-r from-green-500 to-emerald-600 text-white font-bold py-2 rounded-lg text-xs hover:scale-[1.02] transition-transform flex justify-center items-center gap-1.5"><i data-lucide="check-circle" class="w-3 h-3"></i> Salvar Renda</button>
+                                    <button type="submit" class="w-full bg-gradient-to-r from-green-500 to-emerald-600 text-white font-bold py-2 rounded-lg text-xs hover:scale-[1.02] transition-transform flex justify-center items-center gap-1.5"><i data-lucide="check-circle" class="w-3 h-3"></i> <span data-i18n="salvar_renda">Salvar Renda</span></button>
                                 </form>
                             </div>
                         </div>
@@ -472,28 +509,28 @@
     <!-- MODAL APOIE O PROJETO                          -->
     <!-- ============================================== -->
     <div id="modal-apoio" class="hidden fixed inset-0 z-[160] flex items-center justify-center bg-black/60 backdrop-blur-sm p-2 sm:p-4 opacity-0 transition-opacity duration-300">
-        <div class="bg-white dark:bg-[#151a23] rounded-3xl shadow-2xl w-full max-w-sm transform scale-95 transition-transform duration-300 border border-gray-100 dark:border-gray-800 flex flex-col relative overflow-hidden text-center" id="card-apoio">
-            
+        <div class="bg-white dark:bg-[#111b21] rounded-3xl shadow-2xl w-full max-w-sm transform scale-95 transition-transform duration-300 border border-gray-100 dark:border-gray-800 flex flex-col relative overflow-hidden text-center" id="card-apoio">
+
             <button onclick="fecharModalApoio()" class="absolute top-4 right-4 text-gray-400 hover:text-gray-600 dark:hover:text-gray-200 transition-colors focus:outline-none z-[200]">
                 <i data-lucide="x" class="w-5 h-5"></i>
             </button>
-            
+
             <div class="p-6 md:p-8">
                 <div class="w-16 h-16 bg-red-100 dark:bg-red-900/30 text-red-500 rounded-full flex items-center justify-center mx-auto mb-4 animate-bounce">
                     <i data-lucide="heart" class="w-8 h-8 fill-current"></i>
                 </div>
-                
-                <h3 class="text-xl font-black text-gray-900 dark:text-white mb-2">Apoie o Desenvolvimento</h3>
+
+                <h3 class="text-xl font-black text-gray-900 dark:text-white mb-2" data-i18n="apoie_projeto">Apoie o Desenvolvimento</h3>
                 <p class="text-xs text-gray-500 dark:text-gray-400 mb-6 leading-relaxed">Este sistema é mantido de forma independente. Sua doação ajuda a pagar os servidores e me motiva a trazer novas atualizações incríveis!</p>
 
-                <!-- QR Code (Substitua a imagem por meu_pix.png na pasta static) -->
+                <!-- QR Code -->
                 <div class="bg-gray-50 dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-2xl p-4 mb-4 flex justify-center">
                     <img src="{{ url_for('static', filename='meu_pix.png') }}" alt="QR Code PIX" class="w-32 h-32 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700">
                 </div>
 
                 <!-- Chave PIX Copiável -->
                 <div class="text-left">
-                    <label class="block text-[10px] font-bold text-gray-500 dark:text-gray-400 uppercase mb-1 ml-1">Chave PIX</label>
+                    <label class="block text-[10px] font-bold text-gray-500 dark:text-gray-400 uppercase mb-1 ml-1" data-i18n="chave_pix">Chave PIX</label>
                     <div class="flex items-center gap-2">
                         <input type="text" id="chave-pix" value="ricardo.hir3@gmail.com" readonly class="w-full bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl px-4 py-3 text-sm font-bold text-gray-800 dark:text-white outline-none cursor-pointer" onclick="copiarPix()">
                         <button onclick="copiarPix()" class="w-12 h-[46px] bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl flex items-center justify-center shrink-0 transition-colors shadow-sm focus:outline-none">
@@ -510,8 +547,8 @@
     <!-- ========================================================= -->
     {% if session.get('logado') and request.endpoint not in ['termos_uso', 'politica_privacidade'] %}
     <div id="modal-termos" class="hidden fixed inset-0 z-[9999] items-center justify-center bg-black/80 backdrop-blur-md p-4 opacity-0 transition-opacity duration-300">
-        <div class="bg-white dark:bg-[#151a23] rounded-3xl shadow-2xl w-full max-w-lg transform scale-95 transition-transform duration-300 border border-gray-100 dark:border-gray-800 flex flex-col relative overflow-hidden">
-            
+        <div class="bg-white dark:bg-[#111b21] rounded-3xl shadow-2xl w-full max-w-lg transform scale-95 transition-transform duration-300 border border-gray-100 dark:border-gray-800 flex flex-col relative overflow-hidden">
+
             <!-- Barra superior decorativa -->
             <div class="h-2 w-full bg-gradient-to-r from-indigo-500 to-purple-600"></div>
 
@@ -519,17 +556,17 @@
                 <div class="w-16 h-16 bg-indigo-100 dark:bg-indigo-900/30 text-indigo-600 dark:text-indigo-400 rounded-full flex items-center justify-center mb-4">
                     <i data-lucide="shield-check" class="w-8 h-8"></i>
                 </div>
-                
-                <h3 class="text-xl font-black text-gray-900 dark:text-white mb-2">Termos e Privacidade</h3>
+
+                <h3 class="text-xl font-black text-gray-900 dark:text-white mb-2" data-i18n="termos_privacidade">Termos e Privacidade</h3>
                 <p class="text-xs md:text-sm text-gray-500 dark:text-gray-400 mb-6 leading-relaxed">Para continuar usando o <strong>Meu Controle Financeiro</strong>, precisamos que você leia e concorde com nossos termos atualizados de uso e política de privacidade.</p>
 
                 <!-- Botões para leitura -->
                 <div class="flex gap-4 mb-6 w-full">
                     <a href="/termos_uso" class="flex-1 py-2.5 px-4 bg-gray-50 dark:bg-gray-800 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-xl text-xs font-bold text-indigo-600 dark:text-indigo-400 transition-colors border border-gray-200 dark:border-gray-700 flex items-center justify-center gap-2">
-                        <i data-lucide="file-text" class="w-4 h-4"></i> Ler Termos
+                        <i data-lucide="file-text" class="w-4 h-4"></i> <span data-i18n="ler_termos">Ler Termos</span>
                     </a>
                     <a href="/politica_privacidade" class="flex-1 py-2.5 px-4 bg-gray-50 dark:bg-gray-800 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-xl text-xs font-bold text-indigo-600 dark:text-indigo-400 transition-colors border border-gray-200 dark:border-gray-700 flex items-center justify-center gap-2">
-                        <i data-lucide="lock" class="w-4 h-4"></i> Ler Política
+                        <i data-lucide="lock" class="w-4 h-4"></i> <span data-i18n="ler_politica">Ler Política</span>
                     </a>
                 </div>
 
@@ -546,7 +583,7 @@
 
                 <!-- Botão de Aceite -->
                 <button id="btn-aceitar-termos" disabled onclick="aceitarTermosGlobais()" class="w-full bg-gray-300 dark:bg-gray-700 text-gray-500 dark:text-gray-400 font-bold py-3.5 px-4 rounded-xl transition-all flex items-center justify-center gap-2 text-sm cursor-not-allowed">
-                    Aceitar e Continuar <i data-lucide="arrow-right" class="w-4 h-4"></i>
+                    <span data-i18n="aceitar_continuar">Aceitar e Continuar</span> <i data-lucide="arrow-right" class="w-4 h-4"></i>
                 </button>
             </div>
         </div>
@@ -559,10 +596,10 @@
     {% if request.endpoint not in ['login', 'recuperar', 'recuperar_senha'] %}
     <button onclick="toggleChatHir3()" class="fixed bottom-24 md:bottom-6 right-4 md:right-6 z-[90] w-12 h-12 md:w-14 md:h-14 bg-gradient-to-tr from-indigo-600 to-purple-600 rounded-full shadow-[0_8px_30px_rgba(79,70,229,0.4)] flex items-center justify-center text-white hover:scale-110 transition-transform focus:outline-none">
         <i data-lucide="bot" class="w-6 h-6 md:w-7 md:h-7"></i>
-        <span class="absolute top-0 right-0 w-3 h-3 md:w-3.5 md:h-3.5 bg-green-500 border-2 border-white dark:border-[#0b1120] rounded-full"></span>
+        <span class="absolute top-0 right-0 w-3 h-3 md:w-3.5 md:h-3.5 bg-green-500 border-2 border-white dark:border-[#0b141a] rounded-full"></span>
     </button>
 
-    <div id="janela-chat-hir3" class="fixed bottom-40 md:bottom-24 right-4 md:right-6 w-[calc(100vw-2rem)] md:w-96 h-[450px] md:h-[500px] max-h-[65vh] bg-white dark:bg-[#151a23] rounded-2xl shadow-2xl border border-gray-200 dark:border-gray-800 z-[100] flex flex-col overflow-hidden transition-all duration-300 origin-bottom-right scale-0 opacity-0 pointer-events-none">
+    <div id="janela-chat-hir3" class="fixed bottom-40 md:bottom-24 right-4 md:right-6 w-[calc(100vw-2rem)] md:w-96 h-[450px] md:h-[500px] max-h-[65vh] bg-white dark:bg-[#111b21] rounded-2xl shadow-2xl border border-gray-200 dark:border-gray-800 z-[100] flex flex-col overflow-hidden transition-all duration-300 origin-bottom-right scale-0 opacity-0 pointer-events-none">
         <!-- Header -->
         <div class="p-3 md:p-4 bg-gradient-to-r from-indigo-600 to-purple-600 text-white flex justify-between items-center shrink-0">
             <div class="flex items-center gap-2.5 md:gap-3">
@@ -578,9 +615,9 @@
                 <i data-lucide="x" class="w-4 h-4 md:w-5 md:h-5"></i>
             </button>
         </div>
-        
+
         <!-- Area de Mensagens -->
-        <div id="chat-messages" class="flex-grow p-3 md:p-4 overflow-y-auto bg-gray-50/50 dark:bg-[#0b1120]/50 flex flex-col gap-3 md:gap-4 scroll-smooth">
+        <div id="chat-messages" class="flex-grow p-3 md:p-4 overflow-y-auto bg-gray-50/50 dark:bg-[#0b141a]/50 flex flex-col gap-3 md:gap-4 scroll-smooth">
             <div class="flex gap-2 w-full max-w-[85%]">
                 <div class="w-6 h-6 rounded-full bg-gradient-to-tr from-indigo-600 to-purple-600 shrink-0 flex items-center justify-center mt-1 shadow-sm"><i data-lucide="bot" class="w-3 h-3 text-white"></i></div>
                 <div class="bg-white dark:bg-gray-800 p-2.5 md:p-3 rounded-2xl rounded-tl-sm shadow-sm border border-gray-100 dark:border-gray-700 text-[11px] md:text-xs text-gray-700 dark:text-gray-300 leading-relaxed">
@@ -589,11 +626,11 @@
                 </div>
             </div>
         </div>
-        
+
         <!-- Input -->
-        <div class="p-2.5 md:p-3 bg-white dark:bg-[#151a23] border-t border-gray-100 dark:border-gray-800 shrink-0">
+        <div class="p-2.5 md:p-3 bg-white dark:bg-[#111b21] border-t border-gray-100 dark:border-gray-800 shrink-0">
             <form id="form-chat-hir3" onsubmit="enviarMensagemHir3(event)" class="flex items-center gap-2">
-                <input type="text" id="input-msg-hir3" placeholder="Pergunte ao Hir3..." autocomplete="off" class="flex-grow bg-gray-100 dark:bg-gray-900 border border-transparent rounded-xl px-3 py-2 md:py-2.5 text-xs text-gray-800 dark:text-gray-200 focus:bg-white dark:focus:bg-gray-800 focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/20 outline-none transition-all">
+                <input type="text" id="input-msg-hir3" data-i18n="ph_hir3" placeholder="Pergunte ao Hir3..." autocomplete="off" class="flex-grow bg-gray-100 dark:bg-gray-900 border border-transparent rounded-xl px-3 py-2 md:py-2.5 text-xs text-gray-800 dark:text-gray-200 focus:bg-white dark:focus:bg-gray-800 focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/20 outline-none transition-all">
                 <button type="submit" class="w-9 h-9 md:w-10 md:h-10 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl flex items-center justify-center shrink-0 transition-all hover:scale-105 active:scale-95 shadow-sm shadow-indigo-500/30">
                     <i data-lucide="send" class="w-4 h-4 ml-0.5"></i>
                 </button>
@@ -610,6 +647,15 @@
 
     <!-- SCRIPT DO CHAT E MODAIS -->
     <script>
+        // Função para o Admin desligar o alerta
+        function limparAlertaGeral() {
+            fetch('/api/limpar_alerta', { method: 'POST' })
+            .then(res => res.json())
+            .then(data => {
+                if(data.status === 'sucesso') location.reload();
+            });
+        }
+
         function toggleChatHir3() {
             const chat = document.getElementById('janela-chat-hir3');
             if (chat.classList.contains('scale-0')) {
@@ -625,25 +671,25 @@
         function appendMessage(sender, text) {
             const chatMessages = document.getElementById('chat-messages');
             const isHir3 = sender === 'hir3';
-            
+
             const msgDiv = document.createElement('div');
             msgDiv.className = `flex gap-2 w-full max-w-[90%] md:max-w-[85%] ${isHir3 ? 'self-start' : 'self-end flex-row-reverse'}`;
-            
-            const avatar = isHir3 
+
+            const avatar = isHir3
                 ? `<div class="w-6 h-6 rounded-full bg-gradient-to-tr from-indigo-600 to-purple-600 shrink-0 flex items-center justify-center mt-1 shadow-sm"><i data-lucide="bot" class="w-3 h-3 text-white"></i></div>`
                 : `<div class="w-6 h-6 rounded-full bg-gray-200 dark:bg-gray-700 shrink-0 flex items-center justify-center mt-1 shadow-sm"><i data-lucide="user" class="w-3 h-3 text-gray-500 dark:text-gray-400"></i></div>`;
-                
+
             const bubbleClass = isHir3
                 ? 'bg-white dark:bg-gray-800 rounded-tl-sm border-gray-100 dark:border-gray-700 text-gray-700 dark:text-gray-300'
                 : 'bg-indigo-600 text-white rounded-tr-sm border-transparent';
-                
+
             msgDiv.innerHTML = `
                 ${avatar}
                 <div class="p-2.5 md:p-3 rounded-2xl shadow-sm border text-[11px] md:text-xs leading-relaxed ${bubbleClass}">
                     ${text}
                 </div>
             `;
-            
+
             chatMessages.appendChild(msgDiv);
             chatMessages.scrollTop = chatMessages.scrollHeight;
             if(typeof lucide !== 'undefined') lucide.createIcons();
@@ -654,10 +700,10 @@
             const input = document.getElementById('input-msg-hir3');
             const msg = input.value.trim();
             if (!msg) return;
-            
+
             appendMessage('user', msg);
             input.value = '';
-            
+
             const typingId = 'typing-' + Date.now();
             const chatMessages = document.getElementById('chat-messages');
             chatMessages.insertAdjacentHTML('beforeend', `
@@ -672,7 +718,7 @@
             `);
             chatMessages.scrollTop = chatMessages.scrollHeight;
             if(typeof lucide !== 'undefined') lucide.createIcons();
-            
+
             fetch('/api/chat_hir3', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
@@ -707,14 +753,14 @@
             input.select();
             input.setSelectionRange(0, 99999);
             navigator.clipboard.writeText(input.value);
-            
+
             Swal.fire({
                 icon: 'success',
                 title: 'PIX Copiado!',
                 text: 'Muito obrigado pelo seu apoio! ❤️',
                 timer: 2500,
                 showConfirmButton: false,
-                background: document.documentElement.classList.contains('dark') ? '#1a1b26' : '#ffffff',
+                background: document.documentElement.classList.contains('dark') ? '#111b21' : '#ffffff',
                 color: document.documentElement.classList.contains('dark') ? '#ffffff' : '#1f2937',
                 customClass: { popup: 'rounded-2xl border border-gray-100 dark:border-gray-800' }
             });
@@ -813,7 +859,7 @@
                     cancelButtonColor: document.documentElement.classList.contains('dark') ? '#374151' : '#9ca3af',
                     confirmButtonText: 'Sim, sair!',
                     cancelButtonText: 'Cancelar',
-                    background: document.documentElement.classList.contains('dark') ? '#1a1b26' : '#ffffff',
+                    background: document.documentElement.classList.contains('dark') ? '#111b21' : '#ffffff',
                     color: document.documentElement.classList.contains('dark') ? '#ffffff' : '#1f2937',
                     customClass: { popup: 'rounded-2xl border border-gray-100 dark:border-gray-800' }
                 }).then((result) => {
@@ -890,17 +936,17 @@
             if (userId) {
                 localStorage.setItem('termos_aceitos_' + userId, 'sim');
             }
-            
+
             const mTermos = document.getElementById('modal-termos');
             if (mTermos) {
                 mTermos.classList.add('opacity-0');
                 const card = mTermos.querySelector('.transform');
                 if(card) card.classList.add('scale-95');
-                
-                setTimeout(() => { 
-                    mTermos.classList.add('hidden'); 
-                    mTermos.classList.remove('flex'); 
-                    
+
+                setTimeout(() => {
+                    mTermos.classList.add('hidden');
+                    mTermos.classList.remove('flex');
+
                     if (!localStorage.getItem('tutorial_hir3_visto_v1')) {
                         if (typeof iniciarTourGuiado === 'function') {
                             iniciarTourGuiado();
@@ -923,14 +969,14 @@
 
         // --- INICIALIZAÇÃO DA PÁGINA ---
         document.addEventListener("DOMContentLoaded", function() {
-            
+
             // A) Forçar esconder o loader assim que a página é montada
             esconderLoader();
 
             // B) Lógica do Modal de Termos Obrigatório
             const userId = "{{ session.get('user_id', '') }}";
             const modalTermos = document.getElementById('modal-termos');
-            
+
             if (userId && modalTermos && !localStorage.getItem('termos_aceitos_' + userId)) {
                 modalTermos.classList.remove('hidden');
                 modalTermos.classList.add('flex');
@@ -942,7 +988,7 @@
 
                 const checkTermos = document.getElementById('check-aceite-termos');
                 const btnAceitar = document.getElementById('btn-aceitar-termos');
-                
+
                 if (checkTermos && btnAceitar) {
                     checkTermos.addEventListener('change', function() {
                         if(this.checked) {
@@ -974,15 +1020,15 @@
                 const href = link.getAttribute('href');
                 const target = link.getAttribute('target');
                 const isDownload = link.hasAttribute('download');
-                
+
                 if (href && !href.startsWith('#') && !href.startsWith('javascript:') && target !== '_blank' && !isDownload) {
                     const loader = document.getElementById('global-loader');
                     if (loader) {
                         loader.style.display = 'flex';
                         void loader.offsetWidth; // Força renderização imediata do CSS
                         loader.style.opacity = '1';
-                        
-                        // FALLBACK DE SEGURANÇA: Desliga o loader forçadamente após 6 segundos 
+
+                        // FALLBACK DE SEGURANÇA: Desliga o loader forçadamente após 6 segundos
                         // Isso previne que a tela fique preta caso a internet caia ou o link falhe
                         setTimeout(esconderLoader, 6000);
                     }
@@ -997,7 +1043,7 @@
             if(window.location.pathname.includes('login') || window.location.pathname.includes('recuperar')) return;
 
             const isDark = document.documentElement.classList.contains('dark') || localStorage.theme === 'dark';
-            
+
             const tour = introJs();
             tour.setOptions({
                 nextLabel: 'Próximo',
@@ -1059,6 +1105,127 @@
                     localStorage.setItem('tutorial_hir3_visto_v1', 'sim');
                 }
             }, 1500);
+        });
+    </script>
+
+    <!-- ======================================================= -->
+    <!-- SISTEMA DE TRADUÇÃO DINÂMICA (CÉREBRO POLIGLOTA)        -->
+    <!-- ======================================================= -->
+    <script>
+        const dicionarioGlobal = {
+            "PT-BR": {
+                "saudacao": "Olá", "saldo_disponivel": "Saldo Disponível", "extrato_mes": "Extrato do Mês", "entradas": "Entradas", "saidas": "Saídas",
+                "comparativo_titulo": "Comparativo Mensal", "fluxo_mes": "Fluxo do mês", "fluxo_sub": "Da renda já consumida", "score_pagamento": "Score de pagamento",
+                "reputacao_financeira": "Sua reputação financeira", "pagos": "Pagos", "pendentes": "Pendentes", "em_dia": "Em dia", "nivel": "Nível",
+                "categorias": "Categorias", "tendencia": "Tendência", "sem_despesas": "Sem dados registrados", "todos": "Todos", "primeira_q": "1ª Q.", "segunda_q": "2ª Q.",
+                "pago_min": "Pago", "pend_min": "Pend.", "cancelar": "Cancelar", "salvar": "Salvar", "editar_despesa": "Editar Despesa", "label_descricao": "Descrição",
+                "label_valor": "Valor (R$)", "label_data": "Data", "label_categoria": "Categoria", "quinzena": "Quinzena", "primeira_quinzena": "1ª Quinzena",
+                "segunda_quinzena": "2ª Quinzena", "mes_integral": "Mês Integral", "nenhum_encontrado": "Nenhum gasto encontrado neste filtro.", "nenhum_registrado": "Nenhum gasto registrado.",
+                "ajustar_renda": "Ajustar Renda Base", "desc_ajustar_renda": "Atualize o valor da sua renda mensal. O sistema recalculará o saldo e fluxo do mês.",
+                "renda_total": "Renda Total (R$)", "salvar_renda": "Salvar Renda", "tendencia_gastos": "Tendência de Gastos", "projecao_fim_mes": "Projeção Fim do Mês",
+                "gasto_atual": "Gasto Atual", "hoje": "Hoje", "ritmo_diario": "Ritmo Diário", "estimativa_total": "Estimativa Total", "saldo_projetado": "Saldo Projetado",
+                "aviso_assinatura": "Aviso de Assinatura", "fatura_pendente": "Fatura pendente:", "suporte": "Suporte", "nav_dashboard": "Dashboard Inicial",
+                "nav_gasto": "Registrar Gasto", "nav_compras": "Lista de Compras", "nav_metas": "Planejamento Financeiro", "nav_usuarios": "Gestão de Usuários",
+                "nav_relatorios": "Relatório Premium", "nav_novidades": "Novidades", "menu_titulo": "MENU", "mob_inicio": "Início", "mob_compras": "Compras",
+                "mob_lancar": "Lançar", "mob_metas": "Metas", "mob_mais": "Mais",
+                "ph_hir3": "Pergunte ao Hir3...", "ph_senha": "Nova Senha", "ph_renda": "Renda Mensal (R$)", "ph_desc": "Descrição",
+                "meu_painel": "Meu Painel", "config_pref": "Configurações e Preferências", "meu_perfil": "Meu Perfil", "idioma": "Idioma", "tela_cheia": "Tela Cheia",
+                "modo_escuro": "Modo Escuro", "sair_sistema": "Sair do Sistema", "seu_acesso": "Seu Acesso", "detalhes_plano": "Detalhes do Plano", "seguranca": "Segurança", "config_renda": "Config. de Renda",
+                "licenca": "Licença", "modulos": "Módulos", "atualizar_senha": "Atualizar Senha", "e_variavel": "É Variável?", "sim": "Sim", "nao": "Não",
+                "termos_privacidade": "Termos e Privacidade", "ler_termos": "Ler Termos", "ler_politica": "Ler Política", "aceitar_continuar": "Aceitar e Continuar",
+                "apoie_projeto": "Apoie o Desenvolvimento", "chave_pix": "Chave PIX", "analise_mes": "Análise do Mês", "fechar_resumo": "Fechar Resumo", "total_atual": "Total Atual:", "total_passado": "Total Mês Passado:",
+                "aviso_beta": "SISTEMA EM BETA: Funcionalidades em teste. Podem ocorrer instabilidades."
+            },
+            "EN-US": {
+                "saudacao": "Hello", "saldo_disponivel": "Available Balance", "extrato_mes": "Monthly Statement", "entradas": "Incomes", "saidas": "Expenses",
+                "comparativo_titulo": "Monthly Comparison", "fluxo_mes": "Monthly Flow", "fluxo_sub": "Of consumed income", "score_pagamento": "Payment Score",
+                "reputacao_financeira": "Your financial reputation", "pagos": "Paid", "pendentes": "Pending", "em_dia": "Up to date", "nivel": "Level",
+                "categorias": "Categories", "tendencia": "Trend", "sem_despesas": "No data recorded", "todos": "All", "primeira_q": "1st Q.", "segunda_q": "2nd Q.",
+                "pago_min": "Paid", "pend_min": "Pend.", "cancelar": "Cancel", "salvar": "Save", "editar_despesa": "Edit Expense", "label_descricao": "Description",
+                "label_valor": "Amount ($)", "label_data": "Date", "label_categoria": "Category", "quinzena": "Fortnight", "primeira_quinzena": "1st Fortnight",
+                "segunda_quinzena": "2nd Fortnight", "mes_integral": "Full Month", "nenhum_encontrado": "No expenses found in this filter.", "nenhum_registrado": "No expenses recorded.",
+                "ajustar_renda": "Adjust Base Income", "desc_ajustar_renda": "Update your monthly income. The system will recalculate balance and flow.",
+                "renda_total": "Total Income ($)", "salvar_renda": "Save Income", "tendencia_gastos": "Expense Trend", "projecao_fim_mes": "End of Month Projection",
+                "gasto_atual": "Current Expense", "hoje": "Today", "ritmo_diario": "Daily Pace", "estimativa_total": "Total Estimate", "saldo_projetado": "Projected Balance",
+                "aviso_assinatura": "Subscription Notice", "fatura_pendente": "Pending invoice:", "suporte": "Support", "nav_dashboard": "Home Dashboard",
+                "nav_gasto": "Add Expense", "nav_compras": "Shopping List", "nav_metas": "Financial Planning", "nav_usuarios": "User Management",
+                "nav_relatorios": "Premium Report", "nav_novidades": "Updates", "menu_titulo": "MENU", "mob_inicio": "Home", "mob_compras": "Shop",
+                "mob_lancar": "Add", "mob_metas": "Goals", "mob_mais": "More",
+                "ph_hir3": "Ask Hir3...", "ph_senha": "New Password", "ph_renda": "Monthly Income ($)", "ph_desc": "Description",
+                "meu_painel": "My Dashboard", "config_pref": "Settings & Preferences", "meu_perfil": "My Profile", "idioma": "Language", "tela_cheia": "Full Screen",
+                "modo_escuro": "Dark Mode", "sair_sistema": "Logout", "seu_acesso": "Your Access", "detalhes_plano": "Plan Details", "seguranca": "Security", "config_renda": "Income Setup",
+                "licenca": "License", "modulos": "Modules", "atualizar_senha": "Update Password", "e_variavel": "Is Variable?", "sim": "Yes", "nao": "No",
+                "termos_privacidade": "Terms & Privacy", "ler_termos": "Read Terms", "ler_politica": "Read Policy", "aceitar_continuar": "Accept & Continue",
+                "apoie_projeto": "Support Development", "chave_pix": "PIX Key", "analise_mes": "Month Analysis", "fechar_resumo": "Close Summary", "total_atual": "Current Total:", "total_passado": "Last Month Total:",
+                "aviso_beta": "BETA SYSTEM: Features in testing. Instabilities may occur."
+            },
+            "ZH-CN": {
+                "saudacao": "你好", "saldo_disponivel": "可用余额", "extrato_mes": "月度对账单", "entradas": "收入", "saidas": "支出",
+                "comparativo_titulo": "月度对比", "fluxo_mes": "月度流量", "fluxo_sub": "已消耗收入的", "score_pagamento": "支付得分",
+                "reputacao_financeira": "您的财务声誉", "pagos": "已付", "pendentes": "待办", "em_dia": "最新", "nivel": "级别",
+                "categorias": "类别", "tendencia": "趋势", "sem_despesas": "没有记录数据", "todos": "全部", "primeira_q": "前半月", "segunda_q": "后半月",
+                "pago_min": "已付", "pend_min": "待办", "cancelar": "取消", "salvar": "保存", "editar_despesa": "编辑支出", "label_descricao": "描述",
+                "label_valor": "金额", "label_data": "日期", "label_categoria": "类别", "quinzena": "半月", "primeira_quinzena": "前半月",
+                "segunda_quinzena": "后半月", "mes_integral": "整月", "nenhum_encontrado": "未找到符合此筛选条件的支出。", "nenhum_registrado": "未记录任何支出。",
+                "ajustar_renda": "调整基础收入", "desc_ajustar_renda": "更新您的月收入。系统将重新计算余额和流量。",
+                "renda_total": "总收入", "salvar_renda": "保存收入", "tendencia_gastos": "支出趋势", "projecao_fim_mes": "月底预测",
+                "gasto_atual": "当前支出", "hoje": "今天", "ritmo_diario": "每日节奏", "estimativa_total": "总估算", "saldo_projetado": "预计余额",
+                "aviso_assinatura": "订阅通知", "fatura_pendente": "待付发票:", "suporte": "支持", "nav_dashboard": "主仪表板",
+                "nav_gasto": "添加支出", "nav_compras": "购物清单", "nav_metas": "财务规划", "nav_usuarios": "用户管理",
+                "nav_relatorios": "高级报告", "nav_novidades": "更新", "menu_titulo": "菜单", "mob_inicio": "首页", "mob_compras": "购物",
+                "mob_lancar": "添加", "mob_metas": "目标", "mob_mais": "更多",
+                "ph_hir3": "问问 Hir3...", "ph_senha": "新密码", "ph_renda": "月收入", "ph_desc": "描述",
+                "meu_painel": "我的仪表板", "config_pref": "设置和首选项", "meu_perfil": "我的个人资料", "idioma": "语言", "tela_cheia": "全屏",
+                "modo_escuro": "深色模式", "sair_sistema": "退出系统", "seu_acesso": "您的访问权限", "detalhes_plano": "计划详情", "seguranca": "安全", "config_renda": "收入设置",
+                "licenca": "许可证", "modulos": "模块", "atualizar_senha": "更新密码", "e_variavel": "是否浮动?", "sim": "是", "nao": "否",
+                "termos_privacidade": "条款和隐私", "ler_termos": "阅读条款", "ler_politica": "阅读政策", "aceitar_continuar": "接受并继续",
+                "apoie_projeto": "支持开发", "chave_pix": "PIX密钥", "analise_mes": "月度分析", "fechar_resumo": "关闭摘要", "total_atual": "当前总计:", "total_passado": "上月总计:",
+                "aviso_beta": "测试系统：功能测试中，可能会出现不稳定情况。"
+            }
+        };
+
+        const listaIdiomas = ['PT-BR', 'EN-US', 'ZH-CN'];
+
+        function cicloIdioma() {
+            let idiomaAtual = localStorage.getItem('idioma_sistema') || 'PT-BR';
+            let proximoIdioma = listaIdiomas[(listaIdiomas.indexOf(idiomaAtual) + 1) % listaIdiomas.length];
+            localStorage.setItem('idioma_sistema', proximoIdioma);
+
+            const labelNoMenu = document.getElementById('texto-idioma');
+            if(labelNoMenu) labelNoMenu.innerText = proximoIdioma;
+
+            window.aplicarTraducao(proximoIdioma);
+        }
+
+        window.aplicarTraducao = function(idioma) {
+            const dicionario = dicionarioGlobal[idioma] || dicionarioGlobal['PT-BR'];
+
+            // 1. Traduz todos os elementos
+            document.querySelectorAll('[data-i18n]').forEach(elemento => {
+                const chave = elemento.getAttribute('data-i18n');
+                if (dicionario[chave]) {
+                    // SE for um input com placeholder, traduz o placeholder em vez do texto interno
+                    if (elemento.tagName === 'INPUT' || elemento.tagName === 'TEXTAREA') {
+                        elemento.placeholder = dicionario[chave];
+                    } else {
+                        // Respeita os ícones que possam estar dentro do innerHTML se houver
+                        elemento.innerHTML = dicionario[chave];
+                    }
+                }
+            });
+
+            // 2. Dispara evento para o Dashboard JS atualizar os textos dinâmicos (como o Totalizador)
+            window.dispatchEvent(new CustomEvent('idiomaTrocado', { detail: idioma }));
+
+            if(typeof atualizarNomeMes === 'function') atualizarNomeMes();
+            if(typeof lucide !== 'undefined') lucide.createIcons();
+        }
+
+        document.addEventListener("DOMContentLoaded", () => {
+            let idiomaAtual = localStorage.getItem('idioma_sistema') || 'PT-BR';
+            const labelNoMenu = document.getElementById('texto-idioma');
+            if(labelNoMenu) labelNoMenu.innerText = idiomaAtual;
+            window.aplicarTraducao(idiomaAtual);
         });
     </script>
 

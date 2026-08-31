@@ -152,11 +152,11 @@
 
         <div class="w-full h-[1px] bg-gray-100 dark:bg-white/5 mt-1"></div>
 
-        <!-- 3. Nível / XP -->
-        <div class="cursor-pointer group mt-2" onclick="ganharXP(5, 'Explorador')">
+        <!-- 3. Nível / XP (Gamificação Funcional) -->
+        <div class="cursor-pointer group mt-2" onclick="ganharXP(10, 'Exploração de App')">
             <div class="flex justify-between items-end mb-3">
                 <h3 class="font-bold text-sm text-gray-900 dark:text-white flex items-center gap-1.5">
-                    <span data-i18n="nivel">Nível</span> <span id="user-level-number" class="text-base font-black">1</span>
+                    <span data-i18n="nivel">Nível</span> <span id="user-level-number" class="text-base font-black text-indigo-500">1</span>
                 </h3>
                 <span id="xp-text" class="text-[10px] text-gray-500 dark:text-gray-400 font-medium">0 / 500 XP</span>
             </div>
@@ -260,7 +260,7 @@
     {% include 'partials/dashboard_modais.html' %}
     {% include 'partials/dashboard_scripts.html' %}
 
-    <!-- SCRIPT PARA CONTROLAR O MODAL DO COMPARATIVO -->
+    <!-- SCRIPT PARA CONTROLAR O MODAL DO COMPARATIVO E SALVAR XP -->
     <script>
         function abrirModalComparativo() {
             const modal = document.getElementById('modal-comparativo');
@@ -280,6 +280,63 @@
             if (e.target === this) {
                 fecharModalComparativo();
             }
+        });
+
+        // ==========================================
+        // SISTEMA DE GAMIFICAÇÃO LOCAL (LOCALSTORAGE)
+        // ==========================================
+        function carregarXP() {
+            const user_id = "{{ session.get('user_id', 'visitante') }}";
+            let xp_atual = parseInt(localStorage.getItem('user_xp_' + user_id)) || 0;
+            let nivel_atual = parseInt(localStorage.getItem('user_level_' + user_id)) || 1;
+            
+            const maxXP = nivel_atual * 500; 
+
+            document.getElementById('user-level-number').innerText = nivel_atual;
+            document.getElementById('xp-text').innerText = `${xp_atual} / ${maxXP} XP`;
+            
+            let percentual = (xp_atual / maxXP) * 100;
+            if(percentual > 100) percentual = 100;
+            
+            document.getElementById('xp-bar').style.width = percentual + '%';
+        }
+
+        // Esta função substitui o ganharXP original que estava nos scripts
+        window.ganharXP = function(quantidade, acao) {
+            const user_id = "{{ session.get('user_id', 'visitante') }}";
+            let xp_atual = parseInt(localStorage.getItem('user_xp_' + user_id)) || 0;
+            let nivel_atual = parseInt(localStorage.getItem('user_level_' + user_id)) || 1;
+            
+            xp_atual += quantidade;
+            let maxXP = nivel_atual * 500;
+            
+            // Subiu de Nível!
+            if (xp_atual >= maxXP) {
+                nivel_atual += 1;
+                xp_atual = xp_atual - maxXP; // O que sobrou vai pro próximo nível
+                
+                if(typeof Swal !== 'undefined') {
+                    Swal.fire({
+                        title: 'Nível ' + nivel_atual + '!',
+                        text: 'Parabéns! Você alcançou um novo nível financeiro.',
+                        icon: 'success',
+                        timer: 3000,
+                        showConfirmButton: false
+                    });
+                }
+            }
+            
+            // Salva no navegador
+            localStorage.setItem('user_xp_' + user_id, xp_atual);
+            localStorage.setItem('user_level_' + user_id, nivel_atual);
+            
+            // Atualiza a tela
+            carregarXP();
+        };
+
+        // Carrega o XP salvo assim que a página abre
+        document.addEventListener('DOMContentLoaded', () => {
+            carregarXP();
         });
     </script>
 {% endblock %}

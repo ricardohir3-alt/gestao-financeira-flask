@@ -29,7 +29,7 @@
                             <label class="block text-[11px] md:text-xs font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wider mb-1 md:mb-1.5 flex items-center gap-1">
                                 <i data-lucide="file-text" class="w-3 h-3"></i> <span data-i18n="label_descricao">Descrição</span>
                             </label>
-                            <input type="text" name="descricao" value="{{ gasto.descricao if gasto else '' }}" placeholder="Ex: Energia, Mercado..." required
+                            <input type="text" name="descricao" value="{{ gasto.descricao if gasto else '' }}" placeholder="Ex: Energia, Mercado, Celular..." required
                                    class="w-full px-3 py-2 md:px-4 md:py-3 text-sm md:text-base bg-gray-50 dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-xl text-gray-800 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-blue-500 transition-colors">
                         </div>
                         <div>
@@ -62,6 +62,36 @@
                             </datalist>
                         </div>
                     </div>
+
+                    <!-- ATUALIZAÇÃO: CHAVE DE PARCELAMENTO / CONTRATO -->
+                    {% if not gasto %}
+                    <div class="mb-4 md:mb-5 bg-indigo-50/50 dark:bg-indigo-900/10 p-3.5 md:p-4 rounded-xl border border-indigo-100 dark:border-indigo-800/30 transition-all">
+                        <label class="flex items-center justify-between cursor-pointer group">
+                            <div class="flex items-center gap-2">
+                                <div class="p-1.5 bg-indigo-100 dark:bg-indigo-800/50 rounded-lg group-hover:scale-110 transition-transform">
+                                    <i data-lucide="repeat" class="w-4 h-4 text-indigo-600 dark:text-indigo-400"></i>
+                                </div>
+                                <span class="text-sm font-bold text-indigo-900 dark:text-indigo-200" data-i18n="compra_parcelada">Compra Parcelada / Contrato?</span>
+                            </div>
+                            <div class="relative flex items-center">
+                                <input type="checkbox" name="is_parcelado" id="is_parcelado" class="sr-only peer" onchange="toggleParcelas()">
+                                <div class="w-11 h-6 bg-gray-300 dark:bg-gray-600 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-indigo-600 shadow-inner"></div>
+                            </div>
+                        </label>
+
+                        <div id="div_parcelas" class="hidden mt-4 pt-4 border-t border-indigo-200/50 dark:border-indigo-800/50 transition-all origin-top">
+                            <label class="block text-[11px] md:text-xs font-bold text-indigo-800 dark:text-indigo-300 uppercase tracking-wider mb-1.5 flex items-center gap-1">
+                                <i data-lucide="hash" class="w-3 h-3"></i> <span data-i18n="qtd_parcelas">Quantidade de Parcelas (Meses)</span>
+                            </label>
+                            <input type="number" name="qtd_parcelas" id="qtd_parcelas" min="2" max="360" placeholder="Ex: 10"
+                                   class="w-full px-3 py-2 md:px-4 md:py-3 text-sm md:text-base bg-white dark:bg-gray-900 border border-indigo-200 dark:border-indigo-700/50 rounded-xl text-gray-800 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-indigo-500 transition-colors">
+                            <p class="text-[10px] text-indigo-600 dark:text-indigo-400 mt-2 flex items-start gap-1 font-medium">
+                                <i data-lucide="info" class="w-3.5 h-3.5 shrink-0"></i> 
+                                <span data-i18n="dica_parcelamento">Mágica: O sistema vai gerar automaticamente as faturas em todos os próximos meses para você!</span>
+                            </p>
+                        </div>
+                    </div>
+                    {% endif %}
 
                     <!-- CAIXA DE SELEÇÃO DE QUINZENA/INTEGRAL -->
                     <div class="bg-blue-50/50 dark:bg-blue-900/10 p-3.5 md:p-5 rounded-xl border border-blue-100 dark:border-blue-900/30 mb-4 md:mb-5">
@@ -105,7 +135,7 @@
                         <input type="hidden" name="quinzena" id="quinzena-real" value="{{ gasto.quinzena if gasto else '1' }}">
                     </div>
 
-                    <!-- ATUALIZAÇÃO 1: STATUS COMO FLAGS (BOTÕES TOGGLE) -->
+                    <!-- STATUS COMO FLAGS (BOTÕES TOGGLE) -->
                     <div class="mb-5 md:mb-6">
                         <label class="block text-[11px] md:text-xs font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wider mb-2 flex items-center gap-1">
                             <i data-lucide="check-square" class="w-3 h-3"></i> <span data-i18n="status_despesa">Status da Despesa</span>
@@ -157,7 +187,7 @@
                 <h3 class="text-base md:text-lg font-bold text-gray-800 dark:text-gray-200" data-i18n="automacoes">Automações</h3>
             </div>
 
-            <!-- ATUALIZAÇÃO 2: BOTÃO DUPLICAR AGORA CHAMA O MODAL -->
+            <!-- BOTÃO DUPLICAR CHAMA O MODAL -->
             <button type="button" onclick="abrirModalDuplicar()" class="w-full flex items-center justify-between p-4 border-2 border-dashed border-amber-300 dark:border-amber-700/50 rounded-xl cursor-pointer bg-amber-50/30 dark:bg-amber-900/10 hover:bg-amber-100 dark:hover:bg-amber-900/30 transition-colors group">
                 <div class="flex items-center gap-3">
                     <div class="p-2 bg-amber-200/50 dark:bg-amber-800/50 rounded-lg text-amber-600 dark:text-amber-400">
@@ -288,6 +318,24 @@
 
 <script>
     lucide.createIcons();
+
+    // =====================================
+    // LÓGICA DO PARCELAMENTO
+    // =====================================
+    function toggleParcelas() {
+        const isChecked = document.getElementById('is_parcelado').checked;
+        const divParcelas = document.getElementById('div_parcelas');
+        const inputQtd = document.getElementById('qtd_parcelas');
+        
+        if (isChecked) {
+            divParcelas.classList.remove('hidden');
+            inputQtd.setAttribute('required', 'required');
+        } else {
+            divParcelas.classList.add('hidden');
+            inputQtd.removeAttribute('required');
+            inputQtd.value = '';
+        }
+    }
 
     function mostrarNomeArquivo(input, containerId) {
         const divMensagem = document.getElementById(containerId);
