@@ -1,0 +1,537 @@
+{% if not ajax_request %}
+    {% extends "base.html" %}
+{% endif %}
+
+{% block content %}
+
+<!-- Ampliado para max-w-5xl para manter as automações na direita no PC -->
+<div class="max-w-5xl mx-auto mt-2 pb-10 px-3 md:px-0">
+    {% if not ajax_request %}
+    <a href="javascript:history.back()" class="flex items-center gap-1 text-gray-500 hover:text-indigo-600 dark:text-gray-400 dark:hover:text-indigo-400 mb-4 md:mb-6 transition-colors text-sm font-medium w-fit">
+        <i data-lucide="arrow-left" class="w-4 h-4"></i>
+        <span data-i18n="voltar">Voltar</span>
+    </a>
+    {% endif %}
+
+    <!-- GRID PRINCIPAL -->
+    <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+
+        <!-- ================= COLUNA ESQUERDA: FORMULÁRIO (Ocupa 2/3 da tela) ================= -->
+        <div class="lg:col-span-2">
+            <div class="bg-white dark:bg-[#111b21] p-5 md:p-8 rounded-[24px] shadow-2xl border border-gray-100 dark:border-white/5 relative overflow-hidden">
+
+                <!-- Título -->
+                <div class="mb-6">
+                    <h2 class="text-xl md:text-2xl font-black text-gray-900 dark:text-white tracking-tight">
+                        {% if gasto %}Atualizar lançamento{% else %}Novo lançamento{% endif %}
+                    </h2>
+                    <p class="text-xs text-gray-500 dark:text-gray-400 mt-1">Registre uma receita ou despesa e mantenha seus números atualizados.</p>
+                </div>
+
+                <form action="{{ '/editar_movimentacao/' ~ gasto.id if gasto else '/movimentacoes' }}" method="POST" id="form-movimentacao">
+
+                    <!-- CAMPO OCULTO: Define se é Receita ou Despesa -->
+                    <input type="hidden" name="tipo_movimento" id="tipo_movimento" value="{{ gasto.tipo if gasto else 'despesa' }}">
+
+                    <!-- TOGGLE: DESPESA / RECEITA -->
+                    {% if not gasto %}
+                    <div class="flex p-1 bg-gray-100 dark:bg-[#0b141a] rounded-xl mb-6 border border-gray-200 dark:border-white/5">
+                        <button type="button" id="btn-despesa" onclick="setTipoMovimento('despesa')" class="flex-1 py-2.5 text-sm font-bold rounded-lg bg-white dark:bg-[#111b21] text-red-500 dark:text-red-400 shadow-sm transition-all border border-gray-200 dark:border-white/10">
+                            Despesa
+                        </button>
+                        <button type="button" id="btn-receita" onclick="setTipoMovimento('receita')" class="flex-1 py-2.5 text-sm font-bold rounded-lg text-gray-500 dark:text-gray-400 hover:text-emerald-500 dark:hover:text-emerald-400 transition-all border border-transparent">
+                            Receita
+                        </button>
+                    </div>
+                    {% endif %}
+
+                    <!-- Descrição -->
+                    <div class="mb-4 md:mb-5">
+                        <label class="block text-[10px] md:text-xs font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wider mb-1.5 ml-1">Descrição</label>
+                        <input type="text" name="descricao" value="{{ gasto.descricao if gasto else '' }}" placeholder="Ex: Supermercado, Salário..." required
+                               class="w-full px-4 py-3 text-sm md:text-base bg-gray-50 dark:bg-[#0b141a] border border-gray-200 dark:border-white/10 rounded-xl text-gray-800 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-indigo-500 transition-all">
+                    </div>
+
+                    <!-- Valor e Data -->
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-5 mb-4 md:mb-5">
+                        <div>
+                            <label class="block text-[10px] md:text-xs font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wider mb-1.5 ml-1">Valor</label>
+                            <div class="relative">
+                                <div class="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
+                                    <span class="text-gray-500 font-bold">R$</span>
+                                </div>
+                                <input type="text" inputmode="decimal" name="valor" id="input-valor" value="{{ gasto.valor if gasto else '' }}" placeholder="0,00" required onblur="avaliarCalculo(this)"
+                                       class="w-full pl-10 pr-4 py-3 text-sm md:text-base font-black bg-gray-50 dark:bg-[#0b141a] border border-gray-200 dark:border-white/10 rounded-xl text-gray-800 dark:text-white focus:outline-none focus:ring-2 focus:ring-indigo-500 transition-all">
+                            </div>
+                        </div>
+                        <div>
+                            <label class="block text-[10px] md:text-xs font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wider mb-1.5 ml-1">Data</label>
+                            <input type="date" name="data_gasto" id="input-data-gasto" value="{{ gasto.data if gasto else '' }}" required
+                                   class="w-full px-4 py-3 text-sm md:text-base font-medium bg-gray-50 dark:bg-[#0b141a] border border-gray-200 dark:border-white/10 rounded-xl text-gray-800 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-indigo-500 transition-all">
+                        </div>
+                    </div>
+
+                    <!-- Categoria e Quinzena -->
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-5 mb-4 md:mb-5">
+                        <div>
+                            <label class="block text-[10px] md:text-xs font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wider mb-1.5 ml-1">Categoria</label>
+                            <input type="text" list="lista-categorias" name="categoria" id="input-categoria" value="{{ gasto.categoria if gasto else '' }}" placeholder="Selecione ou digite" required
+                                   class="w-full px-4 py-3 text-sm md:text-base bg-gray-50 dark:bg-[#0b141a] border border-gray-200 dark:border-white/10 rounded-xl text-gray-800 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-indigo-500 transition-all">
+                            <datalist id="lista-categorias">
+                                <option value="Moradia">
+                                <option value="Alimentação">
+                                <option value="Transporte">
+                                <option value="Lazer">
+                                <option value="Saúde">
+                            </datalist>
+                        </div>
+
+                        <!-- Quinzena (Oculta ao selecionar Receita) -->
+                        <div id="bloco-quinzena">
+                            <label class="block text-[10px] md:text-xs font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wider mb-1.5 ml-1">Conta ou Quinzena</label>
+                            <select name="quinzena" class="w-full px-4 py-3 text-sm md:text-base bg-gray-50 dark:bg-[#0b141a] border border-gray-200 dark:border-white/10 rounded-xl text-gray-800 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-indigo-500 transition-all appearance-none cursor-pointer">
+                                <option value="1" {% if gasto and gasto.quinzena|string == '1' %}selected{% endif %}>Descontar na 1ª Quinzena</option>
+                                <option value="2" {% if gasto and gasto.quinzena|string == '2' %}selected{% endif %}>Descontar na 2ª Quinzena</option>
+                                <option value="0" {% if not gasto or gasto.quinzena|string == '0' %}selected{% endif %}>Mês Integral (Sem desconto parcial)</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <!-- Parcelas e Repetição (Apenas para Despesa Novo Gasto) -->
+                    {% if not gasto %}
+                    <div id="bloco-parcelamento" class="mb-4 md:mb-5">
+                        <label class="block text-[10px] md:text-xs font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wider mb-1.5 ml-1">Parcelas</label>
+                        <div class="flex gap-4 items-center">
+                            <select name="qtd_parcelas" id="qtd_parcelas" disabled class="flex-1 px-4 py-3 text-sm md:text-base bg-gray-50 dark:bg-[#0b141a] border border-gray-200 dark:border-white/10 rounded-xl text-gray-800 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-indigo-500 transition-all appearance-none cursor-pointer">
+                                <option value="1">À vista (1x)</option>
+                                <option value="2">2x parcelas</option>
+                                <option value="3">3x parcelas</option>
+                                <option value="4">4x parcelas</option>
+                                <option value="5">5x parcelas</option>
+                                <option value="6">6x parcelas</option>
+                                <option value="10">10x parcelas</option>
+                                <option value="12">12x parcelas</option>
+                            </select>
+
+                            <label class="flex items-center gap-2 cursor-pointer group">
+                                <input type="checkbox" name="is_parcelado" id="is_parcelado" class="peer hidden" onchange="document.getElementById('qtd_parcelas').disabled = !this.checked; if(!this.checked) document.getElementById('qtd_parcelas').value = '1';">
+                                <div class="w-5 h-5 border-2 border-gray-300 dark:border-gray-600 rounded flex items-center justify-center peer-checked:bg-indigo-500 peer-checked:border-indigo-500 transition-colors">
+                                    <i data-lucide="check" class="w-3 h-3 text-white opacity-0 peer-checked:opacity-100"></i>
+                                </div>
+                                <span class="text-xs text-gray-500 dark:text-gray-400 font-medium group-hover:text-gray-700 dark:group-hover:text-gray-300"><i data-lucide="repeat" class="w-3 h-3 inline"></i> Parcelar Compra</span>
+                            </label>
+                        </div>
+                    </div>
+                    {% endif %}
+
+                    <!-- Status da Movimentação -->
+                    <div class="mb-5 md:mb-6">
+                        <label class="block text-[10px] md:text-xs font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wider mb-2 ml-1" id="label-status">Status do Pagamento</label>
+                        <div class="flex gap-3">
+                            <label class="flex-1 cursor-pointer relative">
+                                <input type="radio" name="status" value="PENDENTE" class="peer hidden" {% if not gasto or gasto.status == 'PENDENTE' %}checked{% endif %} required>
+                                <div class="p-3 bg-gray-50 dark:bg-[#0b141a] border border-gray-200 dark:border-white/10 rounded-xl flex items-center justify-center gap-2 text-center transition-all peer-checked:border-orange-500 peer-checked:bg-orange-50 dark:peer-checked:bg-orange-500/10 peer-checked:text-orange-600 dark:peer-checked:text-orange-400 text-gray-500 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-white/5">
+                                    <i data-lucide="clock" class="w-4 h-4"></i>
+                                    <span class="text-xs font-bold" id="texto-pendente">A Pagar</span>
+                                </div>
+                            </label>
+
+                            <label class="flex-1 cursor-pointer relative">
+                                <input type="radio" name="status" value="PAGO" class="peer hidden" {% if gasto and gasto.status == 'PAGO' %}checked{% endif %} required>
+                                <div class="p-3 bg-gray-50 dark:bg-[#0b141a] border border-gray-200 dark:border-white/10 rounded-xl flex items-center justify-center gap-2 text-center transition-all peer-checked:border-emerald-500 peer-checked:bg-emerald-50 dark:peer-checked:bg-emerald-500/10 peer-checked:text-emerald-600 dark:peer-checked:text-emerald-400 text-gray-500 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-white/5">
+                                    <i data-lucide="check-circle-2" class="w-4 h-4"></i>
+                                    <span class="text-xs font-bold" id="texto-pago">Já Pago</span>
+                                </div>
+                            </label>
+                        </div>
+                    </div>
+
+                    <!-- Botões de Ação -->
+                    <div class="flex gap-3 pt-2">
+                        <button type="button" {% if ajax_request %}onclick="fecharModalGlobal()"{% else %}onclick="history.back()"{% endif %} class="flex-1 py-3.5 px-4 bg-gray-100 hover:bg-gray-200 dark:bg-white/5 dark:hover:bg-white/10 text-gray-700 dark:text-gray-300 font-bold rounded-xl transition-colors text-sm shadow-sm">
+                            Cancelar
+                        </button>
+                        <button type="submit" id="btn-submit" class="flex-[2] bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-3.5 px-4 rounded-xl transition-all shadow-lg shadow-indigo-500/20 flex items-center justify-center gap-2 text-sm">
+                            <i data-lucide="check" class="w-4 h-4"></i>
+                            {% if gasto %}Salvar Alterações{% else %}Adicionar lançamento{% endif %}
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+
+        <!-- ================= COLUNA DIREITA: FERRAMENTAS E IMPORTAÇÃO ================= -->
+        {% if not gasto %}
+        <div class="lg:col-span-1 space-y-4">
+
+            <div class="bg-indigo-50 dark:bg-indigo-900/20 p-5 rounded-[24px] border border-indigo-100 dark:border-indigo-800/30">
+                <h3 class="text-sm font-black text-indigo-900 dark:text-indigo-300 flex items-center gap-2 mb-3">
+                    <i data-lucide="zap" class="w-4 h-4"></i> Automações
+                </h3>
+                <p class="text-[11px] text-indigo-700/80 dark:text-indigo-200/70 mb-4 leading-relaxed">Poupe tempo importando dados ou duplicando as contas fixas do mês anterior.</p>
+
+                <button type="button" onclick="abrirModalDuplicar()" class="w-full flex items-center justify-between p-3.5 border border-indigo-200 dark:border-indigo-700/50 rounded-xl bg-white dark:bg-[#111b21] hover:border-indigo-400 dark:hover:border-indigo-500 transition-colors group mb-3 shadow-sm">
+                    <div class="flex items-center gap-3">
+                        <div class="p-1.5 bg-indigo-100 dark:bg-indigo-900/50 rounded-lg text-indigo-600 dark:text-indigo-400"><i data-lucide="copy" class="w-4 h-4"></i></div>
+                        <span class="text-xs text-gray-800 dark:text-gray-200 font-bold">Duplicar Mês Anterior</span>
+                    </div>
+                </button>
+
+                <form action="/upload_extrato" method="POST" enctype="multipart/form-data" class="w-full mb-3">
+                    <label for="extrato_pdf" class="w-full flex items-center justify-between p-3.5 border border-indigo-200 dark:border-indigo-700/50 rounded-xl bg-white dark:bg-[#111b21] hover:border-purple-400 dark:hover:border-purple-500 transition-colors group shadow-sm cursor-pointer">
+                        <div class="flex items-center gap-3">
+                            <div class="p-1.5 bg-purple-100 dark:bg-purple-900/50 rounded-lg text-purple-600 dark:text-purple-400"><i data-lucide="file-text" class="w-4 h-4"></i></div>
+                            <div class="text-left">
+                                <span class="text-xs text-gray-800 dark:text-gray-200 font-bold block">Ler Extrato PDF</span>
+                                <span class="text-[9px] text-gray-500 dark:text-gray-400">Nubank, Itaú, Inter...</span>
+                            </div>
+                        </div>
+                        <input id="extrato_pdf" name="extrato" type="file" accept="application/pdf" class="hidden" required onchange="this.form.submit()" />
+                    </label>
+                </form>
+
+                <form action="/upload_comprovante" method="POST" enctype="multipart/form-data" class="w-full">
+                    <label for="comprovante_img" class="w-full flex items-center justify-between p-3.5 border border-indigo-200 dark:border-indigo-700/50 rounded-xl bg-white dark:bg-[#111b21] hover:border-emerald-400 dark:hover:border-emerald-500 transition-colors group shadow-sm cursor-pointer">
+                        <div class="flex items-center gap-3">
+                            <div class="p-1.5 bg-emerald-100 dark:bg-emerald-900/50 rounded-lg text-emerald-600 dark:text-emerald-400"><i data-lucide="scan-line" class="w-4 h-4"></i></div>
+                            <div class="text-left">
+                                <span class="text-xs text-gray-800 dark:text-gray-200 font-bold block">Ler Comprovante</span>
+                                <span class="text-[9px] text-gray-500 dark:text-gray-400">Pix ou Boleto (Img)</span>
+                            </div>
+                        </div>
+                        <input id="comprovante_img" name="comprovante" type="file" accept="image/*" class="hidden" required onchange="this.form.submit()" />
+                    </label>
+                </form>
+            </div>
+
+        </div>
+        {% endif %}
+
+    </div>
+</div>
+
+<!-- ============================================================================== -->
+<!-- NOVO MODAL: DUPLICAR CONTAS ENTRE MESES -->
+<!-- ============================================================================== -->
+<div id="modal-duplicar" class="fixed inset-0 bg-black/60 backdrop-blur-sm z-[80] hidden flex-col items-center justify-center p-4 transition-all duration-300 opacity-0 pointer-events-none">
+    <div class="bg-white dark:bg-gray-800 w-full max-w-lg rounded-3xl shadow-2xl border border-gray-200 dark:border-gray-700 overflow-hidden transform scale-95 transition-transform duration-300" id="card-duplicar">
+
+        <!-- Header do Modal -->
+        <div class="p-4 bg-amber-50 dark:bg-amber-900/30 border-b border-amber-100 dark:border-amber-800/50 flex justify-between items-center">
+            <h3 class="font-bold text-amber-800 dark:text-amber-400 flex items-center gap-2">
+                <i data-lucide="copy" class="w-5 h-5 text-amber-500"></i> <span data-i18n="duplicar_contas">Duplicar Contas</span>
+            </h3>
+            <button onclick="fecharModalDuplicar()" type="button" class="text-gray-400 hover:text-red-500 transition-colors focus:outline-none">
+                <i data-lucide="x" class="w-5 h-5"></i>
+            </button>
+        </div>
+
+        <!-- Formulário Interno -->
+        <form action="/duplicar_movimentacoes_lote" method="POST" id="form-duplicar">
+            <div class="p-5">
+                <div class="grid grid-cols-2 gap-4 mb-5">
+                    <div>
+                        <label class="block text-[11px] font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wider mb-1" data-i18n="mes_origem">Copiar de (Mês Origem)</label>
+                        <input type="month" name="mes_origem" id="mes_origem" onchange="buscarContasParaDuplicar()" required
+                               class="w-full px-3 py-2 bg-gray-50 dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-xl text-sm font-bold text-gray-800 dark:text-gray-100 focus:ring-2 focus:ring-amber-500 transition-colors">
+                    </div>
+                    <div>
+                        <label class="block text-[11px] font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wider mb-1" data-i18n="mes_destino">Lançar em (Mês Destino)</label>
+                        <input type="month" name="mes_destino" id="mes_destino" required
+                               class="w-full px-3 py-2 bg-gray-50 dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-xl text-sm font-bold text-gray-800 dark:text-gray-100 focus:ring-2 focus:ring-amber-500 transition-colors">
+                    </div>
+                </div>
+
+                <div class="mb-2 flex justify-between items-end border-b border-gray-100 dark:border-gray-700 pb-2">
+                    <label class="block text-xs font-bold text-gray-600 dark:text-gray-300" data-i18n="selecione_contas">Selecione as contas a copiar:</label>
+                    <label class="flex items-center gap-1.5 text-xs font-bold text-blue-600 dark:text-blue-400 cursor-pointer hover:text-blue-700 transition-colors">
+                        <input type="checkbox" id="check-todas" onchange="toggleTodasContas(this)" checked class="rounded border-gray-300 text-blue-600 focus:ring-blue-500">
+                        <span data-i18n="marcar_todas">Marcar Todas</span>
+                    </label>
+                </div>
+
+                <!-- Lista de Contas Renderizada via JS -->
+                <div id="lista-contas-duplicar" class="bg-gray-50 dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-xl h-56 overflow-y-auto p-2 sidebar-scroll">
+                    <div class="flex flex-col items-center justify-center h-full text-gray-400 text-xs text-center">
+                        <i data-lucide="search" class="w-6 h-6 mb-2 opacity-50"></i>
+                        <span data-i18n="aviso_mes_origem">Selecione o Mês Origem para carregar as contas.</span>
+                    </div>
+                </div>
+            </div>
+
+            <div class="p-4 bg-gray-50 dark:bg-gray-900 border-t border-gray-100 dark:border-gray-700 flex gap-3">
+                <button type="button" onclick="fecharModalDuplicar()" class="flex-1 px-4 py-3 bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-300 font-bold rounded-xl hover:bg-gray-300 dark:hover:bg-gray-600 transition-colors">
+                    <span data-i18n="cancelar">Cancelar</span>
+                </button>
+                <button type="submit" class="flex-1 px-4 py-3 bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-600 hover:to-orange-600 text-white font-bold rounded-xl shadow-md transition-all flex items-center justify-center gap-2">
+                    <i data-lucide="copy" class="w-4 h-4"></i> <span data-i18n="duplicar_selecionadas">Duplicar Selecionadas</span>
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<script>
+    // =====================================
+    // LÓGICA DE ALTERNÂNCIA: RECEITA vs DESPESA
+    // =====================================
+    window.setTipoMovimento = function(tipo) {
+        const inputTipo = document.getElementById('tipo_movimento');
+        const btnDespesa = document.getElementById('btn-despesa');
+        const btnReceita = document.getElementById('btn-receita');
+        const blocoQuinzena = document.getElementById('bloco-quinzena');
+        const blocoParcelamento = document.getElementById('bloco-parcelamento');
+        const inputCategoria = document.getElementById('input-categoria');
+        const btnSubmit = document.getElementById('btn-submit');
+        const labelStatus = document.getElementById('label-status');
+        const textoPendente = document.getElementById('texto-pendente');
+        const textoPago = document.getElementById('texto-pago');
+        const inputValor = document.getElementById('input-valor');
+
+        if(inputTipo) inputTipo.value = tipo;
+
+        if (tipo === 'receita') {
+            if(btnReceita) btnReceita.className = "flex-1 py-2.5 text-sm font-bold rounded-lg bg-white dark:bg-[#111b21] text-emerald-500 dark:text-emerald-400 shadow-sm transition-all border border-gray-200 dark:border-white/10";
+            if(btnDespesa) btnDespesa.className = "flex-1 py-2.5 text-sm font-bold rounded-lg text-gray-500 dark:text-gray-400 hover:text-red-500 dark:hover:text-red-400 transition-all border border-transparent";
+
+            if(blocoQuinzena) blocoQuinzena.classList.add('hidden');
+            if(blocoParcelamento) blocoParcelamento.classList.add('hidden');
+
+            if(inputCategoria) {
+                inputCategoria.placeholder = "Ex: Salário, Pix, Vendas...";
+                document.getElementById('lista-categorias').innerHTML = `
+                    <option value="Salário">
+                    <option value="Rendimento">
+                    <option value="Venda">
+                    <option value="Pix Recebido">
+                    <option value="Cashback">
+                `;
+            }
+
+            if(labelStatus) labelStatus.innerText = "Status do Recebimento";
+            if(textoPendente) textoPendente.innerText = "A Receber";
+            if(textoPago) textoPago.innerText = "Recebido";
+
+            if(inputValor) {
+                inputValor.classList.remove('text-gray-800', 'dark:text-white', 'focus:ring-indigo-500');
+                inputValor.classList.add('text-emerald-600', 'dark:text-emerald-400', 'focus:ring-emerald-500');
+            }
+            if(btnSubmit) btnSubmit.className = "flex-[2] bg-emerald-500 hover:bg-emerald-600 text-white font-bold py-3.5 px-4 rounded-xl transition-all shadow-lg shadow-emerald-500/20 flex items-center justify-center gap-2 text-sm";
+
+        } else {
+            if(btnDespesa) btnDespesa.className = "flex-1 py-2.5 text-sm font-bold rounded-lg bg-white dark:bg-[#111b21] text-red-500 dark:text-red-400 shadow-sm transition-all border border-gray-200 dark:border-white/10";
+            if(btnReceita) btnReceita.className = "flex-1 py-2.5 text-sm font-bold rounded-lg text-gray-500 dark:text-gray-400 hover:text-emerald-500 dark:hover:text-emerald-400 transition-all border border-transparent";
+
+            if(blocoQuinzena) blocoQuinzena.classList.remove('hidden');
+            if(blocoParcelamento) blocoParcelamento.classList.remove('hidden');
+
+            if(inputCategoria) {
+                inputCategoria.placeholder = "Selecione ou digite";
+                document.getElementById('lista-categorias').innerHTML = `
+                    <option value="Moradia">
+                    <option value="Alimentação">
+                    <option value="Transporte">
+                    <option value="Lazer">
+                    <option value="Saúde">
+                `;
+            }
+
+            if(labelStatus) labelStatus.innerText = "Status do Pagamento";
+            if(textoPendente) textoPendente.innerText = "A Pagar";
+            if(textoPago) textoPago.innerText = "Já Pago";
+
+            if(inputValor) {
+                inputValor.classList.remove('text-emerald-600', 'dark:text-emerald-400', 'focus:ring-emerald-500');
+                inputValor.classList.add('text-gray-800', 'dark:text-white', 'focus:ring-indigo-500');
+            }
+            if(btnSubmit) btnSubmit.className = "flex-[2] bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-3.5 px-4 rounded-xl transition-all shadow-lg shadow-indigo-500/20 flex items-center justify-center gap-2 text-sm";
+        }
+    }
+
+    // =====================================
+    // CALCULADORA NO CAMPO VALOR E INIT DA TELA
+    // =====================================
+    window.avaliarCalculo = function(elemento) {
+        let valor = elemento.value.trim();
+        if (valor.startsWith('=')) {
+            let expressao = valor.substring(1).replace(/,/g, '.');
+            if (/^[0-9+\-*/.() ]+$/.test(expressao)) {
+                try {
+                    let resultado = Function('"use strict";return (' + expressao + ')')();
+                    elemento.value = resultado.toFixed(2).replace('.', ',');
+                } catch (e) {
+                    console.error("Erro ao calcular:", e);
+                }
+            }
+        }
+    }
+
+    // Função Auto-Executável (IIFE) para injetar lógica direto no carregamento Ajax
+    (function inicializarMovimentacoes() {
+        if(typeof lucide !== 'undefined') lucide.createIcons();
+
+        // Preenche data atual automaticamente se for inclusão
+        const inputData = document.getElementById('input-data-gasto');
+        if (inputData && !inputData.value) {
+            const hoje = new Date();
+            const ano = hoje.getFullYear();
+            const mes = String(hoje.getMonth() + 1).padStart(2, '0');
+            const dia = String(hoje.getDate()).padStart(2, '0');
+            inputData.value = `${ano}-${mes}-${dia}`;
+        }
+
+        // Garante que o select de parcelas comece desabilitado
+        const qtdParcelas = document.getElementById('qtd_parcelas');
+        if(qtdParcelas) qtdParcelas.disabled = true;
+
+        // Se estivermos editando e for receita, simula um clique para montar a tela verde
+        const tipoMovimentoEl = document.getElementById('tipo_movimento');
+        if (tipoMovimentoEl) {
+            const isReceita = tipoMovimentoEl.value === 'receita';
+            if (isReceita && !document.getElementById('btn-receita')) {
+                window.setTipoMovimento('receita');
+            }
+        }
+    })();
+
+    // =====================================
+    // LÓGICA DO NOVO POP-UP DUPLICAR MÊS
+    // =====================================
+    window.abrirModalDuplicar = function() {
+        const modal = document.getElementById('modal-duplicar');
+        const card = document.getElementById('card-duplicar');
+
+        const hoje = new Date();
+        const anoAtual = hoje.getFullYear();
+        const mesAtual = String(hoje.getMonth() + 1).padStart(2, '0');
+
+        let mesPassadoDate = new Date(anoAtual, hoje.getMonth() - 1, 1);
+        const mesPassado = String(mesPassadoDate.getMonth() + 1).padStart(2, '0');
+        const anoPassado = mesPassadoDate.getFullYear();
+
+        const inOrigem = document.getElementById('mes_origem');
+        const inDestino = document.getElementById('mes_destino');
+        if(inOrigem) inOrigem.value = `${anoPassado}-${mesPassado}`;
+        if(inDestino) inDestino.value = `${anoAtual}-${mesAtual}`;
+
+        if(modal && card) {
+            modal.classList.remove('hidden');
+            modal.classList.add('flex');
+
+            setTimeout(() => {
+                modal.classList.remove('opacity-0', 'pointer-events-none');
+                card.classList.remove('scale-95');
+            }, 10);
+        }
+
+        buscarContasParaDuplicar();
+    }
+
+    window.fecharModalDuplicar = function() {
+        const modal = document.getElementById('modal-duplicar');
+        const card = document.getElementById('card-duplicar');
+
+        if(modal && card) {
+            modal.classList.add('opacity-0', 'pointer-events-none');
+            card.classList.add('scale-95');
+
+            setTimeout(() => {
+                modal.classList.add('hidden');
+                modal.classList.remove('flex');
+            }, 300);
+        }
+    }
+
+    window.buscarContasParaDuplicar = async function() {
+        const origemEl = document.getElementById('mes_origem');
+        if(!origemEl) return;
+        const mesOrigem = origemEl.value;
+        const container = document.getElementById('lista-contas-duplicar');
+
+        if(!mesOrigem || !container) return;
+
+        container.innerHTML = `
+            <div class="flex flex-col items-center justify-center h-full text-blue-500 font-bold text-xs">
+                <i data-lucide="loader-2" class="w-6 h-6 mb-2 animate-spin"></i>
+                <span data-i18n="buscando_contas">Buscando contas do mês...</span>
+            </div>
+        `;
+        if(typeof lucide !== 'undefined') lucide.createIcons();
+        if(window.aplicarTraducao) window.aplicarTraducao(localStorage.getItem('idioma_sistema') || 'PT-BR');
+
+        try {
+            const response = await fetch(`/api/movimentacoes_mes?mes=${mesOrigem}`);
+
+            if(response.ok) {
+                const contas = await response.json();
+
+                if(contas.length === 0) {
+                    container.innerHTML = `
+                        <div class="flex flex-col items-center justify-center h-full text-gray-400 text-xs text-center">
+                            <i data-lucide="inbox" class="w-6 h-6 mb-2 opacity-50"></i>
+                            <span data-i18n="nenhuma_conta">Nenhuma conta encontrada neste mês.</span>
+                        </div>`;
+                    if(typeof lucide !== 'undefined') lucide.createIcons();
+                    if(window.aplicarTraducao) window.aplicarTraducao(localStorage.getItem('idioma_sistema') || 'PT-BR');
+                    return;
+                }
+
+                let html = '<div class="space-y-1.5">';
+                contas.forEach(conta => {
+                    html += `
+                    <label class="flex items-center justify-between p-2.5 bg-white dark:bg-gray-800 hover:bg-gray-50 dark:hover:bg-gray-700 rounded-lg cursor-pointer transition-colors border border-gray-100 dark:border-gray-700 hover:border-blue-300">
+                        <div class="flex items-center gap-3 w-full overflow-hidden">
+                            <input type="checkbox" name="contas_selecionadas" value="${conta.id}" checked class="rounded border-gray-300 text-amber-500 focus:ring-amber-500 w-4 h-4 checkbox-conta">
+                            <div class="flex-1 min-w-0">
+                                <p class="text-sm font-bold text-gray-800 dark:text-gray-200 truncate">${conta.descricao}</p>
+                                <p class="text-[10px] font-medium text-gray-500">${conta.categoria}</p>
+                            </div>
+                            <div class="text-right whitespace-nowrap">
+                                <p class="text-xs font-black text-gray-700 dark:text-gray-300">R$ ${parseFloat(conta.valor).toFixed(2)}</p>
+                            </div>
+                        </div>
+                    </label>
+                    `;
+                });
+                html += '</div>';
+                container.innerHTML = html;
+            } else {
+                gerarMockContas(container);
+            }
+        } catch(e) {
+            gerarMockContas(container);
+        }
+    }
+
+    function gerarMockContas(container) {
+        if(!container) return;
+        container.innerHTML = `
+            <div class="p-2 text-[10px] bg-blue-50 text-blue-600 dark:bg-blue-900/30 dark:text-blue-400 rounded-lg mb-2 border border-blue-100 dark:border-blue-800 font-medium">
+                <i data-lucide="info" class="w-3 h-3 inline align-text-bottom"></i> Crie a rota <code>/api/movimentacoes_mes</code> no Python para ver as contas reais. Dados de teste exibidos:
+            </div>
+            <div class="space-y-1.5">
+                ${['Aluguel', 'Internet', 'Energia', 'Cartão Nubank'].map((desc, i) => `
+                <label class="flex items-center justify-between p-2.5 bg-white dark:bg-gray-800 hover:bg-gray-50 dark:hover:bg-gray-700 rounded-lg cursor-pointer transition-colors border border-gray-100 dark:border-gray-700 hover:border-blue-300">
+                    <div class="flex items-center gap-3 w-full overflow-hidden">
+                        <input type="checkbox" name="contas_selecionadas" value="id_ficticio_${i}" checked class="rounded border-gray-300 text-amber-500 focus:ring-amber-500 w-4 h-4 checkbox-conta">
+                        <div class="flex-1 min-w-0">
+                            <p class="text-sm font-bold text-gray-800 dark:text-gray-200 truncate">${desc}</p>
+                            <p class="text-[10px] font-medium text-gray-500">Fixa</p>
+                        </div>
+                        <div class="text-right whitespace-nowrap">
+                            <p class="text-xs font-black text-gray-700 dark:text-gray-300">R$ ${(Math.random() * 200 + 50).toFixed(2)}</p>
+                        </div>
+                    </div>
+                </label>
+                `).join('')}
+            </div>
+        `;
+        if(typeof lucide !== 'undefined') lucide.createIcons();
+    }
+
+    window.toggleTodasContas = function(checkbox) {
+        const checkboxes = document.querySelectorAll('.checkbox-conta');
+        checkboxes.forEach(cb => cb.checked = checkbox.checked);
+    }
+</script>
+{% endblock %}

@@ -1,19 +1,24 @@
-{% extends "base.html" %}
+{% if not ajax_request %}
+    {% extends "base.html" %}
+{% endif %}
 
 {% block content %}
+
 <div class="max-w-3xl mx-auto px-3 md:px-0 pb-12 mt-2 md:mt-4">
-    
-    <!-- Botão Voltar -->
+
+    <!-- Botão Voltar (Oculto no Modal) -->
+    {% if not ajax_request %}
     <a href="javascript:history.back()" class="flex items-center gap-1 text-gray-500 hover:text-blue-600 dark:text-gray-400 dark:hover:text-blue-400 mb-3 md:mb-4 transition-colors text-xs md:text-sm font-bold w-fit group">
         <i data-lucide="arrow-left" class="w-3.5 h-3.5 md:w-4 md:h-4 group-hover:-translate-x-1 transition-transform"></i>
         <span>Voltar ao Início</span>
     </a>
+    {% endif %}
 
     <!-- Header Premium (Compacto no Mobile) -->
     <div class="flex flex-col md:flex-row justify-between gap-3 md:gap-4 mb-3 md:mb-6 bg-gradient-to-r from-indigo-600 to-blue-600 p-3 md:p-5 rounded-xl md:rounded-2xl shadow-lg shadow-blue-500/20 text-white relative overflow-hidden">
         <!-- Efeito de brilho no fundo -->
         <div class="absolute top-0 right-0 -mt-4 -mr-4 w-20 h-20 md:w-24 md:h-24 bg-white opacity-10 rounded-full blur-2xl"></div>
-        
+
         <div class="relative z-10 flex flex-col justify-center">
             <h2 class="text-base md:text-xl font-black flex items-center gap-1.5 md:gap-2">
                 <i data-lucide="bar-chart-2" class="w-4 h-4 md:w-5 md:h-5 text-yellow-300"></i> Relatório Premium
@@ -27,15 +32,14 @@
                 <input type="month" name="mes" value="{{ mes_filtro }}" onchange="this.form.submit()"
                        class="bg-transparent border-none text-white focus:ring-0 cursor-pointer text-[10px] md:text-sm font-bold p-0 w-full outline-none [&::-webkit-calendar-picker-indicator]:invert">
             </form>
-            
-            <button onclick="abrirPreVisualizacaoPDF()" id="btn-exportar" class="flex items-center justify-center gap-1.5 bg-white text-indigo-600 px-2.5 py-1.5 md:px-3 md:py-2 rounded-lg md:rounded-xl text-[10px] md:text-sm font-bold hover:bg-gray-50 transition-colors shadow-sm whitespace-nowrap active:scale-95">
+
+            <button onclick="window.abrirPreVisualizacaoPDF()" id="btn-exportar" class="flex items-center justify-center gap-1.5 bg-white text-indigo-600 px-2.5 py-1.5 md:px-3 md:py-2 rounded-lg md:rounded-xl text-[10px] md:text-sm font-bold hover:bg-gray-50 transition-colors shadow-sm whitespace-nowrap active:scale-95">
                 <i data-lucide="file-search" class="w-3.5 h-3.5 md:w-4 md:h-4"></i> <span class="hidden md:inline">Prévia</span> PDF
             </button>
         </div>
     </div>
 
     <!-- Área de Captura do PDF -->
-    <!-- Adicionamos uma classe base para o modo de impressão -->
     <div id="conteudo-relatorio" class="pdf-container rounded-lg">
 
         <!-- Título Oculto (Só aparece no PDF gerado) -->
@@ -46,13 +50,12 @@
         </div>
 
         <!-- Seção de Gráficos -->
-        <!-- O pdf-element é uma classe de reset de cor -->
         <div class="pdf-element bg-white dark:bg-[#1a1b26] p-2.5 md:p-4 rounded-xl md:rounded-2xl shadow-sm border border-gray-100 dark:border-white/5 mb-3 md:mb-4 html2pdf-graficos">
             <div class="flex bg-gray-50 dark:bg-gray-900/50 rounded-lg md:rounded-xl p-1 mb-2 md:mb-3 botoes-abas border border-gray-100 dark:border-gray-800">
-                <button onclick="mostrarGrafico('ondas')" id="btn-ondas" class="flex-1 py-1.5 md:py-2 text-[10px] md:text-xs font-bold rounded-md md:rounded-lg bg-white dark:bg-gray-800 shadow-sm text-blue-600 dark:text-blue-400 transition-all flex justify-center items-center gap-1.5 border border-gray-100 dark:border-gray-700">
+                <button onclick="window.mostrarGrafico('ondas')" id="btn-ondas" class="flex-1 py-1.5 md:py-2 text-[10px] md:text-xs font-bold rounded-md md:rounded-lg bg-white dark:bg-gray-800 shadow-sm text-blue-600 dark:text-blue-400 transition-all flex justify-center items-center gap-1.5 border border-gray-100 dark:border-gray-700">
                     <i data-lucide="trending-up" class="w-3 h-3 md:w-3.5 md:h-3.5"></i> Curva de Gastos
                 </button>
-                <button onclick="mostrarGrafico('donut')" id="btn-donut" class="flex-1 py-1.5 md:py-2 text-[10px] md:text-xs font-bold rounded-md md:rounded-lg text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200 transition-all flex justify-center items-center gap-1.5 border border-transparent">
+                <button onclick="window.mostrarGrafico('donut')" id="btn-donut" class="flex-1 py-1.5 md:py-2 text-[10px] md:text-xs font-bold rounded-md md:rounded-lg text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200 transition-all flex justify-center items-center gap-1.5 border border-transparent">
                     <i data-lucide="pie-chart" class="w-3 h-3 md:w-3.5 md:h-3.5"></i> Por Categoria
                 </button>
             </div>
@@ -118,7 +121,6 @@
             </p>
             <div class="space-y-1.5 md:space-y-2.5">
                 {% for gasto in top3_gastos %}
-                <!-- pdf-inner remove backgrounds que atrapalham a leitura -->
                 <div class="pdf-inner flex justify-between items-center bg-gray-50 dark:bg-gray-900/50 p-2 md:p-3 rounded-lg md:rounded-xl border border-gray-100 dark:border-gray-700/60 transition-colors hover:bg-rose-50/50 dark:hover:bg-rose-900/10">
                     <div class="flex items-center gap-2 md:gap-3">
                         <div class="w-5 h-5 md:w-7 md:h-7 rounded md:rounded-lg bg-rose-100 dark:bg-rose-900/30 flex justify-center items-center text-rose-600 text-[9px] md:text-xs font-black shadow-sm shrink-0">
@@ -154,11 +156,11 @@
                             <span class="text-purple-600 dark:text-purple-400">{{ d.parcelas_pagas }} pagas</span>
                             <span class="pdf-text text-gray-400">de {{ d.total_parcelas }}</span>
                         </div>
-                        
+
                         <div class="w-full bg-gray-100 dark:bg-gray-700 rounded-full h-1 md:h-2 overflow-hidden mb-1.5 md:mb-2">
                             <div class="bg-gradient-to-r from-purple-500 to-indigo-500 h-full rounded-full transition-all duration-1000" style="width: {{ d.perc_paga }}%"></div>
                         </div>
-                        
+
                         <div class="flex justify-between items-center mt-1.5 md:mt-2">
                             <span class="pdf-text text-[8px] md:text-[10px] text-gray-400 font-medium">{{ d.perc_paga }}% Concluído</span>
                             <span class="pdf-text text-[8px] md:text-[10px] text-gray-500 font-black uppercase tracking-wider">Restante: <span class="pdf-text text-gray-700 dark:text-gray-300">R$ {{ "%.2f"|format(d.saldo_restante) }}</span></span>
@@ -198,7 +200,7 @@
                         <div class="w-full bg-gray-100 dark:bg-gray-700 rounded-full h-1 md:h-2 overflow-hidden mb-1.5 md:mb-2">
                             <div class="bg-gradient-to-r from-blue-500 to-cyan-400 h-full rounded-full transition-all duration-1000" style="width: {{ porcentagem }}%"></div>
                         </div>
-                        
+
                         <div class="flex justify-between items-center mt-1.5 md:mt-2">
                             <span class="pdf-text text-[8px] md:text-[10px] text-gray-400 font-medium">{{ porcentagem }}% Alcançado</span>
                             <span class="pdf-text text-[8px] md:text-[10px] text-gray-500 font-black uppercase tracking-wider">Guardado: <span class="text-blue-600 dark:text-blue-400">R$ {{ "%.2f"|format(r.guardado) }}</span></span>
@@ -220,13 +222,13 @@
     <!-- ========================================== -->
     <div id="modal-preview-pdf" class="fixed inset-0 z-50 hidden items-center justify-center bg-gray-900/80 backdrop-blur-sm px-4 transition-opacity" style="opacity: 1;">
         <div class="bg-white dark:bg-[#1a1b26] border border-gray-100 dark:border-white/10 rounded-2xl md:rounded-3xl w-full max-w-4xl shadow-2xl flex flex-col max-h-[90vh] overflow-hidden">
-            
+
             <!-- Modal Header -->
             <div class="flex items-center justify-between p-4 md:p-5 border-b border-gray-100 dark:border-white/5 bg-gray-50/50 dark:bg-gray-900/30">
                 <h3 class="text-sm md:text-base font-bold text-gray-800 dark:text-gray-200 flex items-center gap-2">
                     <i data-lucide="file-text" class="w-4 h-4 text-indigo-500"></i> Pré-visualização do Relatório
                 </h3>
-                <button onclick="fecharModalPreview()" class="text-gray-400 hover:text-red-500 transition-colors focus:outline-none bg-white dark:bg-gray-800 p-1.5 rounded-lg border border-gray-200 dark:border-gray-700">
+                <button onclick="window.fecharModalPreview()" class="text-gray-400 hover:text-red-500 transition-colors focus:outline-none bg-white dark:bg-gray-800 p-1.5 rounded-lg border border-gray-200 dark:border-gray-700">
                     <i data-lucide="x" class="w-4 h-4"></i>
                 </button>
             </div>
@@ -238,10 +240,10 @@
 
             <!-- Modal Footer -->
             <div class="p-4 md:p-5 border-t border-gray-100 dark:border-white/5 flex justify-end gap-3 bg-white dark:bg-[#1a1b26]">
-                <button onclick="fecharModalPreview()" class="px-4 py-2 text-xs md:text-sm font-bold text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-xl transition-colors border border-gray-200 dark:border-gray-700">
+                <button onclick="window.fecharModalPreview()" class="px-4 py-2 text-xs md:text-sm font-bold text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-xl transition-colors border border-gray-200 dark:border-gray-700">
                     Voltar
                 </button>
-                <button onclick="confirmarDownloadPDF()" class="px-5 py-2 text-xs md:text-sm font-bold text-white bg-indigo-600 hover:bg-indigo-700 rounded-xl flex items-center gap-2 shadow-sm transition-colors shadow-indigo-500/30">
+                <button onclick="window.confirmarDownloadPDF()" class="px-5 py-2 text-xs md:text-sm font-bold text-white bg-indigo-600 hover:bg-indigo-700 rounded-xl flex items-center gap-2 shadow-sm transition-colors shadow-indigo-500/30">
                     <i data-lucide="download-cloud" class="w-4 h-4"></i> Salvar PDF
                 </button>
             </div>
@@ -254,7 +256,7 @@
             background-color: #ffffff !important;
             color: #111827 !important;
         }
-        .modo-impressao .pdf-element, 
+        .modo-impressao .pdf-element,
         .modo-impressao .pdf-inner {
             background-color: #ffffff !important;
             border-color: #e5e7eb !important;
@@ -265,147 +267,188 @@
     </style>
 
     <!-- Scripts Otimizados -->
-    <script src="https://cdn.jsdelivr.net/npm/apexcharts"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
-
+    <!-- Carregamos os scripts apenas se o modal for aberto e os objetos ainda não existirem -->
     <script>
-        // Variáveis globais para os gráficos e para o PDF
-        let chartOndas, chartDonut;
-        let currentPdfUrl = null;
+        (function inicializarRelatorios() {
+            if(typeof lucide !== 'undefined') lucide.createIcons();
 
-        document.addEventListener("DOMContentLoaded", function() {
-            lucide.createIcons();
-            const isDarkMode = document.documentElement.classList.contains('dark') || document.body.classList.contains('dark') || localStorage.theme === 'dark';
-            const textColor = isDarkMode ? '#9ca3af' : '#6b7280';
+            // Variáveis globais para os gráficos e para o PDF (vinculadas ao window)
+            window.chartOndas = null;
+            window.chartDonut = null;
+            window.currentPdfUrl = null;
 
-            {% if valores_grafico %}
-            var optionsOndas = { series: [{ name: 'Gastos', data: {{ valores_grafico | tojson }} }], chart: { type: 'area', height: window.innerWidth < 768 ? 160 : 220, toolbar: { show: false }, background: 'transparent' }, colors: ['#4f46e5'], stroke: { curve: 'smooth', width: 2.5 }, fill: { type: 'gradient', gradient: { shadeIntensity: 1, opacityFrom: 0.4, opacityTo: 0.05, stops: [0, 90, 100] } }, xaxis: { categories: {{ dias_grafico | tojson }}, labels: { style: { colors: textColor, fontSize: '9px' } } }, yaxis: { show: false }, theme: { mode: isDarkMode ? 'dark' : 'light' } };
-            chartOndas = new ApexCharts(document.querySelector("#grafico-ondas"), optionsOndas);
-            chartOndas.render();
-            {% endif %}
+            function carregarScriptsEInicializar() {
+                const isDarkMode = document.documentElement.classList.contains('dark') || document.body.classList.contains('dark') || localStorage.theme === 'dark';
+                const textColor = isDarkMode ? '#9ca3af' : '#6b7280';
 
-            {% if valores_categorias %}
-            var optionsDonut = { series: {{ valores_categorias | tojson }}, labels: {{ labels_categorias | tojson }}, chart: { type: 'donut', height: window.innerWidth < 768 ? 180 : 240, background: 'transparent' }, legend: { position: 'bottom', fontSize: '10px', markers: { width: 8, height: 8 }, labels: { colors: textColor } }, stroke: { width: 1, colors: isDarkMode ? ['#1f2937'] : ['#ffffff'] }, theme: { mode: isDarkMode ? 'dark' : 'light' } };
-            chartDonut = new ApexCharts(document.querySelector("#grafico-donut"), optionsDonut);
-            chartDonut.render();
-            {% endif %}
-        });
+                const renderizarGraficos = () => {
+                    {% if valores_grafico %}
+                    var optionsOndas = { series: [{ name: 'Gastos', data: {{ valores_grafico | tojson }} }], chart: { type: 'area', height: window.innerWidth < 768 ? 160 : 220, toolbar: { show: false }, background: 'transparent' }, colors: ['#4f46e5'], stroke: { curve: 'smooth', width: 2.5 }, fill: { type: 'gradient', gradient: { shadeIntensity: 1, opacityFrom: 0.4, opacityTo: 0.05, stops: [0, 90, 100] } }, xaxis: { categories: {{ dias_grafico | tojson }}, labels: { style: { colors: textColor, fontSize: '9px' } } }, yaxis: { show: false }, theme: { mode: isDarkMode ? 'dark' : 'light' } };
+                    if(document.querySelector("#grafico-ondas")) {
+                        window.chartOndas = new ApexCharts(document.querySelector("#grafico-ondas"), optionsOndas);
+                        window.chartOndas.render();
+                    }
+                    {% endif %}
 
-        function mostrarGrafico(tipo) {
-            const btnOndas = document.getElementById('btn-ondas');
-            const btnDonut = document.getElementById('btn-donut');
-            const contOndas = document.getElementById('container-ondas');
-            const contDonut = document.getElementById('container-donut');
-            
-            const classeAtiva = "flex-1 py-1.5 md:py-2 text-[10px] md:text-xs font-bold rounded-md md:rounded-lg bg-white dark:bg-gray-800 shadow-sm text-blue-600 dark:text-blue-400 transition-all flex justify-center items-center gap-1.5 border border-gray-100 dark:border-gray-700";
-            const classeInativa = "flex-1 py-1.5 md:py-2 text-[10px] md:text-xs font-bold rounded-md md:rounded-lg text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200 transition-all flex justify-center items-center gap-1.5 border border-transparent";
-
-            if (tipo === 'ondas') {
-                btnOndas.className = classeAtiva;
-                btnDonut.className = classeInativa;
-                contOndas.classList.remove('hidden');
-                contDonut.classList.add('hidden');
-            } else {
-                btnDonut.className = classeAtiva;
-                btnOndas.className = classeInativa;
-                contDonut.classList.remove('hidden');
-                contOndas.classList.add('hidden');
-            }
-        }
-
-        // ==========================================
-        // SISTEMA DE PRÉ-VISUALIZAÇÃO DE PDF
-        // ==========================================
-        function abrirPreVisualizacaoPDF() {
-            const btnExportar = document.getElementById('btn-exportar');
-            const conteudo = document.getElementById('conteudo-relatorio');
-            const tituloOculto = document.querySelector('.print-title');
-            const botoesAbas = document.querySelector('.botoes-abas');
-            
-            // Grava se o usuário estava no tema escuro
-            const wasDark = document.documentElement.classList.contains('dark') || document.body.classList.contains('dark') || localStorage.theme === 'dark';
-
-            const textoOriginal = btnExportar.innerHTML;
-            btnExportar.disabled = true;
-            btnExportar.innerHTML = '<i data-lucide="loader" class="w-3.5 h-3.5 animate-spin"></i> <span class="hidden md:inline">Gerando...</span>';
-
-            // PREPARAÇÃO: Força visual branco e limpo para o PDF
-            conteudo.classList.add('modo-impressao');
-            tituloOculto.classList.remove('hidden');
-            botoesAbas.classList.add('hidden');
-            
-            // Força ambos os gráficos a aparecerem simultaneamente na captura
-            document.getElementById('container-ondas').classList.remove('hidden');
-            document.getElementById('container-donut').classList.remove('hidden');
-
-            // Atualiza os gráficos para o modo claro e cores de texto legíveis
-            if(chartOndas) chartOndas.updateOptions({ theme: { mode: 'light' }, xaxis: { labels: { style: { colors: '#374151' } } } });
-            if(chartDonut) chartDonut.updateOptions({ theme: { mode: 'light' }, stroke: { colors: ['#ffffff'] }, legend: { labels: { colors: '#374151' } } });
-
-            // Aguarda 300ms para as animações de cor do ApexCharts terminarem
-            setTimeout(() => {
-                const opt = {
-                    margin:       10,
-                    filename:     'Relatorio_Financeiro.pdf',
-                    image:        { type: 'jpeg', quality: 0.98 },
-                    html2canvas:  { scale: 2, useCORS: true, logging: false },
-                    jsPDF:        { unit: 'mm', format: 'a4', orientation: 'portrait' }
+                    {% if valores_categorias %}
+                    var optionsDonut = { series: {{ valores_categorias | tojson }}, labels: {{ labels_categorias | tojson }}, chart: { type: 'donut', height: window.innerWidth < 768 ? 180 : 240, background: 'transparent' }, legend: { position: 'bottom', fontSize: '10px', markers: { width: 8, height: 8 }, labels: { colors: textColor } }, stroke: { width: 1, colors: isDarkMode ? ['#1f2937'] : ['#ffffff'] }, theme: { mode: isDarkMode ? 'dark' : 'light' } };
+                    if(document.querySelector("#grafico-donut")) {
+                        window.chartDonut = new ApexCharts(document.querySelector("#grafico-donut"), optionsDonut);
+                        window.chartDonut.render();
+                    }
+                    {% endif %}
                 };
 
-                // Em vez de salvar na máquina, gera um link (Blob URL) para visualizar no Iframe
-                html2pdf().set(opt).from(conteudo).output('bloburl').then(function(pdfUrl) {
-                    currentPdfUrl = pdfUrl;
-                    document.getElementById('iframe-pdf-preview').src = pdfUrl;
-                    
-                    // Exibe o Pop-up na tela
-                    const modal = document.getElementById('modal-preview-pdf');
-                    modal.classList.remove('hidden');
-                    modal.classList.add('flex');
-                })
-                .catch((erro) => alert("Erro ao gerar a pré-visualização. Tente novamente."))
-                .finally(() => {
-                    // DEVOLVE AO ESTADO ORIGINAL IMEDIATAMENTE (O PDF JÁ FOI CAPTURADO)
-                    conteudo.classList.remove('modo-impressao');
-                    btnExportar.innerHTML = textoOriginal;
-                    btnExportar.disabled = false;
-                    tituloOculto.classList.add('hidden');
-                    botoesAbas.classList.remove('hidden');
-                    
-                    // Esconde o gráfico que não estava visível antes do clique
-                    mostrarGrafico(document.getElementById('btn-ondas').classList.contains('bg-white') ? 'ondas' : 'donut');
-                    
-                    // Devolve o gráfico pro tema escuro se o usuário usava Dark Mode
-                    if(wasDark) {
-                        if(chartOndas) chartOndas.updateOptions({ theme: { mode: 'dark' }, xaxis: { labels: { style: { colors: '#9ca3af' } } } });
-                        if(chartDonut) chartDonut.updateOptions({ theme: { mode: 'dark' }, stroke: { colors: ['#1f2937'] }, legend: { labels: { colors: '#9ca3af' } } });
-                    }
-                    if (typeof lucide !== 'undefined') lucide.createIcons();
-                });
-            }, 300);
-        }
+                // Carrega ApexCharts dinamicamente se não existir
+                if (typeof ApexCharts === 'undefined') {
+                    const scriptApex = document.createElement('script');
+                    scriptApex.src = "https://cdn.jsdelivr.net/npm/apexcharts";
+                    scriptApex.onload = renderizarGraficos;
+                    document.head.appendChild(scriptApex);
+                } else {
+                    renderizarGraficos();
+                }
 
-        function fecharModalPreview() {
-            const modal = document.getElementById('modal-preview-pdf');
-            modal.classList.add('hidden');
-            modal.classList.remove('flex');
-            
-            // Limpa o src do Iframe para liberar memória de cache do navegador
-            document.getElementById('iframe-pdf-preview').src = '';
-        }
+                // Carrega html2pdf dinamicamente se não existir
+                if (typeof html2pdf === 'undefined') {
+                    const scriptPdf = document.createElement('script');
+                    scriptPdf.src = "https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js";
+                    document.head.appendChild(scriptPdf);
+                }
+            }
 
-        function confirmarDownloadPDF() {
-            if (!currentPdfUrl) return;
-            
-            // Cria um link de download invisível e clica nele automaticamente
-            const a = document.createElement('a');
-            a.href = currentPdfUrl;
-            a.download = 'Relatorio_Financeiro_Premium.pdf';
-            document.body.appendChild(a);
-            a.click();
-            document.body.removeChild(a);
-            
-            fecharModalPreview();
-        }
+            // Inicia a renderização
+            carregarScriptsEInicializar();
+
+            window.mostrarGrafico = function(tipo) {
+                const btnOndas = document.getElementById('btn-ondas');
+                const btnDonut = document.getElementById('btn-donut');
+                const contOndas = document.getElementById('container-ondas');
+                const contDonut = document.getElementById('container-donut');
+
+                const classeAtiva = "flex-1 py-1.5 md:py-2 text-[10px] md:text-xs font-bold rounded-md md:rounded-lg bg-white dark:bg-gray-800 shadow-sm text-blue-600 dark:text-blue-400 transition-all flex justify-center items-center gap-1.5 border border-gray-100 dark:border-gray-700";
+                const classeInativa = "flex-1 py-1.5 md:py-2 text-[10px] md:text-xs font-bold rounded-md md:rounded-lg text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200 transition-all flex justify-center items-center gap-1.5 border border-transparent";
+
+                if (tipo === 'ondas') {
+                    if(btnOndas) btnOndas.className = classeAtiva;
+                    if(btnDonut) btnDonut.className = classeInativa;
+                    if(contOndas) contOndas.classList.remove('hidden');
+                    if(contDonut) contDonut.classList.add('hidden');
+                } else {
+                    if(btnDonut) btnDonut.className = classeAtiva;
+                    if(btnOndas) btnOndas.className = classeInativa;
+                    if(contDonut) contDonut.classList.remove('hidden');
+                    if(contOndas) contOndas.classList.add('hidden');
+                }
+            };
+
+            // ==========================================
+            // SISTEMA DE PRÉ-VISUALIZAÇÃO DE PDF
+            // ==========================================
+            window.abrirPreVisualizacaoPDF = function() {
+                if(typeof html2pdf === 'undefined') {
+                    alert("Aguarde um momento, o gerador de PDF está carregando...");
+                    return;
+                }
+
+                const btnExportar = document.getElementById('btn-exportar');
+                const conteudo = document.getElementById('conteudo-relatorio');
+                const tituloOculto = document.querySelector('.print-title');
+                const botoesAbas = document.querySelector('.botoes-abas');
+
+                // Grava se o usuário estava no tema escuro
+                const wasDark = document.documentElement.classList.contains('dark') || document.body.classList.contains('dark') || localStorage.theme === 'dark';
+
+                const textoOriginal = btnExportar.innerHTML;
+                btnExportar.disabled = true;
+                btnExportar.innerHTML = '<i data-lucide="loader" class="w-3.5 h-3.5 animate-spin"></i> <span class="hidden md:inline">Gerando...</span>';
+
+                // PREPARAÇÃO: Força visual branco e limpo para o PDF
+                conteudo.classList.add('modo-impressao');
+                if(tituloOculto) tituloOculto.classList.remove('hidden');
+                if(botoesAbas) botoesAbas.classList.add('hidden');
+
+                // Força ambos os gráficos a aparecerem simultaneamente na captura
+                if(document.getElementById('container-ondas')) document.getElementById('container-ondas').classList.remove('hidden');
+                if(document.getElementById('container-donut')) document.getElementById('container-donut').classList.remove('hidden');
+
+                // Atualiza os gráficos para o modo claro e cores de texto legíveis
+                if(window.chartOndas) window.chartOndas.updateOptions({ theme: { mode: 'light' }, xaxis: { labels: { style: { colors: '#374151' } } } });
+                if(window.chartDonut) window.chartDonut.updateOptions({ theme: { mode: 'light' }, stroke: { colors: ['#ffffff'] }, legend: { labels: { colors: '#374151' } } });
+
+                // Aguarda 300ms para as animações de cor do ApexCharts terminarem
+                setTimeout(() => {
+                    const opt = {
+                        margin:       10,
+                        filename:     'Relatorio_Financeiro.pdf',
+                        image:        { type: 'jpeg', quality: 0.98 },
+                        html2canvas:  { scale: 2, useCORS: true, logging: false },
+                        jsPDF:        { unit: 'mm', format: 'a4', orientation: 'portrait' }
+                    };
+
+                    // Em vez de salvar na máquina, gera um link (Blob URL) para visualizar no Iframe
+                    html2pdf().set(opt).from(conteudo).output('bloburl').then(function(pdfUrl) {
+                        window.currentPdfUrl = pdfUrl;
+                        document.getElementById('iframe-pdf-preview').src = pdfUrl;
+
+                        // Exibe o Pop-up na tela
+                        const modal = document.getElementById('modal-preview-pdf');
+                        if(modal) {
+                            modal.classList.remove('hidden');
+                            modal.classList.add('flex');
+                        }
+                    })
+                    .catch((erro) => {
+                        console.error("Erro PDF:", erro);
+                        alert("Erro ao gerar a pré-visualização. Tente novamente.");
+                    })
+                    .finally(() => {
+                        // DEVOLVE AO ESTADO ORIGINAL IMEDIATAMENTE
+                        conteudo.classList.remove('modo-impressao');
+                        btnExportar.innerHTML = textoOriginal;
+                        btnExportar.disabled = false;
+                        if(tituloOculto) tituloOculto.classList.add('hidden');
+                        if(botoesAbas) botoesAbas.classList.remove('hidden');
+
+                        // Esconde o gráfico que não estava visível antes do clique
+                        const btnOndas = document.getElementById('btn-ondas');
+                        window.mostrarGrafico(btnOndas && btnOndas.classList.contains('bg-white') ? 'ondas' : 'donut');
+
+                        // Devolve o gráfico pro tema escuro se o usuário usava Dark Mode
+                        if(wasDark) {
+                            if(window.chartOndas) window.chartOndas.updateOptions({ theme: { mode: 'dark' }, xaxis: { labels: { style: { colors: '#9ca3af' } } } });
+                            if(window.chartDonut) window.chartDonut.updateOptions({ theme: { mode: 'dark' }, stroke: { colors: ['#1f2937'] }, legend: { labels: { colors: '#9ca3af' } } });
+                        }
+                        if (typeof lucide !== 'undefined') lucide.createIcons();
+                    });
+                }, 300);
+            };
+
+            window.fecharModalPreview = function() {
+                const modal = document.getElementById('modal-preview-pdf');
+                if(modal) {
+                    modal.classList.add('hidden');
+                    modal.classList.remove('flex');
+                }
+                // Limpa o src do Iframe para liberar memória
+                const iframe = document.getElementById('iframe-pdf-preview');
+                if(iframe) iframe.src = '';
+            };
+
+            window.confirmarDownloadPDF = function() {
+                if (!window.currentPdfUrl) return;
+
+                const a = document.createElement('a');
+                a.href = window.currentPdfUrl;
+                a.download = 'Relatorio_Financeiro_Premium.pdf';
+                document.body.appendChild(a);
+                a.click();
+                document.body.removeChild(a);
+
+                window.fecharModalPreview();
+            };
+        })();
     </script>
 </div>
+
 {% endblock %}

@@ -1,12 +1,17 @@
-{% extends "base.html" %}
+{% if not ajax_request %}
+    {% extends "base.html" %}
+{% endif %}
 
 {% block content %}
+
 <div class="max-w-md mx-auto mt-2 pb-10">
-    <!-- Botão Voltar -->
+    <!-- Botão Voltar (Oculto no modal) -->
+    {% if not ajax_request %}
     <a href="javascript:history.back()" class="flex items-center gap-1 text-gray-500 hover:text-blue-600 dark:text-gray-400 dark:hover:text-blue-400 mb-6 transition-colors text-sm font-medium">
         <i data-lucide="arrow-left" class="w-4 h-4"></i>
         <span>Voltar</span>
     </a>
+    {% endif %}
 
     <!-- Título -->
     <h2 class="text-xl font-bold mb-8 text-gray-800 dark:text-gray-200 flex items-center gap-2">
@@ -147,7 +152,7 @@
                 <span class="absolute flex items-center justify-center w-8 h-8 bg-gray-100 rounded-full -left-[41px] top-2 ring-4 ring-white dark:ring-gray-900 dark:bg-gray-800 shadow-sm transition-transform duration-300 group-open:-rotate-180">
                     <i data-lucide="chevron-down" class="w-5 h-5 text-gray-500 dark:text-gray-400"></i>
                 </span>
-                
+
                 <div class="bg-gray-50 dark:bg-gray-800/50 p-4 rounded-xl border border-gray-200 dark:border-gray-700/50 flex-1 flex items-center gap-3 hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors shadow-sm">
                     <div class="p-2 bg-gray-200 dark:bg-gray-700 rounded-lg">
                         <i data-lucide="archive" class="w-4 h-4 text-gray-600 dark:text-gray-300"></i>
@@ -244,6 +249,11 @@
 </style>
 
 <script>
-    lucide.createIcons();
+    (function inicializarAtualizacoes() {
+        if(typeof lucide !== 'undefined') {
+            lucide.createIcons();
+        }
+    })();
 </script>
+
 {% endblock %}

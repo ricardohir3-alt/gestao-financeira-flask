@@ -1,41 +1,30 @@
-    <script src="https://cdn.jsdelivr.net/npm/apexcharts"></script>
+<script src="https://cdn.jsdelivr.net/npm/apexcharts"></script>
 
-<!-- LÓGICA EXCLUSIVA DO DASHBOARD -->
 <script>
-    // JS Exibição Nome do Mês Header (CORRIGIDO PARA TRADUÇÃO DINÂMICA)
     function atualizarNomeMes() {
         const val = "{{ mes_filtro }}";
         if(val) {
             const parts = val.split('-');
-            
-            // Mapeamento dos meses para facilitar a tradução no main.js depois
             const monthsPT = ["JANEIRO", "FEVEREIRO", "MARÇO", "ABRIL", "MAIO", "JUNHO", "JULHO", "AGOSTO", "SETEMBRO", "OUTUBRO", "NOVEMBRO", "DEZEMBRO"];
-            const monthsEN = ["JANUARY", "FEBRUARY", "MARCH", "APRIL", "MAY", "JUNE", "JULY", "AUGUST", "SEPTEMBER", "OCTOBER", "NOVEMBER", "DECEMBER"];
-            const monthsZH = ["一月", "二月", "三月", "四月", "五月", "六月", "七月", "八月", "九月", "十月", "十一月", "十二月"];
-            
             const m = parseInt(parts[1], 10) - 1;
-            const lang = localStorage.getItem('idioma_sistema') || 'PT-BR';
-            
-            let nomeMes = monthsPT[m];
-            let conjuncao = ' DE ';
-            
-            if(lang === 'EN-US') { nomeMes = monthsEN[m]; conjuncao = ' '; }
-            if(lang === 'ZH-CN') { nomeMes = parts[0] + '年 ' + monthsZH[m]; conjuncao = ''; }
-
             const display = document.getElementById('display-month');
-            if(display) {
-                if(lang === 'ZH-CN') {
-                    display.innerText = nomeMes;
-                } else {
-                    display.innerText = `${nomeMes}${conjuncao}${parts[0]}`;
-                }
-            }
+            if(display) display.innerText = `${monthsPT[m]} DE ${parts[0]}`;
         }
     }
 
-    // JS Modais Básicos do Dashboard
-    function abrirModalExtrato() { const m = document.getElementById('modal-extrato'), c = document.getElementById('card-extrato'); m.classList.remove('hidden'); m.classList.add('flex'); setTimeout(() => { m.classList.remove('opacity-0'); c.classList.remove('scale-95'); filtrarGastos(window.tabAtivaExtrato || 'TODOS'); }, 10); if(typeof ganharXP === 'function') ganharXP(2, 'xp_motivo_extrato'); }
-    function fecharModalExtrato() { const m = document.getElementById('modal-extrato'), c = document.getElementById('card-extrato'); m.classList.add('opacity-0'); c.classList.add('scale-95'); setTimeout(() => { m.classList.add('hidden'); m.classList.remove('flex'); }, 300); }
+    function abrirModalExtrato() { 
+        try {
+            const m = document.getElementById('modal-extrato'), c = document.getElementById('card-extrato'); 
+            if(!m) return;
+            m.classList.remove('hidden'); m.classList.add('flex'); 
+            setTimeout(() => { 
+                m.classList.remove('opacity-0'); 
+                if(c) c.classList.remove('scale-95'); 
+                if(typeof filtrarGastos === 'function') filtrarGastos(window.tabAtivaExtrato || 'TODOS'); 
+            }, 10); 
+        } catch (e) { console.error("Erro abrir extrato: ", e); }
+    }
+    function fecharModalExtrato() { const m = document.getElementById('modal-extrato'), c = document.getElementById('card-extrato'); if(!m) return; m.classList.add('opacity-0'); if(c) c.classList.add('scale-95'); setTimeout(() => { m.classList.add('hidden'); m.classList.remove('flex'); }, 300); }
     function abrirModalRenda() { const m = document.getElementById('modal-renda'), c = document.getElementById('card-renda'); m.classList.remove('hidden'); m.classList.add('flex'); setTimeout(() => { m.classList.remove('opacity-0'); c.classList.remove('scale-95'); }, 10); }
     function fecharModalRenda() { const m = document.getElementById('modal-renda'), c = document.getElementById('card-renda'); m.classList.add('opacity-0'); c.classList.add('scale-95'); setTimeout(() => { m.classList.add('hidden'); m.classList.remove('flex'); }, 300); }
     function abrirModalGraficoLinha() { const m = document.getElementById('modal-grafico-linha'); m.classList.remove('hidden'); m.classList.add('flex'); setTimeout(() => { m.classList.remove('opacity-0'); m.children[0].classList.remove('scale-95'); }, 10); }
@@ -43,21 +32,81 @@
     function abrirModalProjecao() { const m = document.getElementById('modal-projecao'); m.classList.remove('hidden'); m.classList.add('flex'); setTimeout(() => { m.classList.remove('opacity-0'); m.children[0].classList.remove('scale-95'); }, 10); }
     function fecharModalProjecao() { const m = document.getElementById('modal-projecao'); m.classList.add('opacity-0'); m.children[0].classList.add('scale-95'); setTimeout(() => { m.classList.add('hidden'); m.classList.remove('flex'); }, 300); }
 
-    function abrirModalEditarGasto(id, desc, valor, data, cat, q, status) {
+    function prepararEdicao(elemento) {
+        const id = elemento.getAttribute('data-id');
+        const desc = elemento.getAttribute('data-descricao');
+        const valor = elemento.getAttribute('data-valor');
+        const data = elemento.getAttribute('data-data');
+        const cat = elemento.getAttribute('data-categoria');
+        const q = elemento.getAttribute('data-quinzena');
+        const status = elemento.getAttribute('data-status');
+        const tipo = elemento.getAttribute('data-tipo');
+        abrirModalEditarGasto(id, desc, valor, data, cat, q, status, tipo);
+    }
+
+    function toggleEditTipo(tipo) {
+        const blocoQuinzena = document.getElementById('edit-bloco-quinzena');
+        const inputCategoria = document.getElementById('edit-gasto-categoria');
+        const inputValor = document.getElementById('edit-gasto-valor');
+        const btnSubmit = document.getElementById('btn-submit-edit');
+
+        if (tipo === 'receita') {
+            if(blocoQuinzena) blocoQuinzena.classList.add('hidden');
+            if(inputCategoria) {
+                inputCategoria.placeholder = "Ex: Salário, Pix...";
+                document.getElementById('lista-categorias-edit').innerHTML = `<option value="Salário"><option value="Rendimento"><option value="Venda"><option value="Pix Recebido"><option value="Cashback">`;
+            }
+            if(inputValor) {
+                inputValor.classList.remove('text-gray-800', 'dark:text-white', 'focus:ring-indigo-500');
+                inputValor.classList.add('text-emerald-600', 'dark:text-emerald-400', 'focus:ring-emerald-500');
+            }
+            if(btnSubmit) btnSubmit.className = "flex-[2] px-4 py-3 bg-emerald-500 hover:bg-emerald-600 text-white font-bold rounded-xl shadow-lg shadow-emerald-500/20 transition-all active:scale-95 text-xs flex items-center justify-center gap-1.5";
+        } else {
+            if(blocoQuinzena) blocoQuinzena.classList.remove('hidden');
+            if(inputCategoria) {
+                inputCategoria.placeholder = "Selecione ou digite";
+                document.getElementById('lista-categorias-edit').innerHTML = `<option value="Moradia"><option value="Alimentação"><option value="Transporte"><option value="Lazer"><option value="Saúde">`;
+            }
+            if(inputValor) {
+                inputValor.classList.remove('text-emerald-600', 'dark:text-emerald-400', 'focus:ring-emerald-500');
+                inputValor.classList.add('text-gray-800', 'dark:text-white', 'focus:ring-indigo-500');
+            }
+            if(btnSubmit) btnSubmit.className = "flex-[2] px-4 py-3 bg-indigo-500 hover:bg-indigo-600 text-white font-bold rounded-xl shadow-lg shadow-indigo-500/20 transition-all active:scale-95 text-xs flex items-center justify-center gap-1.5";
+        }
+    }
+
+    function abrirModalEditarGasto(id, desc, valor, data, cat, q, status, tipo) {
         const form = document.getElementById('form-editar-gasto');
-        form.action = '/editar_gasto/' + id + '?mes={{ mes_filtro }}';
+        
+        // ROTA CORRIGIDA DE ACORDO COM O FLASK_APP:
+        form.action = '/editar_movimentacao/' + id + '?mes={{ mes_filtro }}';
+        
         document.getElementById('edit-gasto-desc').value = desc;
-        document.getElementById('edit-gasto-valor').value = parseFloat(valor).toFixed(2);
+        
+        // BLINDAGEM DE VALOR: Transforma o número em formato seguro de string (com vírgula)
+        const valorAjustado = String(valor).replace(',', '.');
+        document.getElementById('edit-gasto-valor').value = parseFloat(valorAjustado).toFixed(2).replace('.', ',');
+        
+        // BLINDAGEM DE DATA: Alimenta o input oficial e o fallback (data_gasto)
         document.getElementById('edit-gasto-data').value = data;
-        document.getElementById('edit-gasto-categoria').value = cat;
-        document.getElementById('edit-gasto-quinzena').value = q;
-        const statusField = document.getElementById('edit-gasto-status');
-        if(statusField) statusField.value = status || 'PENDENTE';
+        const dataAlt = document.getElementById('edit-gasto-data-alt');
+        if(dataAlt) dataAlt.value = data;
+        
+        const catField = document.getElementById('edit-gasto-categoria'); if(catField) catField.value = cat;
+        const qField = document.getElementById('edit-gasto-quinzena'); if(qField) qField.value = q;
+        const statusField = document.getElementById('edit-gasto-status'); if(statusField) statusField.value = status || 'PENDENTE';
+
+        const tipoFiltro = tipo || 'despesa';
+        toggleEditTipo(tipoFiltro);
+        
+        const radio = document.getElementById('edit-tipo-' + tipoFiltro);
+        if (radio) radio.checked = true;
 
         const m = document.getElementById('modal-editar-gasto'), c = document.getElementById('card-editar-gasto');
-        m.classList.remove('hidden'); m.classList.add('flex'); setTimeout(() => { m.classList.remove('opacity-0'); c.classList.remove('scale-95'); }, 10);
+        if(m && c) { m.classList.remove('hidden'); m.classList.add('flex'); setTimeout(() => { m.classList.remove('opacity-0'); c.classList.remove('scale-95'); }, 10); }
     }
-    function fecharModalEditarGasto() { const m = document.getElementById('modal-editar-gasto'), c = document.getElementById('card-editar-gasto'); m.classList.add('opacity-0'); c.classList.add('scale-95'); setTimeout(() => { m.classList.add('hidden'); m.classList.remove('flex'); }, 300); }
+    
+    function fecharModalEditarGasto() { const m = document.getElementById('modal-editar-gasto'), c = document.getElementById('card-editar-gasto'); if(!m) return; m.classList.add('opacity-0'); if(c) c.classList.add('scale-95'); setTimeout(() => { m.classList.add('hidden'); m.classList.remove('flex'); }, 300); }
 
     document.addEventListener('click', function(e) {
         const modais = [
@@ -67,7 +116,11 @@
             {bg: 'modal-grafico-linha', card: 'modal-grafico-linha', close: fecharModalGraficoLinha},
             {bg: 'modal-projecao', card: 'modal-projecao', close: fecharModalProjecao}
         ];
-        modais.forEach(m => { const elBg = document.getElementById(m.bg); const elCard = document.getElementById(m.card) || elBg.children[0]; if (elBg && elCard && e.target === elBg && !elCard.contains(e.target)) m.close(); });
+        modais.forEach(m => { 
+            const elBg = document.getElementById(m.bg); 
+            const elCard = document.getElementById(m.card) || (elBg ? elBg.children[0] : null); 
+            if (elBg && elCard && e.target === elBg && !elCard.contains(e.target)) m.close(); 
+        });
     });
 
     function calcularFluxoMes() {
@@ -77,257 +130,89 @@
         const t = document.getElementById('texto-fluxo-mes');
         if(t) { if(perc > 100) { t.classList.add('text-red-400'); t.classList.remove('text-gray-900', 'dark:text-white'); } t.innerText = perc.toFixed(1).replace('.', ',') + '%'; }
         const b = document.getElementById('barra-fluxo-mes'); if(b) setTimeout(() => { b.style.width = (perc > 100 ? 100 : perc) + '%'; }, 100);
-
-        const mFiltro = "{{ mes_filtro }}"; const ano = parseInt(mFiltro.substring(0, 4)); const mes = parseInt(mFiltro.substring(5, 7)) - 1;
-        const h = new Date(); const eMesAtual = (h.getFullYear() === ano && h.getMonth() === mes);
-        let dDias = eMesAtual ? h.getDate() : new Date(ano, mes + 1, 0).getDate(); if(dDias === 0) dDias = 1;
-        const mDiaria = gastos / dDias; const gProj = mDiaria * new Date(ano, mes + 1, 0).getDate(); const sProj = renda - gProj;
-        const fmt = (v) => v.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
-        
-        const lang = localStorage.getItem('idioma_sistema') || 'PT-BR';
-        let txtDia = eMesAtual ? `Dia ${dDias}` : `Mês Fechado`;
-        if(lang === 'EN-US') txtDia = eMesAtual ? `Day ${dDias}` : `Closed Month`;
-        if(lang === 'ZH-CN') txtDia = eMesAtual ? `第 ${dDias} 天` : `关闭月份`;
-
-        const elDia = document.getElementById('mod-dia-atual'); if(elDia) elDia.innerText = txtDia;
-        const elG = document.getElementById('mod-gasto-atual'); if(elG) elG.setAttribute('data-valor', 'R$ ' + fmt(gastos));
-        const elM = document.getElementById('mod-media-diaria'); if(elM) elM.setAttribute('data-valor', 'R$ ' + fmt(mDiaria));
-        const elP = document.getElementById('mod-gasto-projetado'); if(elP) elP.setAttribute('data-valor', 'R$ ' + fmt(gProj));
-        const elS = document.getElementById('mod-saldo-projetado'); if(elS) { elS.setAttribute('data-valor', 'R$ ' + fmt(sProj)); elS.className = "font-black text-sm md:text-base valor-sensivel " + (sProj >= 0 ? "text-indigo-500" : "text-red-400"); }
-        if(typeof atualizarVisibilidade === "function") atualizarVisibilidade();
     }
 
-    // ===================================================================
-    // BARRA DE ALERTAS NO TOPO (COMPATÍVEL COM OPTIMISTIC UI)
-    // ===================================================================
     function verificarVencimentos() {
-        const itens = document.querySelectorAll('.item-gasto');
-        const cont = document.getElementById('alertas-vencimento'); 
         const w = document.getElementById('wrapper-alertas');
-        
-        if (!cont || !w) return; // Se a tela não tem alertas, sai
-        
-        let tem = false; 
-        cont.innerHTML = ''; 
-        const h = new Date(); h.setHours(0,0,0,0);
-        
-        const lang = localStorage.getItem('idioma_sistema') || 'PT-BR';
-
-        itens.forEach(i => {
-            const s = i.getAttribute('data-status');
-            // Só lança aviso na home se o status NÃO for PAGO
-            if(s === 'PAGO') return;
-
-            const ds = i.getAttribute('data-data'); if(!ds) return;
-            const p = ds.split('-'); if(p.length !== 3) return;
-            const dg = new Date(parseInt(p[0]), parseInt(p[1]) - 1, parseInt(p[2])); dg.setHours(0,0,0,0);
-            const dd = Math.ceil((dg.getTime() - h.getTime()) / (1000 * 60 * 60 * 24));
-            const d = i.getAttribute('data-descricao'), v = i.getAttribute('data-valor'), id = i.getAttribute('data-id');
-            const c = i.getAttribute('data-categoria') || 'Gasto', q = i.getAttribute('data-quinzena') || '0';
-            
-            let msgAmanha = 'Vence Amanhã!'; let msgHoje = 'Vence HOJE!'; let msgAtraso = `Atrasado há ${Math.abs(dd)} dia(s)`;
-            if(lang === 'EN-US') { msgAmanha = 'Due Tomorrow!'; msgHoje = 'Due TODAY!'; msgAtraso = `Overdue by ${Math.abs(dd)} day(s)`; }
-            if(lang === 'ZH-CN') { msgAmanha = '明天到期！'; msgHoje = '今天到期！'; msgAtraso = `逾期 ${Math.abs(dd)} 天`; }
-
-            if (dd === 1) { addAlerta(d, v, ds, c, q, s, msgAmanha, 'text-yellow-800 bg-yellow-50 border-yellow-200', 'alert-triangle', id); tem = true; }
-            else if (dd === 0) { addAlerta(d, v, ds, c, q, s, msgHoje, 'text-orange-800 bg-orange-50 border-orange-200', 'bell', id); tem = true; }
-            else if (dd < 0) { addAlerta(d, v, ds, c, q, s, msgAtraso, 'text-red-800 bg-red-50 border-red-200', 'alert-octagon', id); tem = true; }
-        });
-        
-        // Se houver itens pendentes/vencidos, mostra o container, senão, esconde (para quando você pagar a última conta)
-        if(tem) { 
-            w.classList.remove('hidden'); 
-            if(typeof lucide !== 'undefined') lucide.createIcons(); 
-            if(typeof atualizarVisibilidade === "function") atualizarVisibilidade(); 
-        } else {
-            w.classList.add('hidden');
-        }
-    }
-
-    function addAlerta(desc, val, data, cat, q, st, msg, cls, ico, id) {
-        // Validação defensiva caso val seja numérico ou string
-        let valorFmt = val.toString().replace('R$ ', '').replace('.','').replace(',', '.');
-        const html = `<div onclick="abrirModalEditarGasto('${id}', '${desc}', '${valorFmt}', '${data}', '${cat}', '${q}', '${st}')" class="snap-center shrink-0 w-[85%] md:w-64 bg-white dark:bg-[#1a1b26] border border-gray-100 dark:border-white/5 rounded-2xl p-3 flex items-center gap-3 shadow-sm hover:border-indigo-500/30 cursor-pointer ${cls}">
-            <div class="bg-white/50 p-2 rounded-full pointer-events-none"><i data-lucide="${ico}" class="w-4 h-4"></i></div>
-            <div class="flex flex-col w-full pointer-events-none flex-grow"><span class="text-[9px] font-bold uppercase tracking-wider opacity-90 truncate">${msg}</span><span class="text-[10px] font-bold truncate">${desc}</span><span class="text-xs font-black mt-0.5 opacity-90 valor-sensivel" data-valor="R$ ${val}">R$ ${val}</span></div>
-        </div>`;
-        document.getElementById('alertas-vencimento').insertAdjacentHTML('beforeend', html);
+        if (w) w.classList.add('hidden'); // Simples hide para a home (o layout cuida dos cards)
     }
 
     function filtrarGastos(st) {
-        // Memória da aba atual para a Interface Otimista saber para onde voltar
         window.tabAtivaExtrato = st;
-
-        // 1. Estiliza as abas
-        ['TODOS', 'PAGO', 'PENDENTE'].forEach(id => {
+        const abas = ['TODOS', 'PAGO', 'PENDENTE', 'Q1', 'Q2'];
+        abas.forEach(id => {
             const b = document.getElementById('tab-' + id);
             if(!b) return;
-            if (id === st) b.className = "px-3 py-1.5 text-[10px] font-bold rounded-lg bg-indigo-100 dark:bg-indigo-900/30 text-indigo-800 dark:text-indigo-300 transition-all";
-            else b.className = "px-3 py-1.5 text-[10px] font-bold rounded-lg text-gray-500 hover:bg-gray-200 dark:hover:bg-gray-800 transition-all";
+            if (id === st) b.className = "px-3 py-1.5 text-[10px] font-bold rounded-lg bg-white dark:bg-[#111b21] text-indigo-600 dark:text-indigo-400 shadow-sm transition-all border border-gray-200 dark:border-white/10";
+            else b.className = "px-3 py-1.5 text-[10px] font-bold rounded-lg text-gray-500 hover:bg-white dark:hover:bg-[#111b21] hover:text-gray-800 dark:hover:text-gray-100 transition-all border border-transparent";
         });
         
-        let qtdVisiveis = 0;
-        let valorTotal = 0;
-
-        // 2. Filtra os itens e soma os valores
+        let qtdVisiveis = 0; let valorTotal = 0;
         document.querySelectorAll('.item-gasto').forEach(i => {
             const statusItem = i.getAttribute('data-status');
+            const quinzenaItem = i.getAttribute('data-quinzena');
             const valorItem = parseFloat(i.getAttribute('data-valor')) || 0;
 
-            const deveAparecer = (st === 'TODOS') || 
-                                 (st === 'PAGO' && statusItem === 'PAGO') || 
-                                 (st === 'PENDENTE' && statusItem !== 'PAGO');
+            const deveAparecer = (st === 'TODOS') || (st === 'PAGO' && statusItem === 'PAGO') || (st === 'PENDENTE' && statusItem !== 'PAGO') || (st === 'Q1' && quinzenaItem === '1') || (st === 'Q2' && quinzenaItem === '2');
 
             if (deveAparecer) { 
-                i.style.display = 'flex'; 
-                qtdVisiveis++; 
-                valorTotal += valorItem;
-            } else { 
-                i.style.display = 'none'; 
-            }
+                i.style.display = 'flex'; qtdVisiveis++; valorTotal += valorItem;
+            } else { i.style.display = 'none'; }
         });
 
-        // 3. Mostra ou Esconde a mensagem de Vazio
         const msg = document.getElementById('msg-filtro-vazio'); 
         if (msg) msg.style.display = qtdVisiveis === 0 ? 'block' : 'none';
 
-        // 4. Atualiza o Totalizador Dinâmico
         const labelTot = document.getElementById('label-totalizador');
         const valorTot = document.getElementById('valor-totalizador');
-        
         if (labelTot && valorTot) {
             let titulo = "Total Selecionado:";
             if (st === 'PAGO') titulo = "Total Já Pago:";
             if (st === 'PENDENTE') titulo = "Total a Pagar:";
-            
+            if (st === 'Q1') titulo = "Total da 1ª Quinzena:";
+            if (st === 'Q2') titulo = "Total da 2ª Quinzena:";
             labelTot.innerText = titulo;
             valorTot.innerText = "R$ " + valorTotal.toLocaleString('pt-BR', {minimumFractionDigits: 2, maximumFractionDigits: 2});
-            valorTot.setAttribute('data-valor', valorTot.innerText);
-            
-            if(typeof atualizarVisibilidade === "function") atualizarVisibilidade();
         }
     }
 
     document.addEventListener("DOMContentLoaded", function() {
         atualizarNomeMes();
-        if(typeof carregarSistemaXP === 'function') carregarSistemaXP();
-        verificarVencimentos();
-        calcularFluxoMes();
-
-        // Inicializa aba TODOS
         filtrarGastos('TODOS');
-
-        window.addEventListener('themeChanged', () => {}); 
-
-        const slider = document.getElementById('alertas-vencimento');
-        let isDown = false, startX, scrollLeft;
-        if(slider) {
-            slider.addEventListener('mousedown', (e) => { isDown = true; window.isDraggingAlert = false; slider.classList.add('cursor-grabbing'); slider.classList.remove('cursor-grab'); startX = e.pageX - slider.offsetLeft; scrollLeft = slider.scrollLeft; });
-            slider.addEventListener('mouseleave', () => { isDown = false; slider.classList.remove('cursor-grabbing'); slider.classList.add('cursor-grab'); });
-            slider.addEventListener('mouseup', () => { isDown = false; slider.classList.remove('cursor-grabbing'); slider.classList.add('cursor-grab'); setTimeout(() => window.isDraggingAlert = false, 10); });
-            slider.addEventListener('mousemove', (e) => { if (!isDown) return; e.preventDefault(); const x = e.pageX - slider.offsetLeft; const walk = (x - startX) * 2; if (Math.abs(walk) > 5) window.isDraggingAlert = true; slider.scrollLeft = scrollLeft - walk; });
-        }
+        calcularFluxoMes();
 
         const isDark = document.documentElement.classList.contains('dark') || document.body.classList.contains('dark') || localStorage.theme === 'dark';
         const textColor = isDark ? '#9ca3af' : '#6b7280';
         const titleColor = isDark ? '#ffffff' : '#111827';
         const trackColor = isDark ? '#1f2937' : '#e5e7eb';
-        const isMob = window.innerWidth < 768;
-
-        {% if valores_grafico %}
-        new ApexCharts(document.querySelector("#grafico-ondas"), {
-            series: [{ name: 'Gastos', data: {{ valores_grafico | tojson }} }],
-            chart: { type: 'area', height: 250, toolbar: { show: false }, background: 'transparent', foreColor: textColor },
-            colors: ['#6366f1'],
-            stroke: { curve: 'smooth', width: 2 },
-            fill: { type: 'gradient', gradient: { shadeIntensity: 1, opacityFrom: 0.4, opacityTo: 0.05, stops: [0, 90, 100] } },
-            xaxis: { categories: {{ dias_grafico | tojson }}, labels: { style: { colors: textColor, fontSize: '9px' } } },
-            yaxis: { show: false }
-        }).render();
-        {% endif %}
-
-        {% if valores_categorias and labels_categorias %}
-        const vt = {{ valores_categorias | sum | round(2) }};
-        new ApexCharts(document.querySelector("#grafico-donut-container"), {
-            series: {{ valores_categorias | tojson }}, labels: {{ labels_categorias | tojson }},
-            chart: { type: 'donut', height: isMob ? 260 : 300, background: 'transparent', foreColor: textColor },
-            colors: ['#6366f1', '#14b8a6', '#ef4444', '#10b981', '#f59e0b', '#ec4899', '#8b5cf6', '#06b6d4'],
-            plotOptions: {
-                pie: {
-                    donut: {
-                        size: '80%',
-                        labels: {
-                            show: true,
-                            name: { show: true, fontSize: '10px', fontWeight: 600, color: textColor, offsetY: -5, formatter: function() { return 'TOTAL' } },
-                            value: { show: true, fontSize: isMob ? '20px' : '24px', fontWeight: 800, color: titleColor, offsetY: 5, formatter: function (val) { return "R$ " + val.toLocaleString('pt-BR', {minimumFractionDigits: 2, maximumFractionDigits: 2}); } },
-                            total: { show: true, showAlways: true, label: 'TOTAL', color: textColor, fontSize: '10px', fontWeight: 600, formatter: function () { return "R$ " + vt.toLocaleString('pt-BR', {minimumFractionDigits: 2, maximumFractionDigits: 2}); } }
-                        }
-                    }
-                }
-            },
-            dataLabels: { enabled: false },
-            stroke: { width: 0 }, 
-            legend: {
-                position: 'bottom',
-                horizontalAlign: 'center',
-                fontSize: '12px',
-                fontWeight: 600,
-                markers: { radius: 12, width: 8, height: 8, offsetX: -2 },
-                itemMargin: { horizontal: 12, vertical: 6 },
-                labels: { colors: textColor },
-                formatter: function(seriesName, opts) {
-                    const valor = opts.w.globals.seriesTotals[opts.seriesIndex];
-                    return seriesName + " : R$ " + valor.toLocaleString('pt-BR', {minimumFractionDigits: 2, maximumFractionDigits: 2});
-                }
-            }
-        }).render();
-        {% endif %}
 
         const pagoPerc = parseFloat("{{ perc_pago }}".replace(',', '.')) || 0;
-        const hasBills = parseFloat("{{ gastos_totais }}".replace(/\./g, '').replace(',', '.')) > 0;
+        let gastosStr = "{{ gastos_totais }}";
+        if(gastosStr === "None") gastosStr = "0";
+        const hasBills = parseFloat(gastosStr.replace(/\./g, '').replace(',', '.')) > 0;
         const scoreVal = hasBills ? (pagoPerc * 10) : 1000;
 
-        window.graficoScoreChart = new ApexCharts(document.querySelector("#grafico-score"), {
-            series: [pagoPerc],
-            chart: { type: 'radialBar', height: isMob ? 180 : 200, sparkline: { enabled: true }, foreColor: textColor },
-            plotOptions: {
-                radialBar: {
-                    startAngle: -90,
-                    endAngle: 90,
-                    hollow: { size: '60%' },
-                    track: { background: trackColor, strokeWidth: '100%', margin: 5 },
-                    dataLabels: {
-                        name: { show: false },
-                        value: {
-                            offsetY: -5,
-                            fontSize: isMob ? '18px' : '22px',
-                            fontWeight: 700,
-                            color: titleColor,
-                            formatter: function () { return scoreVal.toFixed(0); }
+        const elGraficoScore = document.querySelector("#grafico-score");
+        if(elGraficoScore && typeof ApexCharts !== 'undefined') {
+            window.graficoScoreChart = new ApexCharts(elGraficoScore, {
+                series: [pagoPerc],
+                chart: { type: 'radialBar', height: window.innerWidth < 768 ? 180 : 200, sparkline: { enabled: true }, foreColor: textColor },
+                plotOptions: {
+                    radialBar: {
+                        startAngle: -90, endAngle: 90, hollow: { size: '60%' },
+                        track: { background: trackColor, strokeWidth: '100%', margin: 5 },
+                        dataLabels: {
+                            name: { show: false },
+                            value: { offsetY: -5, fontSize: window.innerWidth < 768 ? '18px' : '22px', fontWeight: 700, color: titleColor, formatter: function () { return scoreVal.toFixed(0); } }
                         }
                     }
-                }
-            },
-            fill: {
-                type: 'gradient',
-                gradient: {
-                    shade: isDark ? 'dark' : 'light',
-                    type: 'horizontal',
-                    colorStops: [
-                        { offset: 0, color: '#ef4444', opacity: 1 },
-                        { offset: 50, color: '#eab308', opacity: 1 },
-                        { offset: 100, color: '#22c55e', opacity: 1 }
-                    ]
-                }
-            },
-            stroke: { lineCap: 'round' }
-        });
-        window.graficoScoreChart.render();
+                },
+                fill: { type: 'gradient', gradient: { shade: isDark ? 'dark' : 'light', type: 'horizontal', colorStops: [ { offset: 0, color: '#ef4444', opacity: 1 }, { offset: 50, color: '#eab308', opacity: 1 }, { offset: 100, color: '#22c55e', opacity: 1 } ] } },
+                stroke: { lineCap: 'round' }
+            });
+            window.graficoScoreChart.render();
+        }
     });
-
-    // =======================================================
-    // OPERAÇÕES EM SEGUNDO PLANO (AJAX) - SEM RECARREGAR A TELA
-    // =======================================================
 
     function extrairValoresDoFundo(html) {
         const parser = new DOMParser();
@@ -356,7 +241,7 @@
             }
 
             const novoPercPago = parseFloat(secScoreNovo.getAttribute('data-pago').replace(',', '.')) || 0;
-            const novosGastosTotais = secScoreNovo.getAttribute('data-gastos');
+            const novosGastosTotais = secScoreNovo.getAttribute('data-gastos') || "0";
             const hasBills = parseFloat(novosGastosTotais.replace(/\./g, '').replace(',', '.')) > 0;
             const novoScoreVal = hasBills ? (novoPercPago * 10) : 1000;
 
@@ -377,165 +262,92 @@
 
     function excluirSemReload(event, form, id) {
         event.preventDefault(); 
-        
         const executarExclusaoAJAX = () => {
             const btn = form.querySelector('button');
             btn.innerHTML = '<i data-lucide="loader" class="w-3.5 h-3.5 animate-spin"></i>';
-            
-            fetch(form.action, { method: 'POST', body: new FormData(form) })
-            .then(() => fetch(window.location.href))
-            .then(res => res.text())
-            .then(html => {
+            fetch(form.action, { method: 'POST', body: new FormData(form) }).then(() => {
                 const card = document.querySelector(`.item-gasto[data-id="${id}"]`);
                 if(card) {
-                    card.style.transition = 'all 0.3s ease';
-                    card.style.opacity = '0';
-                    card.style.transform = 'scale(0.9)';
-                    setTimeout(() => {
-                        card.remove();
-                        const tabAtiva = window.tabAtivaExtrato || 'TODOS';
-                        filtrarGastos(tabAtiva);
-                        verificarVencimentos(); // Atualiza a barra amarela
-                    }, 300);
+                    card.style.transition = 'all 0.3s ease'; card.style.opacity = '0'; card.style.transform = 'scale(0.9)';
+                    setTimeout(() => { card.remove(); filtrarGastos(window.tabAtivaExtrato || 'TODOS'); }, 300);
                 }
-                extrairValoresDoFundo(html); 
             });
         };
-
-        const lang = localStorage.getItem('idioma_sistema') || 'PT-BR';
-        let titleText = 'Excluir?'; let descText = 'Deseja apagar esta despesa?'; let btnSim = 'Sim, excluir!'; let btnNao = 'Cancelar';
-        if(lang === 'EN-US') { titleText = 'Delete?'; descText = 'Do you want to delete this expense?'; btnSim = 'Yes, delete!'; btnNao = 'Cancel'; }
-        if(lang === 'ZH-CN') { titleText = '删除？'; descText = '您要删除这笔支出吗？'; btnSim = '是的，删除！'; btnNao = '取消'; }
-
-        if (typeof Swal !== 'undefined') {
-            Swal.fire({
-                title: titleText,
-                text: descText,
-                icon: 'warning',
-                showCancelButton: true,
-                confirmButtonColor: '#ef4444', 
-                cancelButtonColor: '#6b7280',  
-                confirmButtonText: btnSim,
-                cancelButtonText: btnNao
-            }).then((result) => {
-                if (result.isConfirmed) {
-                    executarExclusaoAJAX();
-                }
-            });
-        } else {
-            if (confirm(descText)) {
-                executarExclusaoAJAX();
-            }
-        }
-    }
-
-    // ===================================================================
-    // TÉCNICA "OPTIMISTIC UI": MUDA NA HORA, SALVA NO FUNDO COM ANIMAÇÃO
-    // ===================================================================
-    function statusSemReload(event, form, id) {
-        event.preventDefault();
-        
-        const card = document.querySelector(`.item-gasto[data-id="${id}"]`);
-        if (!card) return;
-
-        // 1. Toca o status no DOM instantaneamente
-        let currentStatus = card.getAttribute('data-status').toUpperCase();
-        let newStatus = currentStatus === 'PAGO' ? 'PENDENTE' : 'PAGO';
-        card.setAttribute('data-status', newStatus);
-
-        // 2. Muda o visual do botão instantaneamente
-        const btn = form.querySelector('button');
-        if (newStatus === 'PAGO') {
-            btn.className = "px-2.5 py-1.5 bg-emerald-50 dark:bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 rounded-lg text-[9px] font-bold flex items-center gap-1 transition-colors";
-            btn.innerHTML = '<i data-lucide="check-circle" class="w-3 h-3"></i> <span data-i18n="pago_min">Pago</span>';
-            if(typeof ganharXP === 'function') ganharXP(10, 'xp_motivo_pago');
-        } else {
-            btn.className = "px-2.5 py-1.5 bg-orange-50 dark:bg-orange-500/10 text-orange-600 dark:text-orange-400 rounded-lg text-[9px] font-bold flex items-center gap-1 transition-colors";
-            btn.innerHTML = '<i data-lucide="clock" class="w-3 h-3"></i> <span data-i18n="pend_min">Pend.</span>';
-        }
-        
-        if(typeof lucide !== 'undefined') lucide.createIcons();
-
-        // 3. Verifica se o card ainda deve continuar aparecendo na aba atual
-        const abaAtual = window.tabAtivaExtrato || 'TODOS';
-        const deveAparecer = (abaAtual === 'TODOS') || 
-                             (abaAtual === 'PAGO' && newStatus === 'PAGO') || 
-                             (abaAtual === 'PENDENTE' && newStatus !== 'PAGO');
-
-        if (!deveAparecer) {
-            // Faz o card sumir silenciosamente (fade out + encolher)
-            card.style.transition = 'all 0.3s ease';
-            card.style.opacity = '0';
-            card.style.transform = 'scale(0.95)';
-            
-            setTimeout(() => {
-                filtrarGastos(abaAtual); // Recalcula totais e dá display: none no card
-                verificarVencimentos(); // Atualiza a barra de alertas no topo
-                
-                // Restaura a opacidade para quando o usuário trocar de aba ele não estar invisível
-                card.style.opacity = '1';
-                card.style.transform = 'scale(1)';
-            }, 300);
-        } else {
-            // Se estiver na aba TODOS, apenas recalcula os totais instantaneamente
-            filtrarGastos(abaAtual);
-            verificarVencimentos(); // Atualiza a barra de alertas no topo
-        }
-
-        if(window.aplicarTraducao) window.aplicarTraducao(localStorage.getItem('idioma_sistema') || 'PT-BR');
-
-        // 4. Salva a requisição no servidor de forma invisível
-        fetch(form.action, { method: 'POST', body: new FormData(form) })
-        .then(() => fetch(window.location.href))
-        .then(res => res.text())
-        .then(html => {
-            extrairValoresDoFundo(html); // Atualiza os números principais do Dashboard no fundo
-        }).catch(err => console.error("Erro ao salvar no banco:", err));
+        if (confirm("Deseja apagar esta despesa?")) executarExclusaoAJAX();
     }
 
     function editarSemReload(event, form) {
         event.preventDefault();
         
-        const idMatch = form.action.match(/\/editar_gasto\/(\d+)/);
-        if (!idMatch) return;
-        const idGasto = idMatch[1];
+        // BLINDAGEM DE ROTA: Regex melhorado (Aceita editar_movimentacao ou editar_gasto)
+        const idMatch = form.action.match(/\/editar_(?:movimentacao|gasto)\/(\d+)/);
+        
+        if (!idMatch) {
+            console.error("Erro Crítico na URL de Action. O Regex falhou na tentativa de achar a Rota.");
+            return;
+        }
         
         const btn = form.querySelector('button[type="submit"]');
         const txtOriginal = btn.innerHTML;
-        
-        const lang = localStorage.getItem('idioma_sistema') || 'PT-BR';
-        btn.innerHTML = lang === 'EN-US' ? 'Saving...' : (lang === 'ZH-CN' ? '保存中...' : 'Salvando...');
+        btn.innerHTML = '<i data-lucide="loader" class="w-4 h-4 animate-spin"></i> Salvando...';
+        if(typeof lucide !== 'undefined') lucide.createIcons();
         
         fetch(form.action, { method: 'POST', body: new FormData(form) })
-        .then(() => fetch(window.location.href))
+        .then(res => {
+            if (!res.ok) throw new Error("Falha no servidor. Verifique os dados.");
+            
+            // QUEBRANDO O CACHE: Adiciona o timestamp na URL para forçar atualização
+            const currentUrl = window.location.href;
+            const sep = currentUrl.includes('?') ? '&' : '?';
+            return fetch(currentUrl + sep + 't=' + Date.now());
+        })
         .then(res => res.text())
         .then(html => {
             const parser = new DOMParser();
             const novoDoc = parser.parseFromString(html, 'text/html');
+            const cardAntigo = document.querySelector(`.item-gasto[data-id="${idMatch[1]}"]`);
+            const cardNovo = novoDoc.querySelector(`.item-gasto[data-id="${idMatch[1]}"]`);
             
-            const cardAntigo = document.querySelector(`.item-gasto[data-id="${idGasto}"]`);
-            const cardNovo = novoDoc.querySelector(`.item-gasto[data-id="${idGasto}"]`);
             if(cardAntigo && cardNovo) {
                 cardAntigo.innerHTML = cardNovo.innerHTML;
-                ['data-descricao', 'data-valor', 'data-data', 'data-categoria', 'data-quinzena', 'data-status'].forEach(attr => {
-                    cardAntigo.setAttribute(attr, cardNovo.getAttribute(attr));
+                ['data-descricao', 'data-valor', 'data-data', 'data-categoria', 'data-quinzena', 'data-status', 'data-tipo'].forEach(attr => { 
+                    cardAntigo.setAttribute(attr, cardNovo.getAttribute(attr)); 
                 });
             }
             
             fecharModalEditarGasto();
             btn.innerHTML = txtOriginal; 
             if(typeof lucide !== 'undefined') lucide.createIcons();
+            filtrarGastos(window.tabAtivaExtrato || 'TODOS');
             extrairValoresDoFundo(html);
-            
-            const tabAtiva = window.tabAtivaExtrato || 'TODOS';
-            filtrarGastos(tabAtiva);
-            verificarVencimentos(); // Atualiza a barra de alertas do topo
-            
-            if(window.aplicarTraducao) window.aplicarTraducao(localStorage.getItem('idioma_sistema') || 'PT-BR');
         })
-        .catch(err => {
-            console.error("Erro ao editar:", err);
-            btn.innerHTML = txtOriginal;
+        .catch(err => { 
+            console.error("Erro:", err); 
+            btn.innerHTML = txtOriginal; 
+            if(typeof lucide !== 'undefined') lucide.createIcons();
+            alert("Aconteceu um pequeno erro ao salvar. Atualize a página e tente novamente.");
         });
+    }
+
+    function statusSemReload(event, form, id) {
+        event.preventDefault();
+        const card = document.querySelector(`.item-gasto[data-id="${id}"]`);
+        if (!card) return;
+
+        let newStatus = card.getAttribute('data-status').toUpperCase() === 'PAGO' ? 'PENDENTE' : 'PAGO';
+        card.setAttribute('data-status', newStatus);
+
+        const btn = form.querySelector('button');
+        if (newStatus === 'PAGO') {
+            btn.className = "px-2.5 py-1.5 bg-emerald-50 dark:bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 rounded-lg text-[9px] font-bold flex items-center gap-1 transition-colors";
+            btn.innerHTML = '<i data-lucide="check-circle" class="w-3 h-3"></i> <span>Pago</span>';
+        } else {
+            btn.className = "px-2.5 py-1.5 bg-orange-50 dark:bg-orange-500/10 text-orange-600 dark:text-orange-400 rounded-lg text-[9px] font-bold flex items-center gap-1 transition-colors";
+            btn.innerHTML = '<i data-lucide="clock" class="w-3 h-3"></i> <span>Pend.</span>';
+        }
+        
+        if(typeof lucide !== 'undefined') lucide.createIcons();
+        filtrarGastos(window.tabAtivaExtrato || 'TODOS');
+        fetch(form.action, { method: 'POST', body: new FormData(form) }).catch(err => console.error(err));
     }
 </script>

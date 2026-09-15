@@ -335,7 +335,6 @@ def forcar_troca_senha():
 
     return render_template('telas/forcar_senha.html', erro=erro)
 
-
 # ==============================================================================
 # PÁGINAS LEGAIS E CADASTRO
 # ==============================================================================
@@ -395,7 +394,6 @@ def cadastro_clientes():
     conn.close()
     return redirect(url_for('login'))
 
-
 # ==============================================================================
 # DASHBOARD PRINCIPAL E SISTEMA DE NOTIFICAÇÕES
 # ==============================================================================
@@ -435,14 +433,12 @@ def carregar_notificacoes_usuario(usuario_id):
         print(f"Erro ao carregar notificações: {e}")
         return [], 0
 
-
 @app.context_processor
 def injetar_notificacoes_globais():
     if 'logado' in session and session.get('user_id'):
         notificacoes_list, total_nao_lidas = carregar_notificacoes_usuario(session.get('user_id'))
         return dict(notificacoes=notificacoes_list, total_notificacoes=total_nao_lidas)
     return dict(notificacoes=[], total_notificacoes=0)
-
 
 def verificar_virada_de_mes(user_id):
     mes_atual = datetime.now().strftime('%Y-%m')
@@ -464,7 +460,6 @@ def verificar_virada_de_mes(user_id):
             conexao.commit()
     conexao.close()
 
-
 @app.route('/', methods=['GET'])
 @login_obrigatorio
 def home():
@@ -480,15 +475,17 @@ def home():
     mes_atual_real = datetime.now().strftime('%Y-%m')
     mes_filtro = request.args.get('mes', mes_atual_real)
 
+    # 1. PEGA A RENDA FIXA BASE
     try:
         cursor.execute("SELECT valor FROM renda WHERE mes = ? AND usuario_id = ?", (mes_filtro, user_id))
         resultado_renda = cursor.fetchone()
     except Exception:
         resultado_renda = None
 
+    renda_base = 0.00
     if resultado_renda:
         is_dict = hasattr(resultado_renda, 'keys')
-        renda_atual = float(resultado_renda['valor'] if is_dict else resultado_renda[0])
+        renda_base = float(resultado_renda['valor'] if is_dict else resultado_renda[0])
     else:
         try:
             is_dict_usr = hasattr(resultado_usuario, 'keys') if resultado_usuario else False
@@ -496,24 +493,30 @@ def home():
             usr_renda_fixa = resultado_usuario['renda'] if is_dict_usr else (resultado_usuario[0] if resultado_usuario else None)
 
             if mes_filtro > mes_atual_real and resultado_usuario and usr_renda_var == 'sim':
-                renda_atual = 0.00
+                renda_base = 0.00
             elif resultado_usuario and usr_renda_fixa is not None:
-                renda_atual = float(usr_renda_fixa)
-            else:
-                renda_atual = 0.00
+                renda_base = float(usr_renda_fixa)
         except (ValueError, TypeError):
-            renda_atual = 0.00
+            renda_base = 0.00
 
-    cursor.execute('SELECT * FROM gastos WHERE data LIKE ? AND usuario_id = ? ORDER BY data DESC', (mes_filtro + '%', user_id))
-    lista_gastos_raw = cursor.fetchall()
+    # 2. BUSCA TODAS AS MOVIMENTAÇÕES (RECEITAS E DESPESAS)
+    # Usa IFNULL para garantir compatibilidade caso a coluna 'tipo' ainda não esteja em todos os registros
+    cursor.execute('''SELECT id, descricao, categoria, valor, quinzena, status, data, divida_id, IFNULL(tipo, "despesa") as tipo
+                      FROM gastos WHERE data LIKE ? AND usuario_id = ? ORDER BY data DESC''', (mes_filtro + '%', user_id))
+    lista_movimentos_raw = cursor.fetchall()
 
-    lista_gastos = []
-    if lista_gastos_raw and hasattr(lista_gastos_raw[0], 'keys'):
-        lista_gastos = [dict(row) for row in lista_gastos_raw]
+    lista_movimentos = []
+    if lista_movimentos_raw and hasattr(lista_movimentos_raw[0], 'keys'):
+        lista_movimentos = [dict(row) for row in lista_movimentos_raw]
     else:
-        lista_gastos = [{'id': g[0], 'descricao': g[2], 'valor': g[4], 'data': g[7], 'categoria': g[3], 'quinzena': g[5], 'status': g[6], 'divida_id': g[8] if len(g)>8 else None} for g in lista_gastos_raw] if lista_gastos_raw else []
+        lista_movimentos = [{'id': g[0], 'descricao': g[1], 'categoria': g[2], 'valor': g[3], 'quinzena': g[4], 'status': g[5], 'data': g[6], 'divida_id': g[7], 'tipo': g[8]} for g in lista_movimentos_raw] if lista_movimentos_raw else []
 
-    total_gastos = sum(float(g.get('valor', 0)) for g in lista_gastos)
+    # 3. SEPARAÇÃO E SOMA INTELIGENTE DE VALORES
+    total_gastos = sum(float(g.get('valor', 0)) for g in lista_movimentos if g.get('tipo', 'despesa') == 'despesa')
+    total_receitas_extras = sum(float(g.get('valor', 0)) for g in lista_movimentos if g.get('tipo') == 'receita')
+
+    # A renda real do mês é a Fixa + As extras
+    renda_atual = renda_base + total_receitas_extras
 
     try:
         ano_filtro = int(mes_filtro[:4])
@@ -528,7 +531,8 @@ def home():
 
         mes_passado_str = f"{ano_passado}-{mes_passado_num:02d}"
 
-        cursor.execute("SELECT SUM(valor) as total FROM gastos WHERE data LIKE ? AND usuario_id = ?", (mes_passado_str + '%', user_id))
+        # Compara apenas DESPESAS do mês passado
+        cursor.execute("SELECT SUM(valor) as total FROM gastos WHERE data LIKE ? AND usuario_id = ? AND (tipo = 'despesa' OR tipo IS NULL)", (mes_passado_str + '%', user_id))
         resultado_passado = cursor.fetchone()
 
         is_dict = hasattr(resultado_passado, 'keys') if resultado_passado else False
@@ -538,8 +542,9 @@ def home():
     except Exception:
         total_passado = 0.0
 
+    # Gráfico só exibe as despesas
     cursor.execute('''SELECT substr(data, 9, 2) as dia, SUM(valor) as total FROM gastos
-                      WHERE data LIKE ? AND usuario_id = ? GROUP BY dia ORDER BY dia''', (mes_filtro + '%', user_id))
+                      WHERE data LIKE ? AND usuario_id = ? AND (tipo = 'despesa' OR tipo IS NULL) GROUP BY dia ORDER BY dia''', (mes_filtro + '%', user_id))
     dados_grafico = cursor.fetchall()
 
     dias_grafico = []
@@ -554,17 +559,20 @@ def home():
 
     conexao.close()
 
+    # Filtra apenas os gastos puros para os cálculos de Donut, Top 3 e Quinzenas
+    gastos_puros = [g for g in lista_movimentos if g.get('tipo', 'despesa') == 'despesa']
+
     categorias_dict = {}
-    for g in lista_gastos:
+    for g in gastos_puros:
         cat = g.get('categoria', 'Outros')
         categorias_dict[cat] = categorias_dict.get(cat, 0) + float(g.get('valor', 0))
 
-    total_q1 = sum(float(g.get('valor', 0)) for g in lista_gastos if str(g.get('quinzena', '')) == '1')
-    total_q2 = sum(float(g.get('valor', 0)) for g in lista_gastos if str(g.get('quinzena', '')) == '2')
+    total_q1 = sum(float(g.get('valor', 0)) for g in gastos_puros if str(g.get('quinzena', '')) == '1')
+    total_q2 = sum(float(g.get('valor', 0)) for g in gastos_puros if str(g.get('quinzena', '')) == '2')
     perc_q1 = round((total_q1 / total_gastos * 100), 1) if total_gastos > 0 else 0
     perc_q2 = round((total_q2 / total_gastos * 100), 1) if total_gastos > 0 else 0
 
-    total_pago = sum(float(g.get('valor', 0)) for g in lista_gastos if str(g.get('status', '')).upper() == 'PAGO')
+    total_pago = sum(float(g.get('valor', 0)) for g in gastos_puros if str(g.get('status', '')).upper() == 'PAGO')
     total_pendente = total_gastos - total_pago
 
     if total_gastos > 0:
@@ -574,7 +582,7 @@ def home():
         perc_pago = 0
         perc_pendente = 0
 
-    top3_gastos = sorted(lista_gastos, key=lambda x: float(x.get('valor', 0)), reverse=True)[:3]
+    top3_gastos = sorted(gastos_puros, key=lambda x: float(x.get('valor', 0)), reverse=True)[:3]
     disponivel_geral = renda_atual - total_gastos
 
     def fmt(v): return f"{v:,.2f}".replace(",", "X").replace(".", ",").replace("X", ".")
@@ -599,7 +607,7 @@ def home():
 
     return render_template('index.html',
                            renda_total=fmt(renda_atual), gastos_totais=fmt(total_gastos),
-                           valor_disponivel=fmt(disponivel_geral), gastos=lista_gastos,
+                           valor_disponivel=fmt(disponivel_geral), gastos=lista_movimentos,
                            mes_filtro=mes_filtro, dias_grafico=dias_grafico, valores_grafico=valores_grafico,
                            labels_categorias=list(categorias_dict.keys()), valores_categorias=list(categorias_dict.values()),
                            perc_q1=perc_q1, perc_q2=perc_q2, total_q1=fmt(total_q1), total_q2=fmt(total_q2),
@@ -623,99 +631,6 @@ def historico_notificacoes():
     return render_template('telas/historico_notificacoes.html', notificacoes=notificacoes_historico)
 
 # ==============================================================================
-# GAMIFICAÇÃO E JORNADA IA
-# ==============================================================================
-def calcular_jornada_ia(usuario_id, cursor):
-    """Função central para não quebrar a lógica do painel RPG."""
-    cursor.execute("SELECT * FROM metas WHERE usuario_id = ? AND status = 'ATIVA' ORDER BY id DESC LIMIT 1", (usuario_id,))
-    meta = cursor.fetchone()
-    if meta:
-        try:
-            # Lógica simples para deduzir esforço mensal
-            data_prazo = datetime.strptime(meta['data_prazo'], '%Y-%m-%d') if len(meta['data_prazo']) > 7 else datetime.strptime(meta['data_prazo'] + '-01', '%Y-%m-%d')
-            hoje = datetime.now()
-            meses_restantes = max(1, (data_prazo.year - hoje.year) * 12 + data_prazo.month - hoje.month)
-            falta = meta['valor_objetivo'] - meta['valor_atual']
-            missao_mensal = falta / meses_restantes
-        except:
-            missao_mensal = 0.0
-
-        return {
-            'nome': meta['nome_meta'],
-            'objetivo': meta['valor_objetivo'],
-            'valor_atual': meta['valor_atual'],
-            'missao_mensal': missao_mensal
-        }
-    return None
-
-@app.route('/nova_meta', methods=['POST'])
-@login_obrigatorio
-def nova_meta():
-    user_id = session['user_id']
-
-    nome_meta = request.form.get('nome_meta')
-    valor_objetivo = request.form.get('valor_objetivo')
-    data_prazo = request.form.get('data_prazo')
-    data_criacao = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
-
-    conexao = get_db_connection()
-    cursor = conexao.cursor()
-    cursor.execute("UPDATE metas SET status = 'PAUSADA' WHERE usuario_id = ? AND status = 'ATIVA'", (user_id,))
-    cursor.execute('''INSERT INTO metas (usuario_id, nome_meta, valor_objetivo, data_prazo, data_criacao)
-                      VALUES (?, ?, ?, ?, ?)''', (user_id, nome_meta, valor_objetivo, data_prazo, data_criacao))
-    conexao.commit()
-    conexao.close()
-    return redirect(url_for('home'))
-
-@app.route('/api/jornada_rpg')
-@login_obrigatorio
-def api_jornada_rpg():
-    try:
-        id_usuario = session['user_id']
-        mes_atual = datetime.now().strftime('%Y-%m')
-
-        conexao = get_db_connection()
-        cursor = conexao.cursor()
-
-        cursor.execute("SELECT renda FROM usuarios WHERE id = ?", (id_usuario,))
-        row_renda = cursor.fetchone()
-        renda = float(row_renda['renda']) if row_renda and row_renda['renda'] else 0.0
-
-        cursor.execute("SELECT SUM(valor) FROM gastos WHERE usuario_id = ? AND data LIKE ?", (id_usuario, f"{mes_atual}%"))
-        row_gastos = cursor.fetchone()
-        gastos = float(row_gastos[0]) if row_gastos and row_gastos[0] else 0.0
-
-        jornada_ia = calcular_jornada_ia(id_usuario, cursor)
-        conexao.close()
-
-        saldo = renda - gastos
-        perc_poupado = (saldo / renda * 100) if renda > 0 else 0
-
-        if perc_poupado >= 30: nivel, meta_atual, nome_nivel = 4, renda * 0.40, "Nível 4: Independência"
-        elif perc_poupado >= 20: nivel, meta_atual, nome_nivel = 3, renda * 0.30, "Nível 3: Paz de Espírito"
-        elif perc_poupado >= 10: nivel, meta_atual, nome_nivel = 2, renda * 0.20, "Nível 2: Escudo Protetor"
-        elif perc_poupado > 0: nivel, meta_atual, nome_nivel = 1, renda * 0.10, "Nível 1: O Despertar"
-        else: nivel, meta_atual, nome_nivel = 0, renda * 0.10 if renda > 0 else 100, "Nível 0: Sobrevivência"
-
-        progresso = min(100, max(0, (saldo / meta_atual * 100) if meta_atual > 0 else 0))
-
-        prompt = f"Atue como um Mentor Financeiro Gamificado. Renda: {renda:.2f}, Gastos: {gastos:.2f}, Saldo: {saldo:.2f}. Nível: {nome_nivel}."
-        if jornada_ia:
-            prompt += f" Missão: Juntar {jornada_ia['objetivo']:.2f} para {jornada_ia['nome']}. Guardar {jornada_ia['missao_mensal']:.2f}/mês."
-        prompt += " Escreva em 3 linhas com emojis estilo RPG."
-
-        # Usa a variável global configurada no início
-        resposta_ia = modelo_hir3.generate_content(prompt)
-
-        return jsonify({
-            'status': 'sucesso', 'nivel': nivel, 'saldo': saldo, 'meta_atual': meta_atual,
-            'progresso': progresso, 'mensagem': resposta_ia.text.strip(), 'jornada_ia': jornada_ia
-        })
-    except Exception as e:
-        print(f"Erro RPG: {e}")
-        return jsonify({'status': 'erro'}), 500
-
-# ==============================================================================
 # GESTÃO DE USUÁRIOS E ADMINISTRAÇÃO
 # ==============================================================================
 
@@ -723,7 +638,7 @@ def api_jornada_rpg():
 @login_obrigatorio
 def usuarios():
     if not session.get('is_admin'):
-        return redirect(url_for('home')) # Se não for admin, volta pro dashboard!
+        return redirect(url_for('home'))
 
     conexao = get_db_connection()
     cursor = conexao.cursor()
@@ -736,29 +651,33 @@ def usuarios():
             try:
                 cursor.execute("INSERT INTO usuarios (usuario, senha, licenca) VALUES (?, ?, ?)", (novo_user, nova_senha, nova_licenca))
                 conexao.commit()
-            except sqlite3.IntegrityError: pass
+            except sqlite3.IntegrityError:
+                pass
 
         elif 'editar' in request.form:
             id_edit = request.form.get('id_usuario_edit')
             novo_nome = request.form.get('novo_nome')
             nova_licenca = request.form.get('nova_licenca')
-            try: novo_valor = float(str(request.form.get('novo_valor', '0')).replace(',', '.'))
-            except ValueError: novo_valor = 0.00
+            try:
+                novo_valor = float(str(request.form.get('novo_valor', '0')).replace(',', '.'))
+            except ValueError:
+                novo_valor = 0.00
             novos_modulos = request.form.get('novos_modulos', 'Todos')
 
             try:
                 cursor.execute("UPDATE usuarios SET usuario=?, licenca=?, valor_licencas=?, modulos_liberados=? WHERE id=?", (novo_nome, nova_licenca, novo_valor, novos_modulos, id_edit))
                 conexao.commit()
-            except: pass
+            except:
+                pass
 
         elif 'excluir' in request.form:
             id_del = request.form.get('id_usuario')
             try:
                 cursor.execute("UPDATE usuarios SET ativo = 0 WHERE id = ? AND id != 1", (id_del,))
                 conexao.commit()
-            except: pass
+            except:
+                pass
 
-    # Trazendo as novas colunas: validade_licenca, email e ultimo_acesso
     cursor.execute("SELECT id, usuario, licenca, valor_licencas, modulos_liberados, validade_licenca, email, ultimo_acesso FROM usuarios WHERE ativo = 1 OR ativo IS NULL")
     rows = cursor.fetchall()
 
@@ -766,7 +685,6 @@ def usuarios():
     lista_users = []
 
     for r in rows:
-        # Garantindo leitura independente se o banco retornar Tupla ou Dicionário (sqlite3.Row)
         is_dict = hasattr(r, 'keys')
         uid = r['id'] if is_dict else r[0]
         unome = r['usuario'] if is_dict else r[1]
@@ -781,40 +699,40 @@ def usuarios():
         if u_acesso:
             try:
                 data_acesso = datetime.strptime(u_acesso, '%Y-%m-%d %H:%M:%S')
-                # Considera ONLINE se a última atividade foi há menos de 5 minutos
                 if (agora - data_acesso) < timedelta(minutes=5):
                     is_online = True
-            except: pass
+            except:
+                pass
 
-        # O HTML espera exatamente essa ordem (0 ao 7)
         lista_users.append((uid, unome, ulic, uval, umod, uvalid, uemail, is_online))
 
-    # Lógica de Captura dos Logs (A Caixa Preta)
     try:
         cursor.execute("SELECT * FROM logs_sistema ORDER BY id DESC LIMIT 50")
-        # Ensure row is processed as dictionary
         logs = [dict(zip([column[0] for column in cursor.description], row)) for row in cursor.fetchall()]
     except Exception as e:
         print(f"Error fetching logs: {e}")
-        logs = [] # Se a tabela não existir ainda, retorna lista vazia
+        logs = []
 
     conexao.close()
 
     db_size_mb = round(os.path.getsize(DB_PATH) / (1024 * 1024), 2) if os.path.exists(DB_PATH) else 0.0
-    try: disk_percent = int((shutil.disk_usage("/")[1] / shutil.disk_usage("/")[0]) * 100)
-    except: disk_percent = 0
+    try:
+        disk_percent = int((shutil.disk_usage("/")[1] / shutil.disk_usage("/")[0]) * 100)
+    except:
+        disk_percent = 0
 
-    # Usando string fixa "1.6.6" para a versão, como fizemos nas rotas anteriores
     sys_info = {
         'db_size': str(db_size_mb).replace('.', ','),
-        'uploads_size': "0,00", # Pode ser implementado dinamicamente no futuro
+        'uploads_size': "0,00",
         'disk_percent': disk_percent,
         'python_version': platform.python_version(),
         'flask_version': flask.__version__,
         'app_version': "v1.6.6"
     }
 
-    return render_template('telas/gestao_usuarios.html', usuarios=lista_users, logs=logs, sys_info=sys_info)
+    # TRAVA DO AJAX APLICADA AQUI
+    is_ajax = request.args.get('modal') == 'true'
+    return render_template('telas/gestao_usuarios.html', usuarios=lista_users, logs=logs, sys_info=sys_info, ajax_request=is_ajax)
 
 @app.route('/api/inativar_usuario/<int:id_usuario>', methods=['POST'])
 @login_obrigatorio
@@ -838,7 +756,6 @@ def api_editar_usuario(id_usuario):
     except ValueError: novo_valor = 0.00
     nova_validade = dados.get('nova_validade', '2099-12-31')
 
-    # Trata o e-mail (para não salvar vazio)
     email = dados.get('email')
     if email:
         email = email.strip()
@@ -847,7 +764,6 @@ def api_editar_usuario(id_usuario):
     try:
         conexao = get_db_connection()
         cursor = conexao.cursor()
-        # Adicionado o e-mail na query de atualização
         cursor.execute("""UPDATE usuarios SET usuario=?, email=?, licenca=?, valor_licencas=?, modulos_liberados=?, validade_licenca=? WHERE id=?""",
                        (dados['nome'], email, dados['licenca'], novo_valor, dados['modulos'], nova_validade, id_usuario))
         conexao.commit()
@@ -864,22 +780,13 @@ def analisar_erro(log_id):
     try:
         conexao = get_db_connection()
         cursor = conexao.cursor()
-
-        # Pega o erro cru do banco
         cursor.execute('SELECT erro_raw FROM logs_sistema WHERE id = ?', (log_id,))
         erro_banco = cursor.fetchone()
 
         if erro_banco:
-            # Handle tuple or sqlite3.Row based on row_factory
             erro_raw = erro_banco[0] if isinstance(erro_banco, tuple) else erro_banco['erro_raw']
-
-            # Pede para o Hir3 traduzir o erro (MÁGICA ACONTECENDO)
             prompt = f"Você é o Hir3, o engenheiro de IA do Meu Controle Financeiro. Analise o seguinte erro do Python/Flask e explique em português MUITO simples, em até 2 frases, qual é o problema e como o desenvolvedor Ricardo deve resolver. Não use jargões difíceis. Erro: {erro_raw}"
-
-            # Usa o modelo_hir3 instanciado no começo do arquivo
             resposta_ia = modelo_hir3.generate_content(prompt).text
-
-            # Salva o diagnóstico limpo no banco
             cursor.execute('UPDATE logs_sistema SET diagnostico = ? WHERE id = ?', (resposta_ia, log_id))
             conexao.commit()
 
@@ -892,7 +799,6 @@ def analisar_erro(log_id):
 @app.route('/licencas', methods=['GET', 'POST'])
 @login_obrigatorio
 def licencas():
-    # Apenas o Admin Master (ID 1) acessa licencas
     if session.get('user_id') != 1: return "Acesso negado", 403
 
     conexao = get_db_connection()
@@ -905,7 +811,6 @@ def licencas():
         return redirect(url_for('licencas'))
 
     cursor.execute("SELECT COUNT(*) as total FROM usuarios WHERE ativo = 1 OR ativo IS NULL")
-    # Handling both tuple and dict-like row returns
     total_result = cursor.fetchone()
     total_usuarios = total_result['total'] if hasattr(total_result, 'keys') else total_result[0]
 
@@ -916,14 +821,12 @@ def licencas():
 
 @app.route('/assinatura_vencida')
 def assinatura_vencida():
-    # Como não exige login ativo e desloga a pessoa, essa fica sem @login_obrigatorio
     session.clear()
     return render_template('telas/licencas_vencidas.html')
 
 @app.route('/tornar_admin/<int:id>', methods=['POST'])
 @login_obrigatorio
 def tornar_admin(id):
-    # Apenas o Admin Master (ID 1) pode promover outros admins
     if session.get('user_id') != 1: return redirect(url_for('usuarios'))
     try:
         conexao = get_db_connection()
@@ -931,7 +834,8 @@ def tornar_admin(id):
         cursor.execute("UPDATE usuarios SET is_admin = 1 WHERE id = ?", (id,))
         conexao.commit()
         conexao.close()
-    except: pass
+    except:
+        pass
     return redirect(url_for('usuarios'))
 
 # ==============================================================================
@@ -998,7 +902,6 @@ def renovar_cobranca():
     finally: conexao.close()
     return redirect(url_for('financeiro'))
 
-
 # ==============================================================================
 # ROTA 1: SALVAR FATURA PIX GERADA (NOVA)
 # ==============================================================================
@@ -1031,7 +934,6 @@ def salvar_fatura():
         return jsonify({'sucesso': True})
     except Exception as e:
         return jsonify({'sucesso': False, 'erro': str(e)}), 500
-
 
 # ==============================================================================
 # ROTA 2: MARCAR COMO PAGO E RENOVAR 30 DIAS (ATUALIZADA)
@@ -1278,10 +1180,14 @@ def perfil():
         valor_licenca=usuario_data['valor_licencas'] if usuario_data else 0.0,
         modulos_liberados=usuario_data['modulos_liberados'] if usuario_data else 'Todos')
 
+# ==============================================================================
+# NOVIDADES E ATUALIZAÇÕES
+# ==============================================================================
 @app.route('/atualizacoes')
 @login_obrigatorio
 def atualizacoes():
-    return render_template('telas/atualizacoes.html')
+    is_ajax = request.args.get('modal') == 'true'
+    return render_template('telas/atualizacoes.html', ajax_request=is_ajax)
 
 # ==============================================================================
 # ATUALIZAR RENDA DO MÊS
@@ -1359,117 +1265,160 @@ def registrar_aprendizado_ia(user_id, modulo, acao, dados):
     except Exception as e: print(f"[IA] Erro: {e}")
     finally: conexao.close()
 
-@app.route('/novo_gasto', methods=['GET', 'POST'])
+# ==========================================
+# ROTA ATUALIZADA: MOVIMENTAÇÕES (Receitas e Despesas)
+# ==========================================
+@app.route('/movimentacoes', methods=['GET', 'POST'])
 @login_obrigatorio
-def novo_gasto():
+def movimentacoes():
     if request.method == 'POST':
         try:
-            try: valor = float(str(request.form.get('valor', '0')).replace(',', '.'))
-            except ValueError: valor = 0.0
+            try:
+                valor = float(str(request.form.get('valor', '0')).replace(',', '.'))
+            except ValueError:
+                valor = 0.0
 
-            # Captura a mágica do Parcelamento
-            is_parcelado = request.form.get('is_parcelado') == 'on'
-            try: qtd_parcelas = int(request.form.get('qtd_parcelas', '1'))
-            except ValueError: qtd_parcelas = 1
+            tipo = request.form.get('tipo_movimento', 'despesa')
+            is_parcelado = (request.form.get('is_parcelado') == 'on' and tipo == 'despesa')
 
-            # Trava de segurança: Se não for parcelado, garante que seja 1 lançamento
+            try:
+                qtd_parcelas = int(request.form.get('qtd_parcelas', '1'))
+            except ValueError:
+                qtd_parcelas = 1
+
             if not is_parcelado or qtd_parcelas < 1:
                 qtd_parcelas = 1
 
-            descricao_base = request.form.get('descricao', 'Gasto sem nome')
+            descricao_base = request.form.get('descricao', 'Sem descrição')
             categoria = request.form.get('categoria', 'Outros')
             data_str = request.form.get('data_gasto') or request.form.get('data')
-            quinzena = int(request.form.get('quinzena', '0'))
-            status_base = request.form.get('status', 'PAGO')
 
-            # Converte a string da data para objeto Date para podermos somar os meses
+            quinzena = int(request.form.get('quinzena', '0')) if tipo == 'despesa' else 0
+            status_base = request.form.get('status', 'PAGO')
             data_inicial = datetime.strptime(data_str, '%Y-%m-%d')
 
             conexao = get_db_connection()
-            cursor = conexao.cursor()
+            try:
+                cursor = conexao.cursor()
+                try:
+                    cursor.execute("ALTER TABLE gastos ADD COLUMN tipo TEXT DEFAULT 'despesa'")
+                except Exception:
+                    pass
 
-            # Loop de criação das parcelas
-            for i in range(qtd_parcelas):
-                # Calcula o ano e o mês da parcela atual (i)
-                mes_atual = data_inicial.month - 1 + i
-                ano_atual = data_inicial.year + (mes_atual // 12)
-                mes_atual = (mes_atual % 12) + 1
+                for i in range(qtd_parcelas):
+                    mes_atual = data_inicial.month - 1 + i
+                    ano_atual = data_inicial.year + (mes_atual // 12)
+                    mes_atual = (mes_atual % 12) + 1
 
-                # Ajusta o dia para não quebrar em meses curtos (ex: dia 31 caindo em Fevereiro)
-                ultimo_dia_mes = calendar.monthrange(ano_atual, mes_atual)[1]
-                dia_atual = min(data_inicial.day, ultimo_dia_mes)
+                    ultimo_dia_mes = calendar.monthrange(ano_atual, mes_atual)[1]
+                    dia_atual = min(data_inicial.day, ultimo_dia_mes)
+                    data_parcela = f"{ano_atual:04d}-{mes_atual:02d}-{dia_atual:02d}"
 
-                data_parcela = f"{ano_atual:04d}-{mes_atual:02d}-{dia_atual:02d}"
+                    descricao_final = f"{descricao_base} ({i+1}/{qtd_parcelas})" if is_parcelado else descricao_base
+                    status_final = status_base if i == 0 else 'PENDENTE'
 
-                # Adiciona o (1/10), (2/10) no final do nome se for parcelado
-                descricao_final = f"{descricao_base} ({i+1}/{qtd_parcelas})" if is_parcelado else descricao_base
+                    cursor.execute(
+                        "INSERT INTO gastos (usuario_id, descricao, valor, categoria, data, quinzena, status, tipo) VALUES (?, ?, ?, ?, ?, ?, ?, ?)",
+                        (session['user_id'], descricao_final, valor, categoria, data_parcela, quinzena, status_final, tipo)
+                    )
+                conexao.commit()
+            finally:
+                conexao.close()
 
-                # A primeira parcela assume o status que o usuário clicou (ex: PAGO). As futuras nascem PENDENTES!
-                status_final = status_base if i == 0 else 'PENDENTE'
+            # Evitar quebra se a função registrar_aprendizado_ia não estiver definida
+            try:
+                registrar_aprendizado_ia(session['user_id'], 'gastos', 'criar', {'descricao': descricao_base, 'categoria': categoria, 'valor': valor, 'tipo': tipo, 'parcelas': qtd_parcelas})
+            except Exception:
+                pass
 
-                cursor.execute("INSERT INTO gastos (usuario_id, descricao, valor, categoria, data, quinzena, status) VALUES (?, ?, ?, ?, ?, ?, ?)",
-                    (session['user_id'], descricao_final, valor, categoria, data_parcela, quinzena, status_final))
-
-            conexao.commit()
-            conexao.close()
-
-            registrar_aprendizado_ia(session['user_id'], 'gastos', 'criar', {'descricao': descricao_base, 'categoria': categoria, 'valor': valor, 'parcelas': qtd_parcelas})
             return redirect(url_for('home'))
 
         except Exception as e:
-            print(f"Erro: {e}")
+            print(f"Erro ao inserir movimentacao: {e}")
             return redirect(url_for('home'))
 
-    return render_template('telas/novo_gasto.html')
+    is_ajax = request.args.get('modal') == 'true'
+    return render_template('telas/movimentacoes.html', ajax_request=is_ajax, gasto=None)
 
-@app.route('/editar_gasto/<int:id>', methods=['POST'])
+@app.route('/editar_movimentacao/<int:id>', methods=['POST'])
 @login_obrigatorio
-def editar_gasto(id):
-    try: valor = float(str(request.form.get('valor', '0')).replace(',', '.'))
-    except: valor = 0.0
+def editar_movimentacao(id):
+    try:
+        valor = float(str(request.form.get('valor', '0')).replace(',', '.'))
+    except ValueError:
+        valor = 0.0
+
+    tipo = request.form.get('tipo_movimento', 'despesa')
+    quinzena = int(request.form.get('quinzena', '0')) if tipo == 'despesa' else 0
+
     conexao = get_db_connection()
-    cursor = conexao.cursor()
-    cursor.execute("UPDATE gastos SET descricao=?, data=?, valor=?, categoria=?, quinzena=?, status=? WHERE id=? AND usuario_id=?",
-        (request.form.get('descricao'), request.form.get('data'), valor, request.form.get('categoria'), int(request.form.get('quinzena', '0')), request.form.get('status', 'PENDENTE'), id, session['user_id']))
-    conexao.commit()
-    conexao.close()
+    try:
+        cursor = conexao.cursor()
+        cursor.execute(
+            "UPDATE gastos SET descricao=?, data=?, valor=?, categoria=?, quinzena=?, status=?, tipo=? WHERE id=? AND usuario_id=?",
+            (request.form.get('descricao'), request.form.get('data'), valor, request.form.get('categoria'), quinzena, request.form.get('status', 'PENDENTE'), tipo, id, session['user_id'])
+        )
+        conexao.commit()
+    finally:
+        conexao.close()
 
     mes_filtro = request.form.get('mes_filtro')
     return redirect(url_for('home', mes=mes_filtro) if mes_filtro else url_for('home'))
 
-@app.route('/api/gastos_mes', methods=['GET'])
+@app.route('/api/movimentacoes_mes', methods=['GET'])
 @login_obrigatorio
-def api_gastos_mes():
+def api_movimentacoes_mes():
     mes = request.args.get('mes')
-    if not mes: return jsonify([])
-    conexao = get_db_connection()
-    cursor = conexao.cursor()
-    cursor.execute('SELECT id, descricao, valor, categoria FROM gastos WHERE data LIKE ? AND usuario_id = ? ORDER BY data ASC', (mes + '%', session['user_id']))
-    gastos = [{'id': g['id'], 'descricao': g['descricao'], 'valor': float(g['valor']), 'categoria': g['categoria']} for g in cursor.fetchall()]
-    conexao.close()
-    return jsonify(gastos)
+    if not mes:
+        return jsonify([])
 
-@app.route('/duplicar_gastos_lote', methods=['POST'])
+    conexao = get_db_connection()
+    try:
+        cursor = conexao.cursor()
+        cursor.execute('SELECT id, descricao, valor, categoria, IFNULL(tipo, "despesa") as tipo FROM gastos WHERE data LIKE ? AND usuario_id = ? ORDER BY data ASC', (mes + '%', session['user_id']))
+        movimentacoes = [{'id': m['id'], 'descricao': m['descricao'], 'valor': float(m['valor']), 'categoria': m['categoria'], 'tipo': m['tipo']} for m in cursor.fetchall()]
+    finally:
+        conexao.close()
+
+    return jsonify(movimentacoes)
+
+
+@app.route('/duplicar_movimentacoes_lote', methods=['POST'])
 @login_obrigatorio
-def duplicar_gastos_lote():
-    mes_destino, contas = request.form.get('mes_destino'), request.form.getlist('contas_selecionadas')
-    if not mes_destino or not contas: return redirect(url_for('novo_gasto'))
+def duplicar_movimentacoes_lote():
+    mes_destino = request.form.get('mes_destino')
+    contas = request.form.getlist('contas_selecionadas')
+
+    if not mes_destino or not contas:
+        return redirect(url_for('movimentacoes'))
 
     ano_dest, mes_dest = map(int, mes_destino.split('-'))
     ultimo_dia = calendar.monthrange(ano_dest, mes_dest)[1]
 
     conexao = get_db_connection()
-    cursor = conexao.cursor()
-    cursor.execute(f"SELECT * FROM gastos WHERE id IN ({','.join('?'*len(contas))}) AND usuario_id = ?", contas + [session['user_id']])
+    try:
+        cursor = conexao.cursor()
+        placeholders = ','.join('?' * len(contas))
+        query = f"SELECT * FROM gastos WHERE id IN ({placeholders}) AND usuario_id = ?"
+        cursor.execute(query, contas + [session['user_id']])
 
-    for g in cursor.fetchall():
-        try: dia_origem = int(g['data'][8:10])
-        except: dia_origem = 1
-        nova_data = f"{ano_dest:04d}-{mes_dest:02d}-{min(dia_origem, ultimo_dia):02d}"
-        cursor.execute("INSERT INTO gastos (descricao, categoria, valor, quinzena, status, data, usuario_id) VALUES (?, ?, ?, ?, 'PENDENTE', ?, ?)",
-                       (g['descricao'], g['categoria'], g['valor'], g['quinzena'], nova_data, session['user_id']))
-    conexao.commit()
-    conexao.close()
+        for m in cursor.fetchall():
+            try:
+                dia_origem = int(m['data'][8:10])
+            except ValueError:
+                dia_origem = 1
+
+            nova_data = f"{ano_dest:04d}-{mes_dest:02d}-{min(dia_origem, ultimo_dia):02d}"
+            tipo_conta = m['tipo'] if 'tipo' in m.keys() and m['tipo'] else 'despesa'
+
+            cursor.execute(
+                "INSERT INTO gastos (descricao, categoria, valor, quinzena, status, data, tipo, usuario_id) VALUES (?, ?, ?, ?, 'PENDENTE', ?, ?, ?)",
+                (m['descricao'], m['categoria'], m['valor'], m['quinzena'], nova_data, tipo_conta, session['user_id'])
+            )
+        conexao.commit()
+    finally:
+        conexao.close()
+
     return redirect(url_for('home', mes=mes_destino))
 
 # ==============================================================================
@@ -1526,13 +1475,12 @@ def atualizar_status(id):
     mes_filtro = request.args.get('mes', datetime.now().strftime('%Y-%m'))
     return redirect(url_for('home', mes=mes_filtro))
 
-
 # ==============================================================================
-# ROTA: EXCLUIR GASTO (Com Reversão Inteligente de Contratos)
+# ROTA: EXCLUIR MOVIMENTAÇÃO (Com Reversão Inteligente de Contratos)
 # ==============================================================================
-@app.route('/excluir_gasto/<int:id>', methods=['POST'])
+@app.route('/excluir_movimentacao/<int:id>', methods=['POST'])
 @login_obrigatorio
-def excluir_gasto(id):
+def excluir_movimentacao(id):
     user_id = session.get('user_id')
     conexao = get_db_connection()
     cursor = conexao.cursor()
@@ -1546,7 +1494,7 @@ def excluir_gasto(id):
         divida_id = gasto['divida_id'] if is_dict else gasto[0]
         status_atual = str(gasto['status'] if is_dict else gasto[1]).upper().strip()
 
-        # Exclui o gasto da tabela
+        # Exclui a movimentação da tabela
         cursor.execute("DELETE FROM gastos WHERE id = ? AND usuario_id = ?", (id, user_id))
 
         # Se excluiu uma parcela que já estava PAGA, remove do progresso do contrato para não corromper
@@ -1640,107 +1588,126 @@ def excluir_divida(id):
 
 
 # ==============================================================================
-# RESERVAS (CAIXINHAS)
+# METAS (CAIXINHAS / RESERVAS)
 # ==============================================================================
-@app.route('/reservas', methods=['GET', 'POST'])
+@app.route('/metas', methods=['GET', 'POST'])
 @login_obrigatorio
-def reservas():
-    conexao = get_db_connection()
-    cursor = conexao.cursor()
+def metas():
+    try:
+        conexao = get_db_connection()
+        cursor = conexao.cursor()
 
-    if request.method == 'POST':
-        if 'novo_objetivo' in request.form:
-            try: meta = float(str(request.form.get('meta', '0')).replace(',', '.'))
-            except: meta = 0.0
-            cursor.execute('INSERT INTO reservas (nome, meta, guardado, usuario_id) VALUES (?, ?, 0, ?)', (request.form.get('nome'), meta, session['user_id']))
-        elif 'adicionar_saldo' in request.form:
-            try: v = float(str(request.form.get('valor_adicionar', '0')).replace(',', '.'))
-            except: v = 0.0
-            cursor.execute('UPDATE reservas SET guardado = guardado + ? WHERE id = ? AND usuario_id = ?', (v, request.form.get('id_reserva'), session['user_id']))
-        conexao.commit()
-        return redirect(url_for('reservas'))
+        if request.method == 'POST':
+            if 'novo_objetivo' in request.form:
+                try:
+                    meta_valor = float(str(request.form.get('meta', '0')).replace(',', '.'))
+                except ValueError:
+                    meta_valor = 0.0
 
-    reservas = cursor.execute('SELECT * FROM reservas WHERE usuario_id = ? ORDER BY id DESC', (session['user_id'],)).fetchall()
-    conexao.close()
-    return render_template('telas/dividas_planejamento.html', reservas=reservas)
+                cursor.execute(
+                    'INSERT INTO reservas (nome, meta, guardado, usuario_id) VALUES (?, ?, 0, ?)',
+                    (request.form.get('nome'), meta_valor, session['user_id'])
+                )
+            elif 'adicionar_saldo' in request.form:
+                try:
+                    v = float(str(request.form.get('valor_adicionar', '0')).replace(',', '.'))
+                except ValueError:
+                    v = 0.0
+
+                cursor.execute(
+                    'UPDATE reservas SET guardado = guardado + ? WHERE id = ? AND usuario_id = ?',
+                    (v, request.form.get('id_reserva'), session['user_id'])
+                )
+            conexao.commit()
+            return redirect(url_for('metas'))
+
+        reservas = cursor.execute('SELECT * FROM reservas WHERE usuario_id = ? ORDER BY id DESC', (session['user_id'],)).fetchall()
+    finally:
+        conexao.close()
+
+    is_ajax = request.args.get('modal') == 'true'
+    return render_template('telas/metas.html', reservas=reservas, ajax_request=is_ajax)
+
 
 @app.route('/editar_reserva/<int:id>', methods=['POST'])
 @login_obrigatorio
 def editar_reserva(id):
-    try: meta = float(str(request.form.get('meta', '0')).replace(',', '.'))
-    except: meta = 0.0
-    conexao = get_db_connection()
-    cursor = conexao.cursor()
-    cursor.execute('UPDATE reservas SET nome = ?, meta = ? WHERE id = ? AND usuario_id = ?', (request.form.get('nome'), meta, id, session['user_id']))
-    conexao.commit()
-    conexao.close()
-    return redirect('/reservas')
+    try:
+        meta_valor = float(str(request.form.get('meta', '0')).replace(',', '.'))
+    except ValueError:
+        meta_valor = 0.0
+
+    try:
+        conexao = get_db_connection()
+        cursor = conexao.cursor()
+        cursor.execute(
+            'UPDATE reservas SET nome = ?, meta = ? WHERE id = ? AND usuario_id = ?',
+            (request.form.get('nome'), meta_valor, id, session['user_id'])
+        )
+        conexao.commit()
+    finally:
+        conexao.close()
+
+    return redirect('/metas')
+
 
 @app.route('/excluir_reserva/<int:id>', methods=['POST'])
 @login_obrigatorio
 def excluir_reserva(id):
-    conexao = get_db_connection()
-    cursor = conexao.cursor()
-    cursor.execute("DELETE FROM reservas WHERE id = ? AND usuario_id = ?", (id, session['user_id']))
-    conexao.commit()
-    conexao.close()
-    return redirect('/reservas')
+    try:
+        conexao = get_db_connection()
+        cursor = conexao.cursor()
+        cursor.execute("DELETE FROM reservas WHERE id = ? AND usuario_id = ?", (id, session['user_id']))
+        conexao.commit()
+    finally:
+        conexao.close()
+
+    return redirect('/metas')
+
 
 # --------------------------------------------------------------------------------
-
 @app.route('/lancar_parcela/<int:id_divida>', methods=['POST'])
 @login_obrigatorio
 def lancar_parcela(id_divida):
     user_id = session.get('user_id')
-    conexao = get_db_connection()
-    cursor = conexao.cursor()
-
-    # 1. Puxa os dados do contrato
-    cursor.execute("SELECT descricao, valor_parcela FROM dividas WHERE id = ? AND usuario_id = ?", (id_divida, user_id))
-    divida = cursor.fetchone()
-
-    if not divida:
-        conexao.close()
-        return jsonify({'status': 'erro', 'mensagem': 'Contrato não encontrado'}), 404
-
-    # =========================================================================
-    # 2. LIMPEZA E TRATAMENTO DE MOEDA (CORREÇÃO DO PONTO E VÍRGULA)
-    # =========================================================================
-    # Garante que seja lido como string para podermos manipular
-    valor_raw = str(divida['valor_parcela']).strip()
-
-    # Remove R$ e espaços em branco por precaução
-    valor_raw = valor_raw.replace('R$', '').replace(' ', '')
-
-    # Lógica de formatação PT-BR para Padrão Universal:
-    # Se tiver ponto e vírgula (ex: 1.250,50), remove o ponto e troca vírgula por ponto
-    if '.' in valor_raw and ',' in valor_raw:
-        valor_raw = valor_raw.replace('.', '').replace(',', '.')
-    # Se tiver só vírgula (ex: 150,00), troca vírgula por ponto
-    elif ',' in valor_raw:
-        valor_raw = valor_raw.replace(',', '.')
 
     try:
-        valor_limpo = float(valor_raw)
-    except ValueError:
-        valor_limpo = 0.00 # Trava de segurança caso o valor venha corrompido
-    # =========================================================================
+        conexao = get_db_connection()
+        cursor = conexao.cursor()
 
-    # 3. Prepara os dados automáticos
-    descricao_gasto = f"Parcela: {divida['descricao']}"
-    data_atual = datetime.now().strftime('%Y-%m-%d')
-    quinzena = 1 if datetime.now().day <= 15 else 2
+        cursor.execute("SELECT descricao, valor_parcela FROM dividas WHERE id = ? AND usuario_id = ?", (id_divida, user_id))
+        divida = cursor.fetchone()
 
-    # 4. Injeta no fluxo de caixa (amarrado ao divida_id)
-    cursor.execute('''
-        INSERT INTO gastos (descricao, categoria, valor, quinzena, status, data, usuario_id, divida_id)
-        VALUES (?, ?, ?, ?, ?, ?, ?, ?)
-    ''', (descricao_gasto, 'Contratos/Dívidas', valor_limpo, quinzena, 'PENDENTE', data_atual, user_id, id_divida))
+        if not divida:
+            return jsonify({'status': 'erro', 'mensagem': 'Contrato não encontrado'}), 404
 
-    conexao.commit()
-    conexao.close()
+        valor_raw = str(divida['valor_parcela'] if hasattr(divida, 'keys') else divida[1]).strip()
+        valor_raw = valor_raw.replace('R$', '').replace(' ', '')
 
-    return jsonify({'status': 'sucesso', 'mensagem': 'Parcela adicionada aos gastos do mês!'})
+        if '.' in valor_raw and ',' in valor_raw:
+            valor_raw = valor_raw.replace('.', '').replace(',', '.')
+        elif ',' in valor_raw:
+            valor_raw = valor_raw.replace(',', '.')
+
+        try:
+            valor_limpo = float(valor_raw)
+        except ValueError:
+            valor_limpo = 0.00
+
+        desc_nome = divida['descricao'] if hasattr(divida, 'keys') else divida[0]
+        descricao_gasto = f"Parcela: {desc_nome}"
+        data_atual = datetime.now().strftime('%Y-%m-%d')
+        quinzena = 1 if datetime.now().day <= 15 else 2
+
+        cursor.execute('''
+            INSERT INTO gastos (descricao, categoria, valor, quinzena, status, data, usuario_id, divida_id)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+        ''', (descricao_gasto, 'Contratos/Dívidas', valor_limpo, quinzena, 'PENDENTE', data_atual, user_id, id_divida))
+
+        conexao.commit()
+        return jsonify({'status': 'sucesso', 'mensagem': 'Parcela adicionada aos gastos do mês!'})
+    finally:
+        conexao.close()
 
 # ==============================================================================
 # COMPRAS (LISTA)
@@ -1754,43 +1721,58 @@ def parse_valor(texto, padrao=0.0):
 @login_obrigatorio
 def compras():
     mes_atual = datetime.now().strftime('%Y-%m')
-    conexao = get_db_connection()
-    cursor = conexao.cursor()
+    try:
+        conexao = get_db_connection()
+        cursor = conexao.cursor()
 
-    if request.method == 'POST':
-        if 'valor_meta' in request.form:
-            cursor.execute('INSERT INTO meta_compras (usuario_id, mes, valor) VALUES (?, ?, ?) ON CONFLICT(usuario_id, mes) DO UPDATE SET valor = excluded.valor', (session['user_id'], mes_atual, parse_valor(request.form.get('valor_meta'))))
-        elif 'editar' in request.form:
-            cursor.execute('UPDATE lista_compras SET descricao=?, quantidade=?, preco=?, total_item=? WHERE id=? AND usuario_id=?',
-                           (request.form.get('descricao'), int(request.form.get('quantidade', 1)), parse_valor(request.form.get('preco')), int(request.form.get('quantidade', 1))*parse_valor(request.form.get('preco')), request.form.get('id_item_edit'), session['user_id']))
-        else:
-            q, p = int(request.form.get('quantidade', 1)), parse_valor(request.form.get('preco'))
-            cursor.execute('INSERT INTO lista_compras (usuario_id, descricao, quantidade, preco, total_item, mes) VALUES (?, ?, ?, ?, ?, ?)', (session['user_id'], request.form.get('descricao'), q, p, q*p, mes_atual))
-        conexao.commit()
-        return redirect('/compras')
+        if request.method == 'POST':
+            if 'valor_meta' in request.form:
+                cursor.execute('INSERT INTO meta_compras (usuario_id, mes, valor) VALUES (?, ?, ?) ON CONFLICT(usuario_id, mes) DO UPDATE SET valor = excluded.valor',
+                               (session['user_id'], mes_atual, parse_valor(request.form.get('valor_meta'))))
+            elif 'editar' in request.form:
+                cursor.execute('UPDATE lista_compras SET descricao=?, quantidade=?, preco=?, total_item=? WHERE id=? AND usuario_id=?',
+                               (request.form.get('descricao'), int(request.form.get('quantidade', 1)), parse_valor(request.form.get('preco')), int(request.form.get('quantidade', 1))*parse_valor(request.form.get('preco')), request.form.get('id_item_edit'), session['user_id']))
+            else:
+                q, p = int(request.form.get('quantidade', 1)), parse_valor(request.form.get('preco'))
+                cursor.execute('INSERT INTO lista_compras (usuario_id, descricao, quantidade, preco, total_item, mes) VALUES (?, ?, ?, ?, ?, ?)',
+                               (session['user_id'], request.form.get('descricao'), q, p, q*p, mes_atual))
+            conexao.commit()
+            return redirect('/compras')
 
-    itens_bd = cursor.execute("SELECT * FROM lista_compras WHERE usuario_id = ? AND mes = ?", (session['user_id'], mes_atual)).fetchall()
-    itens, total_lista = [], 0.0
-    for r in itens_bd:
-        d = dict(r)
-        d['total_item'] = d.get('total_item') if d.get('total_item') is not None else ((d.get('quantidade') or 1) * (d.get('preco') or 0.0))
-        total_lista += d['total_item']
-        itens.append(d)
+        itens_bd = cursor.execute("SELECT * FROM lista_compras WHERE usuario_id = ? AND mes = ?", (session['user_id'], mes_atual)).fetchall()
+        itens, total_lista = [], 0.0
+        for r in itens_bd:
+            d = dict(r)
+            d['total_item'] = d.get('total_item') if d.get('total_item') is not None else ((d.get('quantidade') or 1) * (d.get('preco') or 0.0))
+            total_lista += d['total_item']
+            itens.append(d)
 
-    m = cursor.execute("SELECT valor FROM meta_compras WHERE usuario_id = ? AND mes = ?", (session['user_id'], mes_atual)).fetchone()
-    meta = m['valor'] if m else 0.0
-    conexao.close()
+        m = cursor.execute("SELECT valor FROM meta_compras WHERE usuario_id = ? AND mes = ?", (session['user_id'], mes_atual)).fetchone()
+        meta = m['valor'] if m else 0.0
+    finally:
+        conexao.close()
 
-    return render_template('telas/compras.html', itens=itens, total_lista=total_lista, meta_valor=meta, saldo_meta=meta - total_lista, porcentagem_meta=round((total_lista/meta*100),1) if meta>0 else 0)
+    # A MÁGICA DO AJAX: Se a requisição veio do JavaScript Modal Ajax, enviamos só o 'miolo'.
+    is_ajax = request.args.get('modal') == 'true'
+
+    return render_template('telas/compras.html',
+                           itens=itens,
+                           total_lista=total_lista,
+                           meta_valor=meta,
+                           saldo_meta=meta - total_lista,
+                           porcentagem_meta=round((total_lista/meta*100),1) if meta>0 else 0,
+                           ajax_request=is_ajax)
 
 @app.route('/excluir_compra/<int:id>', methods=['POST'])
 @login_obrigatorio
 def excluir_compra(id):
-    conexao = get_db_connection()
-    cursor = conexao.cursor()
-    cursor.execute("DELETE FROM lista_compras WHERE id = ? AND usuario_id = ?", (id, session.get('user_id')))
-    conexao.commit()
-    conexao.close()
+    try:
+        conexao = get_db_connection()
+        cursor = conexao.cursor()
+        cursor.execute("DELETE FROM lista_compras WHERE id = ? AND usuario_id = ?", (id, session.get('user_id')))
+        conexao.commit()
+    finally:
+        conexao.close()
     return redirect('/compras')
 
 @app.route('/lancar_compras_gastos', methods=['POST'])
@@ -1798,30 +1780,43 @@ def excluir_compra(id):
 def lancar_compras_gastos():
     try: valor = float(request.form.get('total_compra', 0))
     except: valor = 0.0
+
     if valor > 0:
-        conexao = get_db_connection()
-        cursor = conexao.cursor()
-        cursor.execute("INSERT INTO gastos (usuario_id, descricao, valor, categoria, data, quinzena, status) VALUES (?, ?, ?, ?, ?, 0, 'PAGO')", (session.get('user_id'), 'Supermercado (Lista de Compras)', valor, 'Alimentação', datetime.now().strftime('%Y-%m-%d')))
-        conexao.commit()
-        conexao.close()
+        try:
+            conexao = get_db_connection()
+            cursor = conexao.cursor()
+            cursor.execute("INSERT INTO gastos (usuario_id, descricao, valor, categoria, data, quinzena, status) VALUES (?, ?, ?, ?, ?, 0, 'PAGO')",
+                           (session.get('user_id'), 'Supermercado (Lista de Compras)', valor, 'Alimentação', datetime.now().strftime('%Y-%m-%d')))
+            conexao.commit()
+        finally:
+            conexao.close()
+
     return redirect(url_for('home'))
 
 @app.route('/exportar_compras_csv')
 @login_obrigatorio
 def exportar_compras_csv():
     mes = datetime.now().strftime('%Y-%m')
-    conexao = get_db_connection()
-    itens = conexao.cursor().execute("SELECT descricao, quantidade, preco FROM lista_compras WHERE usuario_id = ? AND mes = ?", (session['user_id'], mes)).fetchall()
-    conexao.close()
+    try:
+        conexao = get_db_connection()
+        itens = conexao.cursor().execute("SELECT descricao, quantidade, preco FROM lista_compras WHERE usuario_id = ? AND mes = ?", (session['user_id'], mes)).fetchall()
+    finally:
+        conexao.close()
 
     output = io.StringIO()
     output.write('\ufeff')
     writer = csv.writer(output, delimiter=';')
     writer.writerow(['Descrição', 'Quantidade', 'Preço Unitário', 'Total do Item'])
-    for i, item in enumerate(itens, 2): writer.writerow([item[0], item[1], str(item[2]).replace('.', ','), f'=B{i}*C{i}'])
+    for i, item in enumerate(itens, 2):
+        # Acesso seguro via índice, independente se for dicionário ou tupla
+        desc = item['descricao'] if hasattr(item, 'keys') else item[0]
+        qtd = item['quantidade'] if hasattr(item, 'keys') else item[1]
+        preco = item['preco'] if hasattr(item, 'keys') else item[2]
+
+        writer.writerow([desc, qtd, str(preco).replace('.', ','), f'=B{i}*C{i}'])
+
     if len(itens) > 0: writer.writerow(['', '', 'TOTAL GERAL:', f'=SOMA(D2:D{len(itens)+1})'])
     return Response(output.getvalue(), mimetype="text/csv; charset=utf-8", headers={"Content-Disposition": f"attachment;filename=lista_{mes}.csv"})
-
 # ==============================================================================
 # CHAT BOT - IA HIR3
 # ==============================================================================
@@ -1920,9 +1915,20 @@ def relatorios_avancados():
         div['saldo_restante'] = (d['total_parcelas'] - d['parcelas_pagas']) * d['valor_parcela']
         lista_div.append(div)
 
-    return render_template('telas/relatorios_avancados.html', mes_filtro=mes_filtro, dias_grafico=[r['dia'] for r in grafico], valores_grafico=[r['total'] for r in grafico],
-        labels_categorias=list(cat_dict.keys()), valores_categorias=list(cat_dict.values()), top3_gastos=sorted(gastos, key=lambda x: float(x['valor']), reverse=True)[:3],
-        dividas=lista_div, reservas=reservas, total_q1=0, total_q2=0, perc_pago=0, perc_pendente=0) # Resumido para foco do relatório
+    # TRAVA AJAX
+    is_ajax = request.args.get('modal') == 'true'
+
+    return render_template('telas/relatorios_avancados.html',
+                           mes_filtro=mes_filtro,
+                           dias_grafico=[r['dia'] for r in grafico],
+                           valores_grafico=[r['total'] for r in grafico],
+                           labels_categorias=list(cat_dict.keys()),
+                           valores_categorias=list(cat_dict.values()),
+                           top3_gastos=sorted(gastos, key=lambda x: float(x['valor']), reverse=True)[:3],
+                           dividas=lista_div,
+                           reservas=reservas,
+                           total_q1=0, total_q2=0, perc_pago=0, perc_pendente=0,
+                           ajax_request=is_ajax)
 
 def buscar_memoria_hir3(user_id):
     try:
@@ -1965,7 +1971,6 @@ def webhook_whatsapp():
                         conexao.cursor().execute("INSERT INTO gastos (usuario_id, descricao, valor, categoria, status) VALUES (?, ?, ?, ?, 'PAGO')", (u['id'], decisao['descricao'], float(decisao['valor']), decisao['categoria']))
                         conexao.commit()
                 conexao.close()
-                # Chamada fictícia para enviar_whatsapp(tel, resposta)
         except: pass
         return jsonify({"status": "recebido"}), 200
 

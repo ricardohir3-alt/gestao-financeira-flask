@@ -1,10 +1,16 @@
-{% extends "base.html" %}
+{% if not ajax_request %}
+    {% extends "base.html" %}
+{% endif %}
 
 {% block content %}
+
+    <!-- O botão Voltar fica oculto se abrir no modal (pois o modal já tem seu próprio 'X' pra fechar) -->
+    {% if not ajax_request %}
     <a href="javascript:history.back()" class="flex items-center gap-1 text-gray-500 hover:text-blue-600 dark:text-gray-400 dark:hover:text-blue-400 mb-3 md:mb-4 transition-colors text-xs md:text-sm font-bold w-fit group">
         <i data-lucide="arrow-left" class="w-3.5 h-3.5 md:w-4 md:h-4 group-hover:-translate-x-1 transition-transform"></i>
         <span>Voltar</span>
     </a>
+    {% endif %}
 
     <div class="w-full bg-white dark:bg-gray-800 p-4 md:p-6 rounded-xl md:rounded-3xl shadow-sm border border-gray-100 dark:border-gray-700 overflow-hidden">
         <h2 class="text-lg md:text-xl font-bold mb-4 md:mb-6 text-gray-800 dark:text-gray-200 flex items-center gap-2">
@@ -57,7 +63,7 @@
                         <div class="relative w-full">
                             <input type="password" id="senha-input" name="senha" required
                                    class="w-full px-3 py-2 md:px-4 md:py-2.5 pr-10 bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-lg md:rounded-xl text-xs md:text-sm text-gray-800 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all">
-                            <button type="button" onclick="toggleSenha()" class="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 transition-colors focus:outline-none">
+                            <button type="button" onclick="window.toggleSenha()" class="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 transition-colors focus:outline-none">
                                 <i id="olhinho-icone" data-lucide="eye" class="w-4 h-4 md:w-5 md:h-5"></i>
                             </button>
                         </div>
@@ -116,12 +122,12 @@
                                     </form>
 
                                     <!-- Editar -->
-                                    <button type="button" onclick="abrirEdicaoUsuario('{{ u[0] }}', '{{ u[1] }}', '{{ u[2] }}', '{{ u[3] }}', '{{ u[4] }}', '{{ u[5] if u|length > 5 else '' }}', '{{ u[6] if u|length > 6 else '' }}')" class="flex items-center justify-center p-1.5 md:p-2 rounded-lg md:rounded-xl bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 text-amber-500 hover:bg-amber-50 dark:hover:bg-amber-900/20 hover:border-amber-200 transition-colors shadow-sm" title="Editar Usuário / Contrato">
+                                    <button type="button" onclick="window.abrirEdicaoUsuario('{{ u[0] }}', '{{ u[1] }}', '{{ u[2] }}', '{{ u[3] }}', '{{ u[4] }}', '{{ u[5] if u|length > 5 else '' }}', '{{ u[6] if u|length > 6 else '' }}')" class="flex items-center justify-center p-1.5 md:p-2 rounded-lg md:rounded-xl bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 text-amber-500 hover:bg-amber-50 dark:hover:bg-amber-900/20 hover:border-amber-200 transition-colors shadow-sm" title="Editar Usuário / Contrato">
                                         <i data-lucide="edit-3" class="w-3.5 h-3.5 md:w-4 md:h-4"></i>
                                     </button>
 
                                     <!-- Inativar -->
-                                    <button type="button" onclick="confirmarInativacao('{{ u[0] }}', '{{ u[1] }}')" class="flex items-center justify-center p-1.5 md:p-2 rounded-lg md:rounded-xl bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 hover:border-red-200 transition-colors shadow-sm" title="Inativar Usuário">
+                                    <button type="button" onclick="window.confirmarInativacao('{{ u[0] }}', '{{ u[1] }}')" class="flex items-center justify-center p-1.5 md:p-2 rounded-lg md:rounded-xl bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 hover:border-red-200 transition-colors shadow-sm" title="Inativar Usuário">
                                         <i data-lucide="trash-2" class="w-3.5 h-3.5 md:w-4 md:h-4"></i>
                                     </button>
                                 </div>
@@ -176,7 +182,7 @@
                             <button type="submit" name="salvar_cobranca" id="btn-salvar-cobranca" disabled class="flex-1 bg-indigo-600 text-white font-bold py-2.5 md:py-3 px-3 md:px-4 rounded-lg md:rounded-xl text-xs md:text-sm hover:bg-indigo-700 transition duration-200 shadow-sm flex items-center justify-center gap-1.5 md:gap-2 active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed">
                                 <i data-lucide="check-circle" class="w-4 h-4 md:w-5 md:h-5"></i> Atualizar
                             </button>
-                            <button type="button" onclick="showTab('usuarios')" class="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 text-gray-700 dark:text-gray-300 font-bold py-2.5 md:py-3 px-3 md:px-4 rounded-lg md:rounded-xl text-xs md:text-sm hover:bg-gray-50 dark:hover:bg-gray-700 transition duration-200 flex items-center justify-center gap-1.5 md:gap-2 active:scale-95">
+                            <button type="button" onclick="window.showTab('usuarios')" class="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 text-gray-700 dark:text-gray-300 font-bold py-2.5 md:py-3 px-3 md:px-4 rounded-lg md:rounded-xl text-xs md:text-sm hover:bg-gray-50 dark:hover:bg-gray-700 transition duration-200 flex items-center justify-center gap-1.5 md:gap-2 active:scale-95">
                                 <i data-lucide="x" class="w-4 h-4 md:w-5 md:h-5"></i> Cancelar
                             </button>
                         </div>
@@ -250,12 +256,12 @@
                                 <i data-lucide="chevron-right" class="w-4 h-4 opacity-50 group-hover:opacity-100 transition-opacity group-hover:translate-x-1"></i>
                             </button>
 
-                            <button onclick="travarInadimplentes()" class="w-full bg-rose-50 dark:bg-rose-900/20 text-rose-600 dark:text-rose-400 border border-rose-200 dark:border-rose-800/50 font-bold py-3 px-4 rounded-xl text-xs hover:bg-rose-100 transition-colors flex items-center justify-between mb-3 group">
+                            <button onclick="window.travarInadimplentes()" class="w-full bg-rose-50 dark:bg-rose-900/20 text-rose-600 dark:text-rose-400 border border-rose-200 dark:border-rose-800/50 font-bold py-3 px-4 rounded-xl text-xs hover:bg-rose-100 transition-colors flex items-center justify-between mb-3 group">
                                 <span class="flex items-center gap-2"><i data-lucide="lock" class="w-4 h-4"></i> Travar Inadimplentes</span>
                                 <i data-lucide="chevron-right" class="w-4 h-4 opacity-50 group-hover:opacity-100 transition-opacity group-hover:translate-x-1"></i>
                             </button>
 
-                            <button onclick="enviarAlertaGeral()" class="w-full bg-blue-50 dark:bg-blue-900/20 text-blue-600 dark:text-blue-400 border border-blue-200 dark:border-blue-800/50 font-bold py-3 px-4 rounded-xl text-xs hover:bg-blue-100 transition-colors flex items-center justify-between group">
+                            <button onclick="window.enviarAlertaGeral()" class="w-full bg-blue-50 dark:bg-blue-900/20 text-blue-600 dark:text-blue-400 border border-blue-200 dark:border-blue-800/50 font-bold py-3 px-4 rounded-xl text-xs hover:bg-blue-100 transition-colors flex items-center justify-between group">
                                 <span class="flex items-center gap-2"><i data-lucide="megaphone" class="w-4 h-4"></i> Enviar Alerta Geral</span>
                                 <i data-lucide="chevron-right" class="w-4 h-4 opacity-50 group-hover:opacity-100 transition-opacity group-hover:translate-x-1"></i>
                             </button>
@@ -269,7 +275,7 @@
                                 <h3 class="font-bold text-sm text-gray-800 dark:text-white flex items-center gap-2">
                                     <i data-lucide="users" class="w-4 h-4 text-indigo-500"></i> Últimos Clientes Ativos
                                 </h3>
-                                <button onclick="showTab('usuarios')" class="text-[10px] uppercase font-bold text-indigo-500 hover:text-indigo-600 transition-colors">Ver Todos</button>
+                                <button onclick="window.showTab('usuarios')" class="text-[10px] uppercase font-bold text-indigo-500 hover:text-indigo-600 transition-colors">Ver Todos</button>
                             </div>
                             <div class="p-0 overflow-y-auto max-h-[250px]">
                                 <table class="w-full text-left text-sm whitespace-nowrap">
@@ -420,8 +426,11 @@
         {% endif %}
     </div>
 
-    <script>
-        function showTab(tab) {
+<script>
+    (function inicializarGestaoUsuarios() {
+        if(typeof lucide !== 'undefined') lucide.createIcons();
+
+        window.showTab = function(tab) {
             const allTabs = ['div-usuarios', 'div-cobrancas', 'div-sistema', 'div-logs', 'div-master'];
             const allBtns = ['btn-usuarios', 'btn-cobrancas', 'btn-sistema', 'btn-logs', 'btn-master'];
 
@@ -446,156 +455,108 @@
                     targetBtn.className = "pb-2 border-b-2 border-indigo-500 font-bold text-xs md:text-sm text-indigo-600 dark:text-indigo-400 transition-all whitespace-nowrap";
                 } else if (tab === 'master') {
                     targetBtn.className = "pb-2 border-b-2 border-amber-500 font-bold text-xs md:text-sm text-amber-600 dark:text-amber-500 transition-all whitespace-nowrap flex items-center gap-1.5";
-                    // Força a renderização do ícone caso ele tenha sido resetado pelo className
                     if(targetBtn.querySelector('i')) targetBtn.innerHTML = '<i data-lucide="crown" class="w-3.5 h-3.5 text-amber-500"></i> Master';
-                    lucide.createIcons();
+                    if(typeof lucide !== 'undefined') lucide.createIcons();
                 } else {
                     targetBtn.className = "pb-2 border-b-2 border-blue-500 font-bold text-xs md:text-sm text-blue-600 dark:text-blue-400 transition-all whitespace-nowrap";
                 }
             }
-        }
+        };
 
-        function abrirCobrancas(id, nome, valor) {
+        window.abrirCobrancas = function(id, nome, valor) {
             document.getElementById('cobranca-id').value = id;
             document.getElementById('cobranca-nome-usuario').innerText = "- " + nome;
-
             document.getElementById('cobranca-valor').value = (valor !== 'None' && valor) ? valor : '0.00';
+            document.getElementById('btn-salvar-cobranca').disabled = false;
+            window.showTab('cobrancas');
+        };
 
-            const btnSalvar = document.getElementById('btn-salvar-cobranca');
-            btnSalvar.disabled = false;
-
-            showTab('cobrancas');
-        }
-
-        function confirmarInativacao(idUsuario, nomeUsuario) {
+        window.confirmarInativacao = function(idUsuario, nomeUsuario) {
             Swal.fire({
                 title: 'Inativar Usuário?',
-                text: `O acesso de ${nomeUsuario} será suspenso e ele sumirá da lista, mas os registros e logs permanecerão seguros.`,
+                text: `O acesso de ${nomeUsuario} será suspenso e ele sumirá da lista.`,
                 icon: 'warning',
                 showCancelButton: true,
                 confirmButtonColor: '#ef4444',
                 cancelButtonColor: '#6b7280',
                 confirmButtonText: 'Sim, inativar!',
                 cancelButtonText: 'Cancelar',
-                customClass: {
-                    popup: 'dark:bg-gray-800 dark:text-gray-100 rounded-2xl',
-                    title: 'dark:text-white',
-                }
+                customClass: { popup: 'dark:bg-gray-800 dark:text-gray-100 rounded-2xl', title: 'dark:text-white' }
             }).then((result) => {
                 if (result.isConfirmed) {
                     fetch(`/api/inativar_usuario/${idUsuario}`, { method: 'POST' })
                     .then(response => response.json())
                     .then(data => {
                         if (data.status === 'sucesso') {
-                            Swal.fire({
-                                title: 'Inativado!',
-                                text: data.mensagem,
-                                icon: 'success',
-                                customClass: { popup: 'dark:bg-gray-800 dark:text-gray-100 rounded-2xl' }
-                            }).then(() => location.reload());
+                            Swal.fire({ title: 'Inativado!', text: data.mensagem, icon: 'success', customClass: { popup: 'dark:bg-gray-800 dark:text-gray-100 rounded-2xl' } }).then(() => { if(window.fecharModalGlobal) { window.fecharModalGlobal(); } location.reload(); });
                         } else {
                             Swal.fire('Erro!', data.mensagem, 'error');
                         }
                     });
                 }
             });
-        }
+        };
 
-        function travarInadimplentes() {
+        window.travarInadimplentes = function() {
             Swal.fire({
                 title: 'Travar Inadimplentes?',
-                text: 'O sistema irá varrer a base de dados e BLOQUEAR todos os módulos dos clientes que estão com o vencimento no passado.',
+                text: 'Irá BLOQUEAR todos os módulos dos clientes com vencimento no passado.',
                 icon: 'warning',
                 showCancelButton: true,
                 confirmButtonColor: '#e11d48',
                 cancelButtonColor: '#6b7280',
                 confirmButtonText: 'Sim, travar geral!',
                 cancelButtonText: 'Cancelar',
-                customClass: { 
-                    popup: 'dark:bg-gray-900 border border-gray-100 dark:border-gray-700 rounded-2xl shadow-xl',
-                    title: 'dark:text-white',
-                }
+                customClass: { popup: 'dark:bg-gray-900 border border-gray-100 dark:border-gray-700 rounded-2xl shadow-xl', title: 'dark:text-white' }
             }).then((result) => {
                 if (result.isConfirmed) {
                     fetch('/api/travar_inadimplentes', { method: 'POST' })
                     .then(res => res.json())
                     .then(data => {
                         if(data.status === 'sucesso') {
-                            Swal.fire({
-                                title: 'Varredura Concluída!', 
-                                text: data.mensagem, 
-                                icon: 'success',
-                                customClass: { popup: 'dark:bg-gray-900 border border-gray-100 dark:border-gray-700 rounded-2xl' }
-                            }).then(() => location.reload());
+                            Swal.fire({ title: 'Concluído!', text: data.mensagem, icon: 'success', customClass: { popup: 'dark:bg-gray-900 border border-gray-100 dark:border-gray-700 rounded-2xl' } }).then(() => { if(window.fecharModalGlobal) window.fecharModalGlobal(); location.reload(); });
                         } else {
                             Swal.fire('Erro!', data.mensagem, 'error');
                         }
                     });
                 }
             });
-        }
+        };
 
-        // --- NOVO SCRIPT: ENVIAR ALERTA GERAL ---
-        function enviarAlertaGeral() {
+        window.enviarAlertaGeral = function() {
             Swal.fire({
                 title: '📣 Enviar Alerta Geral',
-                text: 'Essa mensagem aparecerá em destaque no topo da tela para TODOS os usuários.',
+                text: 'Mensagem em destaque para TODOS os usuários.',
                 input: 'textarea',
-                inputPlaceholder: 'Ex: O sistema entrará em manutenção hoje às 23h...',
                 showCancelButton: true,
-                confirmButtonColor: '#2563eb', // blue-600
+                confirmButtonColor: '#2563eb',
                 cancelButtonColor: '#6b7280',
-                confirmButtonText: 'Disparar Alerta!',
+                confirmButtonText: 'Disparar!',
                 cancelButtonText: 'Cancelar',
-                customClass: { 
-                    popup: 'dark:bg-gray-900 border border-gray-100 dark:border-gray-700 rounded-2xl shadow-xl',
-                    title: 'dark:text-white',
-                    input: 'dark:bg-gray-800 dark:text-white dark:border-gray-700 rounded-xl mt-4 text-sm'
-                }
+                customClass: { popup: 'dark:bg-gray-900 border border-gray-100 dark:border-gray-700 rounded-2xl shadow-xl', title: 'dark:text-white', input: 'dark:bg-gray-800 dark:text-white dark:border-gray-700 rounded-xl mt-4 text-sm' }
             }).then((result) => {
                 if (result.isConfirmed && result.value) {
-                    fetch('/api/salvar_alerta', { 
-                        method: 'POST',
-                        headers: {'Content-Type': 'application/json'},
-                        body: JSON.stringify({mensagem: result.value})
-                    })
+                    fetch('/api/salvar_alerta', { method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({mensagem: result.value}) })
                     .then(res => res.json())
                     .then(data => {
                         if(data.status === 'sucesso') {
-                            Swal.fire({
-                                title: 'Disparado!', 
-                                text: 'O aviso já está visível para toda a base de clientes.', 
-                                icon: 'success',
-                                customClass: { popup: 'dark:bg-gray-900 border border-gray-100 dark:border-gray-700 rounded-2xl' }
-                            }).then(() => location.reload());
+                            Swal.fire({ title: 'Disparado!', text: 'Aviso visível para todos.', icon: 'success', customClass: { popup: 'dark:bg-gray-900 border border-gray-100 dark:border-gray-700 rounded-2xl' } }).then(() => { if(window.fecharModalGlobal) window.fecharModalGlobal(); location.reload(); });
                         } else {
                             Swal.fire('Erro!', data.mensagem, 'error');
                         }
                     });
                 }
             });
-        }
+        };
 
-        // Função para o Admin desligar o alerta
-        function limparAlertaGeral() {
-            fetch('/api/limpar_alerta', { method: 'POST' })
-            .then(res => res.json())
-            .then(data => {
-                if(data.status === 'sucesso') location.reload();
-            });
-        }
-
-        // Função de Edição atualizada com Email e Flag Dia/Mês
-        function abrirEdicaoUsuario(idUsuario, nomeAtual, licencaAtual, valorAtual, modulosAtual, validadeAtual, emailAtual) {
+        window.abrirEdicaoUsuario = function(idUsuario, nomeAtual, licencaAtual, valorAtual, modulosAtual, validadeAtual, emailAtual) {
             const mods = (modulosAtual && modulosAtual !== 'None') ? modulosAtual.split(',').map(m => m.trim()) : ['Todos'];
             const chk = (m) => (mods.includes('Todos') || mods.includes(m)) ? 'checked' : '';
 
             let dataBaseBR = '';
             if (validadeAtual && validadeAtual !== 'None' && validadeAtual !== '') {
                 const partes = validadeAtual.split('-');
-                if (partes.length === 3) {
-                    dataBaseBR = `${partes[2]}/${partes[1]}/${partes[0]}`;
-                }
+                if (partes.length === 3) dataBaseBR = `${partes[2]}/${partes[1]}/${partes[0]}`;
             }
 
             if(!dataBaseBR) {
@@ -605,7 +566,6 @@
 
             const htmlFormulario = `
                 <div class="text-left space-y-3 md:space-y-4 mt-1 md:mt-2">
-                    <!-- Linha 1: Nome, Email e Licença -->
                     <div class="grid grid-cols-1 gap-3 md:gap-4">
                         <div class="grid grid-cols-2 gap-3 md:gap-4">
                             <div>
@@ -626,21 +586,18 @@
                         </div>
                     </div>
 
-                    <!-- Linha 2: Calculadora Dinâmica (Por Dia ou Mensal) -->
                     <div class="bg-indigo-50 dark:bg-indigo-900/20 p-2.5 md:p-3 rounded-lg md:rounded-xl border border-indigo-100 dark:border-indigo-800/50">
                         <div class="flex justify-between items-center mb-1.5 md:mb-2">
                             <label class="block text-[9px] md:text-[10px] font-black text-indigo-700 dark:text-indigo-400 uppercase tracking-wide flex items-center gap-1">
                                 <i data-lucide="calculator" class="w-2.5 h-2.5 md:w-3 md:h-3"></i> Calculadora
                             </label>
-
-                            <!-- FLAG DE COBRANÇA -->
                             <div class="flex bg-white dark:bg-gray-800 rounded p-0.5 border border-indigo-200 dark:border-indigo-700">
                                 <label class="cursor-pointer">
-                                    <input type="radio" name="tipo_periodo" value="dia" class="peer sr-only" checked onchange="calcularContrato()">
+                                    <input type="radio" name="tipo_periodo" value="dia" class="peer sr-only" checked onchange="window.calcularContrato()">
                                     <span class="block px-2 py-0.5 text-[9px] md:text-[10px] text-gray-500 peer-checked:bg-indigo-600 peer-checked:text-white font-bold rounded-sm transition-all">Por Dia</span>
                                 </label>
                                 <label class="cursor-pointer">
-                                    <input type="radio" name="tipo_periodo" value="mes" class="peer sr-only" onchange="calcularContrato()">
+                                    <input type="radio" name="tipo_periodo" value="mes" class="peer sr-only" onchange="window.calcularContrato()">
                                     <span class="block px-2 py-0.5 text-[9px] md:text-[10px] text-gray-500 peer-checked:bg-indigo-600 peer-checked:text-white font-bold rounded-sm transition-all">Mensal</span>
                                 </label>
                             </div>
@@ -649,11 +606,11 @@
                         <div class="grid grid-cols-3 gap-1.5 md:gap-2">
                             <div>
                                 <label class="block text-[8px] md:text-[10px] text-gray-600 dark:text-gray-400 mb-0.5 md:mb-1">Valor (R$)</label>
-                                <input id="swal-valor-total" type="number" step="0.01" min="0" oninput="calcularContrato()" class="w-full px-1.5 py-1 md:px-2 md:py-1.5 border border-indigo-200 dark:border-indigo-700 rounded bg-white dark:bg-gray-800 text-[10px] md:text-xs outline-none focus:ring-1 focus:ring-indigo-500 font-bold text-indigo-700 dark:text-indigo-300" value="${(valorAtual !== 'None' && valorAtual) ? valorAtual : '0.00'}">
+                                <input id="swal-valor-total" type="number" step="0.01" min="0" oninput="window.calcularContrato()" class="w-full px-1.5 py-1 md:px-2 md:py-1.5 border border-indigo-200 dark:border-indigo-700 rounded bg-white dark:bg-gray-800 text-[10px] md:text-xs outline-none focus:ring-1 focus:ring-indigo-500 font-bold text-indigo-700 dark:text-indigo-300" value="${(valorAtual !== 'None' && valorAtual) ? valorAtual : '0.00'}">
                             </div>
                             <div>
                                 <label id="lbl-tempo" class="block text-[8px] md:text-[10px] text-gray-600 dark:text-gray-400 mb-0.5 md:mb-1">Dias</label>
-                                <input id="swal-tempo" type="number" min="0" oninput="calcularContrato()" class="w-full px-1.5 py-1 md:px-2 md:py-1.5 border border-indigo-200 dark:border-indigo-700 rounded bg-white dark:bg-gray-800 text-[10px] md:text-xs outline-none focus:ring-1 focus:ring-indigo-500" value="30">
+                                <input id="swal-tempo" type="number" min="0" oninput="window.calcularContrato()" class="w-full px-1.5 py-1 md:px-2 md:py-1.5 border border-indigo-200 dark:border-indigo-700 rounded bg-white dark:bg-gray-800 text-[10px] md:text-xs outline-none focus:ring-1 focus:ring-indigo-500" value="30">
                             </div>
                             <div>
                                 <label id="lbl-custo" class="block text-[8px] md:text-[10px] text-gray-600 dark:text-gray-400 mb-0.5 md:mb-1">Custo/Dia (R$)</label>
@@ -666,7 +623,6 @@
                         </div>
                     </div>
 
-                    <!-- Linha 3: Módulos -->
                     <div>
                         <label class="block text-[10px] md:text-xs font-semibold text-gray-700 dark:text-gray-300 mb-1 md:mb-2">Módulos Liberados</label>
                         <div class="grid grid-cols-2 gap-1.5 md:gap-2 max-h-28 md:max-h-32 overflow-y-auto p-2 md:p-3 bg-gray-50 dark:bg-gray-800 rounded-lg md:rounded-xl border border-gray-200 dark:border-gray-700">
@@ -690,10 +646,10 @@
                 cancelButtonText: 'Cancelar',
                 confirmButtonColor: '#4f46e5',
                 didOpen: () => {
-                    calcularContrato();
-                    lucide.createIcons();
+                    window.calcularContrato();
+                    if(typeof lucide !== 'undefined') lucide.createIcons();
                 },
-                customClass: { popup: 'dark:bg-gray-900 border border-gray-100 dark:border-gray-700 rounded-2xl shadow-xl' },
+                customClass: { popup: 'dark:bg-gray-900 border border-gray-100 dark:border-gray-700 rounded-2xl shadow-xl', title: 'dark:text-white' },
                 preConfirm: () => {
                     const checkboxes = document.querySelectorAll('.swal-check-modulo');
                     const marcados = Array.from(checkboxes).filter(cb => cb.checked).map(cb => cb.value);
@@ -718,20 +674,21 @@
                     .then(response => response.json())
                     .then(data => {
                         if (data.status === 'sucesso') {
-                            Swal.fire('Atualizado!', data.mensagem, 'success').then(() => location.reload());
+                            Swal.fire('Atualizado!', data.mensagem, 'success').then(() => { if(window.fecharModalGlobal) window.fecharModalGlobal(); location.reload(); });
                         } else {
                             Swal.fire('Erro!', data.mensagem, 'error');
                         }
                     });
                 }
             });
-        }
+        };
 
-        // Lógica de cálculo atualizada para suportar Dias e Meses
-        function calcularContrato() {
+        window.calcularContrato = function() {
             const valorTotal = parseFloat(document.getElementById('swal-valor-total').value) || 0;
             const tempo = parseInt(document.getElementById('swal-tempo').value) || 0;
-            const tipoPeriodo = document.querySelector('input[name="tipo_periodo"]:checked').value;
+            const tipoPeriodoRadios = document.querySelector('input[name="tipo_periodo"]:checked');
+            if(!tipoPeriodoRadios) return;
+            const tipoPeriodo = tipoPeriodoRadios.value;
 
             const lblTempo = document.getElementById('lbl-tempo');
             const lblCusto = document.getElementById('lbl-custo');
@@ -758,9 +715,9 @@
             const ano = hoje.getFullYear();
 
             document.getElementById('txt-novo-vencimento').innerText = `${dia}/${mes}/${ano}`;
-        }
+        };
 
-        function toggleSenha() {
+        window.toggleSenha = function() {
             const senhaInput = document.getElementById('senha-input');
             const icone = document.getElementById('olhinho-icone');
             if (senhaInput.type === "password") {
@@ -770,11 +727,9 @@
                 senhaInput.type = "password";
                 icone.setAttribute('data-lucide', 'eye');
             }
-            lucide.createIcons();
-        }
+            if(typeof lucide !== 'undefined') lucide.createIcons();
+        };
+    })();
+</script>
 
-        window.addEventListener('DOMContentLoaded', () => {
-            lucide.createIcons();
-        });
-    </script>
 {% endblock %}
