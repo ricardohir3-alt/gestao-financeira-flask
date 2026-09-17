@@ -13,46 +13,30 @@
         tailwind.config = {
             darkMode: 'class',
         }
-        // SCRIPT ANTI-CLARÃO: Executa ANTES da tela renderizar
         if (localStorage.getItem('tema') === 'dark') {
             document.documentElement.classList.add('dark');
         }
     </script>
     <style>
+        body { overscroll-behavior-x: none; }
+        
         .sidebar-scroll::-webkit-scrollbar { width: 4px; }
         .sidebar-scroll::-webkit-scrollbar-thumb { background-color: #cbd5e1; border-radius: 4px; }
         .dark .sidebar-scroll::-webkit-scrollbar-thumb { background-color: #475569; }
 
         @supports (padding-bottom: env(safe-area-inset-bottom)) {
-            .safe-bottom {
-                padding-bottom: env(safe-area-inset-bottom);
-            }
+            .safe-bottom { padding-bottom: env(safe-area-inset-bottom); }
         }
 
-        /* TRANSIÇÃO DE TEMA NATIVA (Efeito Telegram) */
         ::view-transition-old(root),
-        ::view-transition-new(root) {
-            animation: none;
-            mix-blend-mode: normal;
-        }
+        ::view-transition-new(root) { animation: none; mix-blend-mode: normal; }
         ::view-transition-old(root) { z-index: 999; }
         ::view-transition-new(root) { z-index: 1; }
         .dark::view-transition-old(root) { z-index: 1; }
         .dark::view-transition-new(root) { z-index: 999; }
 
-        /* ESTILOS DO TUTORIAL (INTRO.JS) ADAPTADOS AO TEMA WHATSAPP */
-        .introjs-tooltip {
-            border-radius: 16px !important;
-            background-color: #ffffff !important;
-            box-shadow: 0 10px 25px rgba(0,0,0,0.1) !important;
-            font-family: inherit !important;
-        }
-        .dark .introjs-tooltip {
-            background-color: #111b21 !important;
-            color: #e5e7eb !important;
-            border: 1px solid rgba(255,255,255,0.05) !important;
-            box-shadow: 0 10px 25px rgba(0,0,0,0.5) !important;
-        }
+        .introjs-tooltip { border-radius: 16px !important; background-color: #ffffff !important; box-shadow: 0 10px 25px rgba(0,0,0,0.1) !important; font-family: inherit !important; }
+        .dark .introjs-tooltip { background-color: #111b21 !important; color: #e5e7eb !important; border: 1px solid rgba(255,255,255,0.05) !important; box-shadow: 0 10px 25px rgba(0,0,0,0.5) !important; }
         .introjs-tooltiptitle { font-weight: 900 !important; color: #4f46e5 !important; font-size: 16px !important; }
         .introjs-tooltiptext { font-size: 13px !important; line-height: 1.5 !important; }
         .introjs-button { border-radius: 8px !important; text-shadow: none !important; font-weight: bold !important; font-size: 12px !important; }
@@ -64,16 +48,11 @@
         .dark .introjs-arrow.left { border-right-color: #111b21 !important; }
         .dark .introjs-arrow.right { border-left-color: #111b21 !important; }
     </style>
-
-    <!-- CSS DO INTRO.JS -->
     <link rel="stylesheet" href="https://unpkg.com/intro.js/minified/introjs.min.css">
 </head>
 <body class="bg-gray-50 text-gray-800 dark:bg-[#0b141a] dark:text-gray-100 font-sans transition-colors duration-500 ease-in-out min-h-screen flex flex-col md:flex-row overflow-x-hidden relative">
 
-    <!-- ========================================== -->
-    <!-- TELA DE CARREGAMENTO GLOBAL (MINIMALISTA)  -->
-    <!-- ========================================== -->
-    <div id="global-loader" class="fixed inset-0 z-[9999] flex items-center justify-center bg-white/90 dark:bg-[#0b141a]/90 backdrop-blur-sm transition-opacity duration-300">
+    <div id="global-loader" class="fixed inset-0 flex items-center justify-center bg-white/90 dark:bg-[#0b141a]/90 backdrop-blur-sm transition-opacity duration-300" style="z-index: 9999;">
         <div class="flex flex-col items-center gap-3">
             <div class="p-3 bg-indigo-50 dark:bg-indigo-900/30 rounded-2xl animate-pulse">
                 <i data-lucide="loader-2" class="w-8 h-8 text-indigo-600 dark:text-indigo-400 animate-spin"></i>
@@ -82,15 +61,12 @@
         </div>
     </div>
 
-    <!-- ================= BANNER DE ALERTA GERAL ================= -->
     {% if alerta_global %}
-    <div class="bg-gradient-to-r from-blue-600 to-indigo-600 text-white px-4 py-3 shadow-md relative z-[105] flex items-center justify-center text-xs md:text-sm font-bold animate-[fadeIn_0.5s_ease-out] w-full shrink-0">
+    <div class="bg-gradient-to-r from-blue-600 to-indigo-600 text-white px-4 py-3 shadow-md relative flex items-center justify-center text-xs md:text-sm font-bold animate-[fadeIn_0.5s_ease-out] w-full shrink-0" style="z-index: 300;">
         <div class="flex items-center gap-2 text-center max-w-4xl w-full justify-center pr-8">
             <i data-lucide="megaphone" class="w-4 h-4 md:w-5 md:h-5 shrink-0 animate-bounce"></i>
             <span>{{ alerta_global }}</span>
         </div>
-
-        <!-- Botão exclusivo para o Admin desligar o alerta -->
         {% if session.get('is_admin') %}
         <button onclick="limparAlertaGeral()" title="Desligar Alerta para todos" class="absolute right-4 text-white/70 hover:text-white hover:bg-white/20 p-1.5 rounded-lg transition-colors">
             <i data-lucide="x-circle" class="w-4 h-4 md:w-5 md:h-5"></i>
@@ -98,18 +74,12 @@
         {% endif %}
     </div>
     {% endif %}
-    <!-- ========================================================== -->
 
-    <!-- CONTAINER PRINCIPAL DO LAYOUT -->
     <div class="flex flex-grow w-full min-h-screen relative">
         {% if request.endpoint not in ['login', 'recuperar', 'recuperar_senha'] %}
-            <div id="overlay" class="fixed inset-0 bg-black/60 backdrop-blur-sm z-[90] hidden transition-opacity duration-300"></div>
+            <div id="overlay" class="fixed inset-0 bg-black/60 backdrop-blur-sm hidden transition-opacity duration-300" style="z-index: 90;"></div>
 
-            <!-- ============================================================================== -->
-            <!-- MENU LATERAL (SIDEBAR) -->
-            <!-- ============================================================================== -->
-            <aside id="menu-lateral" class="hidden md:flex absolute top-0 left-0 h-full bg-white dark:bg-[#111b21] shadow-[4px_0_24px_rgba(0,0,0,0.05)] dark:shadow-[4px_0_24px_rgba(0,0,0,0.4)] border-r border-gray-100 dark:border-gray-800/50 z-[100] transition-all duration-300 ease-in-out flex-col overflow-hidden w-14 translate-x-0">
-
+            <aside id="menu-lateral" class="hidden md:flex absolute top-0 left-0 h-full bg-white dark:bg-[#111b21] shadow-[4px_0_24px_rgba(0,0,0,0.05)] dark:shadow-[4px_0_24px_rgba(0,0,0,0.4)] border-r border-gray-100 dark:border-gray-800/50 transition-all duration-300 ease-in-out flex-col overflow-hidden w-14 translate-x-0" style="z-index: 100;">
                 <div class="h-16 flex items-center border-b border-gray-100 dark:border-gray-800/50 shrink-0">
                     <div class="w-14 flex justify-center shrink-0">
                         <button onclick="toggleMenu()" class="text-gray-500 hover:text-indigo-600 dark:text-gray-400 dark:hover:text-indigo-400 transition-colors focus:outline-none">
@@ -123,88 +93,55 @@
 
                 <nav class="flex flex-col py-6 gap-1.5 flex-grow overflow-y-auto sidebar-scroll overflow-x-hidden">
                     <a href="/" id="tour-dashboard" class="flex items-center h-11 mx-2 rounded-xl {% if request.endpoint == 'home' %}bg-indigo-50 dark:bg-indigo-500/10 text-indigo-600 dark:text-indigo-400 shadow-sm{% else %}text-gray-500 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-white/5 hover:text-gray-900 dark:hover:text-white{% endif %} transition-all group relative" title="Dashboard Inicial">
-                        <div class="w-10 flex justify-center shrink-0">
-                            <i data-lucide="layout-dashboard" class="w-5 h-5 {% if request.endpoint != 'home' %}group-hover:scale-110 transition-transform{% endif %}"></i>
-                        </div>
+                        <div class="w-10 flex justify-center shrink-0"><i data-lucide="layout-dashboard" class="w-5 h-5 {% if request.endpoint != 'home' %}group-hover:scale-110 transition-transform{% endif %}"></i></div>
                         <span data-i18n="nav_dashboard" class="menu-texto hidden ml-1 text-[13px] {% if request.endpoint == 'home' %}font-bold{% else %}font-medium{% endif %} whitespace-nowrap">Dashboard Inicial</span>
                     </a>
-
-                    <!-- BOTÕES AJAX NO MENU DESKTOP -->
                     <button type="button" onclick="abrirModalAjax('/movimentacoes', 'Nova Movimentação', 'arrow-right-left')" id="tour-lancamentos" class="w-full flex items-center h-11 mx-2 rounded-xl text-gray-500 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-white/5 hover:text-gray-900 dark:hover:text-white transition-all group relative" title="Movimentações">
-                        <div class="w-10 flex justify-center shrink-0">
-                            <i data-lucide="arrow-right-left" class="w-5 h-5 group-hover:scale-110 transition-transform"></i>
-                        </div>
+                        <div class="w-10 flex justify-center shrink-0"><i data-lucide="arrow-right-left" class="w-5 h-5 group-hover:scale-110 transition-transform"></i></div>
                         <span data-i18n="nav_gasto" class="menu-texto hidden ml-1 text-[13px] font-medium whitespace-nowrap">Movimentações</span>
                     </button>
-
                     <button type="button" onclick="abrirModalAjax('/compras', 'Lista de Compras', 'shopping-cart')" class="w-full flex items-center h-11 mx-2 rounded-xl text-gray-500 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-white/5 hover:text-gray-900 dark:hover:text-white transition-all group relative" title="Lista de Compras">
-                        <div class="w-10 flex justify-center shrink-0">
-                            <i data-lucide="shopping-cart" class="w-5 h-5 group-hover:scale-110 transition-transform"></i>
-                        </div>
+                        <div class="w-10 flex justify-center shrink-0"><i data-lucide="shopping-cart" class="w-5 h-5 group-hover:scale-110 transition-transform"></i></div>
                         <span data-i18n="nav_compras" class="menu-texto hidden ml-1 text-[13px] font-medium whitespace-nowrap">Lista de Compras</span>
                     </button>
-
                     <button type="button" onclick="abrirModalAjax('/metas', 'Minhas Caixinhas', 'compass')" id="tour-planejamento" class="w-full flex items-center h-11 mx-2 rounded-xl text-gray-500 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-white/5 hover:text-purple-600 dark:hover:text-purple-400 transition-all group relative" title="Minhas Caixinhas">
-                        <div class="w-10 flex justify-center shrink-0">
-                            <i data-lucide="compass" class="w-5 h-5 group-hover:scale-110 transition-transform"></i>
-                        </div>
+                        <div class="w-10 flex justify-center shrink-0"><i data-lucide="compass" class="w-5 h-5 group-hover:scale-110 transition-transform"></i></div>
                         <span data-i18n="nav_metas" class="menu-texto hidden ml-1 text-[13px] font-medium whitespace-nowrap">Minhas Caixinhas</span>
                     </button>
 
                     <div class="w-8 h-[1px] bg-gray-100 dark:bg-gray-800/50 my-2 mx-auto transition-all duration-300 menu-divisor"></div>
 
-                    <!-- ATUALIZAÇÃO 1: Botão AJAX Usuários Desktop -->
                     <button type="button" onclick="abrirModalAjax('/usuarios', 'Gestão de Usuários', 'users')" class="w-full flex items-center h-11 mx-2 rounded-xl text-gray-500 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-white/5 hover:text-indigo-600 dark:hover:text-indigo-400 transition-all group relative" title="Gestão de Usuários">
-                        <div class="w-10 flex justify-center shrink-0">
-                            <i data-lucide="users" class="w-5 h-5 group-hover:scale-110 transition-transform"></i>
-                        </div>
+                        <div class="w-10 flex justify-center shrink-0"><i data-lucide="users" class="w-5 h-5 group-hover:scale-110 transition-transform"></i></div>
                         <span data-i18n="nav_usuarios" class="menu-texto hidden ml-1 text-[13px] font-medium whitespace-nowrap">Gestão de Usuários</span>
                     </button>
-
-                    <!-- ATUALIZAÇÃO 2: Botão AJAX Relatórios Desktop -->
                     <button type="button" onclick="abrirModalAjax('/relatorios_avancados', 'Relatório Premium', 'bar-chart-2')" class="w-full flex items-center h-11 mx-2 rounded-xl text-gray-500 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-white/5 hover:text-purple-600 dark:hover:text-purple-400 transition-all group relative" title="Relatório Premium">
-                        <div class="w-10 flex justify-center shrink-0">
-                            <i data-lucide="bar-chart-2" class="w-5 h-5 group-hover:scale-110 transition-transform"></i>
-                        </div>
+                        <div class="w-10 flex justify-center shrink-0"><i data-lucide="bar-chart-2" class="w-5 h-5 group-hover:scale-110 transition-transform"></i></div>
                         <span data-i18n="nav_relatorios" class="menu-texto hidden ml-1 text-[13px] font-medium whitespace-nowrap">Relatório Premium</span>
                     </button>
-
-                    <!-- ATUALIZAÇÃO 3: Botão AJAX Atualizações Desktop -->
                     <button type="button" onclick="abrirModalAjax('/atualizacoes', 'Novidades', 'megaphone')" class="w-full flex items-center h-11 mx-2 rounded-xl text-gray-500 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-white/5 hover:text-emerald-600 dark:hover:text-emerald-400 transition-all group relative" title="Novidades (v{{ versao_atual }})">
-                        <div class="w-10 flex justify-center shrink-0">
-                            <i data-lucide="megaphone" class="w-5 h-5 group-hover:scale-110 transition-transform"></i>
-                        </div>
+                        <div class="w-10 flex justify-center shrink-0"><i data-lucide="megaphone" class="w-5 h-5 group-hover:scale-110 transition-transform"></i></div>
                         <span class="menu-texto hidden ml-1 text-[13px] font-medium whitespace-nowrap"><span data-i18n="nav_novidades">Novidades</span></span>
-                    </button>
-
-                    <!-- BOTÃO APOIE O PROJETO (DESKTOP) -->
-                    <button type="button" onclick="abrirModalApoio()" class="w-full flex items-center h-11 mx-2 rounded-xl text-gray-500 dark:text-gray-400 hover:bg-red-50 dark:hover:bg-red-500/10 hover:text-red-600 dark:hover:text-red-400 transition-all group relative" title="Apoie o Projeto">
-                        <div class="w-10 flex justify-center shrink-0">
-                            <i data-lucide="heart" class="w-5 h-5 group-hover:scale-110 transition-transform group-hover:fill-current"></i>
-                        </div>
-                        <span data-i18n="apoie_projeto" class="menu-texto hidden ml-1 text-[13px] font-medium whitespace-nowrap">Apoie o Projeto</span>
                     </button>
                 </nav>
             </aside>
         {% endif %}
 
-        <!-- ============================================================================== -->
-        <!-- ÁREA PRINCIPAL (MAIN CONTENT)                                                  -->
-        <!-- ============================================================================== -->
         <div class="{% if request.endpoint not in ['login', 'recuperar', 'recuperar_senha'] %}md:ml-14{% endif %} flex-grow min-h-full flex flex-col w-full transition-all duration-300 relative pb-20 md:pb-0">
             <div class="max-w-[1400px] mx-auto relative p-3 md:p-6 lg:p-8 flex flex-col w-full flex-grow">
 
-                <!-- HEADER FIXO E MINIMALISTA GLOBAL -->
                 {% if request.endpoint not in ['login', 'recuperar', 'recuperar_senha'] %}
-                <header class="sticky top-0 z-[80] -mt-3 pt-3 pb-3 -mx-3 px-3 md:-mt-6 md:pt-6 md:pb-4 md:-mx-6 md:px-6 lg:-mt-8 lg:pt-8 lg:-mx-8 lg:px-8 bg-gray-50/90 dark:bg-[#0b141a]/90 backdrop-blur-md flex justify-between items-center mb-6 border-b border-gray-200/50 dark:border-gray-800/50 transition-all">
-
-                    <!-- Lado Esquerdo -->
+                <!-- ============================================== -->
+                <!-- HEADER GLOBAL (Com Z-index ALTO para ficar sempre no topo) -->
+                <!-- ============================================== -->
+                <header class="sticky top-0 -mt-3 pt-3 pb-3 -mx-3 px-3 md:-mt-6 md:pt-6 md:pb-4 md:-mx-6 md:px-6 lg:-mt-8 lg:pt-8 lg:-mx-8 lg:px-8 bg-gray-50/90 dark:bg-[#0b141a]/90 backdrop-blur-md flex justify-between items-center mb-6 border-b border-gray-200/50 dark:border-gray-800/50 transition-all" style="z-index: 500;">
                     <div>
                         {% block header_title %}{% endblock %}
                     </div>
-
-                    <!-- Lado Direito -->
                     <div class="flex items-center gap-3">
+                        <button type="button" onclick="abrirModalApoio()" class="relative p-2.5 text-red-500 hover:text-red-600 dark:text-red-400 bg-gray-100 dark:bg-[#111b21] hover:bg-red-50 dark:hover:bg-red-900/20 rounded-full transition-colors focus:outline-none shadow-sm border border-transparent dark:border-white/5 group" title="Apoie o Projeto">
+                            <i data-lucide="heart" class="w-4 h-4 md:w-5 md:h-5 group-hover:scale-110 transition-transform group-hover:fill-current"></i>
+                        </button>
                         <div class="relative">
                             <button onclick="toggleNotificacoes()" id="tour-notificacoes" class="relative p-2.5 text-gray-400 hover:text-indigo-500 dark:hover:text-indigo-400 bg-gray-100 dark:bg-[#111b21] rounded-full transition-colors focus:outline-none shadow-sm border border-transparent dark:border-white/5">
                                 <i data-lucide="bell" class="w-4 h-4 md:w-5 md:h-5"></i>
@@ -215,8 +152,7 @@
                                 </span>
                                 {% endif %}
                             </button>
-
-                            <div id="painel-notificacoes" class="opacity-0 pointer-events-none scale-95 absolute right-0 mt-3 w-64 md:w-72 bg-white dark:bg-[#111b21] rounded-2xl shadow-xl border border-gray-100 dark:border-white/5 z-[100] overflow-hidden transform origin-top-right transition-all duration-200">
+                            <div id="painel-notificacoes" class="opacity-0 pointer-events-none scale-95 absolute right-0 mt-3 w-64 md:w-72 bg-white dark:bg-[#111b21] rounded-2xl shadow-xl border border-gray-100 dark:border-white/5 overflow-hidden transform origin-top-right transition-all duration-200" style="z-index: 200;">
                                 <div class="bg-gray-50 dark:bg-gray-800/40 px-4 py-3 border-b border-gray-100 dark:border-white/5 flex justify-between items-center">
                                     <h3 class="text-xs font-bold text-gray-800 dark:text-gray-200 flex items-center gap-1.5"><i data-lucide="sparkles" class="w-3.5 h-3.5 text-indigo-500"></i> IA Hir3</h3>
                                     <span id="badge-contador" class="text-[9px] bg-indigo-100 text-indigo-800 dark:bg-indigo-900/30 dark:text-indigo-300 px-2 py-0.5 rounded-full font-bold">
@@ -252,39 +188,30 @@
                                 </div>
                             </div>
                         </div>
-
-                        <!-- Avatar & Dropdown de Menu de Perfil -->
                         <div class="relative">
                             <button onclick="toggleProfileMenu()" id="btn-avatar-perfil" class="w-10 h-10 md:w-11 md:h-11 rounded-full bg-gradient-to-tr from-indigo-600 to-purple-500 flex items-center justify-center text-white font-bold text-sm shadow-md shadow-indigo-500/30 hover:scale-105 active:scale-95 transition-all focus:outline-none ring-2 ring-transparent focus:ring-indigo-500/50">
                                 {{ session.get('nome', session.get('usuario', 'Nerdz'))[:1].upper() }}
                             </button>
-
-                            <div id="profile-menu" class="opacity-0 pointer-events-none scale-95 absolute right-0 mt-3 w-60 bg-white dark:bg-[#111b21] rounded-2xl shadow-xl border border-gray-100 dark:border-white/5 z-[100] overflow-hidden transform origin-top-right transition-all duration-200">
+                            <div id="profile-menu" class="opacity-0 pointer-events-none scale-95 absolute right-0 mt-3 w-60 bg-white dark:bg-[#111b21] rounded-2xl shadow-xl border border-gray-100 dark:border-white/5 overflow-hidden transform origin-top-right transition-all duration-200" style="z-index: 200;">
                                 <div class="px-4 py-3.5 border-b border-gray-100 dark:border-white/5 bg-gray-50 dark:bg-gray-800/40">
                                     <p class="text-sm font-bold text-gray-800 dark:text-white" data-i18n="meu_painel">Meu Painel</p>
                                     <p class="text-[10px] text-gray-500 dark:text-gray-400 mt-0.5" data-i18n="config_pref">Configurações e Preferências</p>
                                 </div>
                                 <div class="p-2 space-y-0.5">
-
                                     <button onclick="abrirModalPerfil()" class="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-xs font-semibold text-gray-600 dark:text-gray-300 hover:bg-indigo-50 dark:hover:bg-indigo-500/10 hover:text-indigo-600 dark:hover:text-indigo-400 transition-colors focus:outline-none">
                                         <i data-lucide="user" class="w-4 h-4"></i> <span data-i18n="meu_perfil">Meu Perfil</span>
                                     </button>
-
-                                    <!-- CICLO DE IDIOMAS -->
                                     <button onclick="cicloIdioma()" class="w-full flex items-center justify-between px-3 py-2.5 rounded-xl text-xs font-semibold text-gray-600 dark:text-gray-300 hover:bg-indigo-50 dark:hover:bg-indigo-500/10 hover:text-indigo-600 dark:hover:text-indigo-400 transition-colors focus:outline-none">
                                         <div class="flex items-center gap-3">
                                             <i data-lucide="globe" class="w-4 h-4"></i> <span data-i18n="idioma">Idioma</span>
                                         </div>
                                         <span id="texto-idioma" class="text-[9px] font-bold bg-gray-200 dark:bg-gray-700 px-2 py-0.5 rounded text-gray-700 dark:text-gray-300 transition-colors">PT-BR</span>
                                     </button>
-
                                     <button onclick="toggleFullScreenMenu()" class="w-full flex items-center justify-between px-3 py-2.5 rounded-xl text-xs font-semibold text-gray-600 dark:text-gray-300 hover:bg-indigo-50 dark:hover:bg-indigo-500/10 hover:text-indigo-600 dark:hover:text-indigo-400 transition-colors focus:outline-none">
                                         <div class="flex items-center gap-3">
                                             <i data-lucide="maximize" class="w-4 h-4" id="icon-fullscreen"></i> <span id="text-fullscreen" data-i18n="tela_cheia">Tela Cheia</span>
                                         </div>
                                     </button>
-
-                                    <!-- MODO ESCURO TELEGRAM -->
                                     <button onclick="toggleDarkModeMenu()" class="w-full flex items-center justify-between px-3 py-2.5 rounded-xl text-xs font-semibold text-gray-600 dark:text-gray-300 hover:bg-indigo-50 dark:hover:bg-indigo-500/10 hover:text-indigo-600 dark:hover:text-indigo-400 transition-colors focus:outline-none group">
                                         <div class="flex items-center gap-3">
                                             <i id="icone-tema" data-lucide="moon" class="w-4 h-4 group-hover:rotate-12 transition-transform duration-500"></i>
@@ -294,7 +221,6 @@
                                             <div class="w-3.5 h-3.5 bg-white rounded-full absolute left-0.5 dark:translate-x-3.5 transition-transform duration-300 ease-out shadow-sm"></div>
                                         </div>
                                     </button>
-
                                 </div>
                                 <div class="p-2 border-t border-gray-100 dark:border-white/5">
                                     <a href="#" onclick="confirmarLogout(event)" class="flex items-center gap-3 px-3 py-2.5 rounded-xl text-xs font-semibold text-red-500 hover:bg-red-50 dark:hover:bg-red-500/10 transition-colors">
@@ -307,23 +233,18 @@
                 </header>
                 {% endif %}
 
-                <!-- CONTEÚDO PRINCIPAL -->
                 <div class="flex-grow w-full">
                     {% block content %}{% endblock %}
                 </div>
 
-                <!-- RODAPÉ - COM ALERTA DE BETA -->
                 {% if request.endpoint not in ['login', 'recuperar', 'recuperar_senha'] %}
                 <footer class="mt-auto pt-6 border-t border-gray-200 dark:border-gray-800/50 text-center w-full opacity-75 hover:opacity-100 transition-opacity pb-4">
-
-                    <!-- AVISO DE BETA -->
                     <div class="flex justify-center mb-3">
                         <div class="bg-amber-50 dark:bg-amber-500/10 border border-amber-200 dark:border-amber-500/20 text-amber-700 dark:text-amber-400 px-3 py-1.5 rounded-lg flex items-center gap-2 max-w-sm w-max shadow-sm">
                             <i data-lucide="flask-conical" class="w-3.5 h-3.5 animate-pulse"></i>
                             <span class="text-[10px] font-bold tracking-wide" data-i18n="aviso_beta">SISTEMA EM BETA: Funcionalidades em teste. Podem ocorrer instabilidades.</span>
                         </div>
                     </div>
-
                     <p class="text-[11px] text-gray-500 dark:text-gray-400 font-medium mb-2 flex items-center justify-center gap-1.5">
                         Meu Controle Financeiro <span class="bg-indigo-100 text-indigo-700 dark:bg-indigo-900/40 dark:text-indigo-400 px-1.5 py-0.5 rounded font-black text-[9px]">v{{ versao_atual }}</span>
                     </p>
@@ -340,87 +261,85 @@
         </div>
     </div>
 
-    <!-- EXTRAS MOBILE -->
     {% if request.endpoint not in ['login', 'recuperar', 'recuperar_senha'] %}
-    <div id="mobile-menu-overlay" class="md:hidden fixed inset-0 bg-black/50 z-[98] hidden transition-opacity duration-300 opacity-0 backdrop-blur-sm" onclick="toggleMobileMenu()"></div>
+    <div id="mobile-menu-overlay" class="md:hidden fixed inset-0 bg-black/50 hidden transition-opacity duration-300 opacity-0 backdrop-blur-sm" onclick="toggleMobileMenu()" style="z-index: 480;"></div>
     
-    <div id="mobile-menu-mais" class="md:hidden fixed bottom-[68px] left-0 w-full bg-white dark:bg-[#111b21] rounded-t-2xl shadow-[0_-10px_30px_rgba(0,0,0,0.15)] dark:shadow-[0_-10px_30px_rgba(0,0,0,0.4)] z-[99] transform translate-y-full transition-transform duration-300 ease-out p-4 flex flex-col gap-2 border-t border-gray-100 dark:border-gray-800">
+    <div id="mobile-menu-mais" class="md:hidden fixed bottom-[68px] left-0 w-full bg-white dark:bg-[#111b21] rounded-t-2xl shadow-[0_-10px_30px_rgba(0,0,0,0.15)] dark:shadow-[0_-10px_30px_rgba(0,0,0,0.4)] transform translate-y-full transition-transform duration-300 ease-out p-4 flex flex-col gap-2 border-t border-gray-100 dark:border-gray-800" style="z-index: 490;">
         <div class="w-12 h-1.5 bg-gray-300 dark:bg-gray-700 rounded-full mx-auto mb-3"></div>
-        
-        <!-- ATUALIZAÇÃO AJAX 4: Menu Mobile (Mais) - Usuários -->
         <button type="button" onclick="abrirModalAjax('/usuarios', 'Gestão de Equipe', 'users'); toggleMobileMenu()" class="w-full flex items-center gap-3 p-3 rounded-xl hover:bg-gray-50 dark:hover:bg-gray-800 text-gray-700 dark:text-gray-200 transition-colors group">
             <div class="w-10 h-10 rounded-full bg-blue-100 dark:bg-blue-900/30 flex items-center justify-center text-blue-600 dark:text-blue-400 group-hover:scale-105 transition-transform"><i data-lucide="users" class="w-5 h-5"></i></div>
             <span data-i18n="nav_usuarios" class="font-medium text-sm">Equipe</span>
         </button>
-
-        <!-- ATUALIZAÇÃO AJAX 5: Menu Mobile (Mais) - Relatórios -->
         <button type="button" onclick="abrirModalAjax('/relatorios_avancados', 'Relatório Premium', 'bar-chart-2'); toggleMobileMenu()" class="w-full flex items-center gap-3 p-3 rounded-xl hover:bg-gray-50 dark:hover:bg-gray-800 text-gray-700 dark:text-gray-200 transition-colors group">
             <div class="w-10 h-10 rounded-full bg-purple-100 dark:bg-purple-900/30 flex items-center justify-center text-purple-600 dark:text-purple-400 group-hover:scale-105 transition-transform"><i data-lucide="bar-chart-2" class="w-5 h-5"></i></div>
             <span data-i18n="nav_relatorios" class="font-medium text-sm">Relatórios</span>
         </button>
-
-        <!-- ATUALIZAÇÃO AJAX 6: Menu Mobile (Mais) - Atualizações -->
         <button type="button" onclick="abrirModalAjax('/atualizacoes', 'Novidades', 'megaphone'); toggleMobileMenu()" class="w-full flex items-center gap-3 p-3 rounded-xl hover:bg-gray-50 dark:hover:bg-gray-800 text-gray-700 dark:text-gray-200 transition-colors group">
             <div class="w-10 h-10 rounded-full bg-green-100 dark:bg-green-900/30 flex items-center justify-center text-green-600 dark:text-green-400 group-hover:scale-105 transition-transform"><i data-lucide="megaphone" class="w-5 h-5"></i></div>
             <span class="font-medium text-sm"><span data-i18n="nav_novidades">Atualizações</span> (v{{ versao_atual }})</span>
         </button>
-
-        <!-- BOTÃO APOIE O PROJETO (MOBILE) -->
-        <button type="button" onclick="abrirModalApoio(); toggleMobileMenu();" class="w-full flex items-center gap-3 p-3 rounded-xl hover:bg-gray-50 dark:hover:bg-gray-800 text-gray-700 dark:text-gray-200 transition-colors group">
-            <div class="w-10 h-10 rounded-full bg-red-100 dark:bg-red-900/30 flex items-center justify-center text-red-500 group-hover:scale-105 transition-transform"><i data-lucide="heart" class="w-5 h-5 group-hover:fill-current"></i></div>
-            <span data-i18n="apoie_projeto" class="font-medium text-sm">Apoie o Projeto</span>
-        </button>
     </div>
 
-    <!-- NAVBAR MOBILE ATUALIZADA E ALINHADA -->
-    <nav class="md:hidden fixed bottom-0 left-0 w-full bg-white dark:bg-[#111b21] border-t border-gray-200 dark:border-gray-800 z-[100] flex justify-around items-end h-[68px] pb-2 px-2 shadow-[0_-4px_10px_rgba(0,0,0,0.03)] dark:shadow-[0_-4px_10px_rgba(0,0,0,0.2)] safe-bottom">
+    <!-- NAVBAR MOBILE -->
+    <nav class="md:hidden fixed bottom-0 left-0 w-full bg-white dark:bg-[#111b21] border-t border-gray-200 dark:border-gray-800 flex justify-around items-end h-[68px] pb-2 px-2 shadow-[0_-4px_10px_rgba(0,0,0,0.03)] dark:shadow-[0_-4px_10px_rgba(0,0,0,0.2)] safe-bottom" style="z-index: 500;">
         <a href="/" class="flex flex-col items-center justify-center w-full text-gray-500 hover:text-blue-600 dark:text-gray-400 dark:hover:text-blue-400 transition-colors pt-2">
             <i data-lucide="layout-dashboard" class="w-[22px] h-[22px] mb-1 {% if request.endpoint == 'home' %}text-blue-600 dark:text-blue-400{% endif %}"></i>
             <span data-i18n="mob_inicio" class="text-[9px] font-medium {% if request.endpoint == 'home' %}text-blue-600 dark:text-blue-400 font-bold{% endif %}">Início</span>
         </a>
-
         <button type="button" onclick="abrirModalAjax('/compras', 'Lista de Compras', 'shopping-cart')" class="flex flex-col items-center justify-center w-full text-gray-500 hover:text-blue-600 dark:text-gray-400 dark:hover:text-blue-400 transition-colors pt-2 focus:outline-none">
             <i data-lucide="shopping-cart" class="w-[22px] h-[22px] mb-1 {% if request.endpoint == 'compras' %}text-blue-600 dark:text-blue-400{% endif %}"></i>
             <span data-i18n="mob_compras" class="text-[9px] font-medium {% if request.endpoint == 'compras' %}text-blue-600 dark:text-blue-400 font-bold{% endif %}">Compras</span>
         </button>
-
         <button type="button" onclick="abrirModalAjax('/movimentacoes', 'Nova Movimentação', 'arrow-right-left')" class="flex flex-col items-center justify-center w-full text-gray-500 hover:text-blue-600 dark:text-gray-400 dark:hover:text-blue-400 transition-colors pt-2 focus:outline-none">
             <i data-lucide="arrow-right-left" class="w-[22px] h-[22px] mb-1"></i>
             <span data-i18n="mob_lancar" class="text-[9px] font-medium">Movimentos</span>
         </button>
-
         <button type="button" onclick="abrirModalAjax('/metas', 'Minhas Caixinhas', 'compass')" class="flex flex-col items-center justify-center w-full text-gray-500 hover:text-blue-600 dark:text-gray-400 dark:hover:text-blue-400 transition-colors pt-2 focus:outline-none">
             <i data-lucide="compass" class="w-[22px] h-[22px] mb-1 {% if request.endpoint == 'metas' %}text-blue-600 dark:text-blue-400{% endif %}"></i>
             <span data-i18n="mob_metas" class="text-[9px] font-medium {% if request.endpoint == 'metas' %}text-blue-600 dark:text-blue-400 font-bold{% endif %}">Metas</span>
         </button>
-
         <button type="button" onclick="toggleMobileMenu()" class="flex flex-col items-center justify-center w-full text-gray-500 hover:text-blue-600 dark:text-gray-400 dark:hover:text-blue-400 transition-colors pt-2 focus:outline-none">
             <i data-lucide="menu" class="w-[22px] h-[22px] mb-1"></i>
             <span data-i18n="mob_mais" class="text-[9px] font-medium">Mais</span>
         </button>
     </nav>
-    <a href="https://wa.me/5586900007237?text=Olá!%20Preciso%20de%20ajuda%20com%20o%20Meu%20Controle%20Financeiro." target="_blank" class="lg:hidden fixed bottom-[104px] md:bottom-24 left-4 md:left-6 z-[60] bg-green-500/95 backdrop-blur-md text-white p-3 md:p-3.5 rounded-full shadow-[0_8px_30px_rgba(34,197,94,0.4)] hover:scale-105 active:scale-95 transition-all flex items-center justify-center border border-green-400/30 group">
-        <i data-lucide="message-circle" class="w-5 h-5 md:w-6 md:h-6"></i>
-    </a>
     {% endif %}
 
-    <!-- ============================================== -->
-    <!-- MODAL DO PERFIL -->
-    <!-- ============================================== -->
-    <div id="modal-perfil" class="hidden fixed inset-0 z-[160] flex items-center justify-center bg-black/60 backdrop-blur-sm p-2 sm:p-4 opacity-0 transition-opacity duration-300">
-        <div class="bg-gray-50 dark:bg-[#0b141a] rounded-[24px] shadow-2xl w-full max-w-2xl transform scale-95 transition-transform duration-300 border border-gray-100 dark:border-gray-800 flex flex-col max-h-[90vh] relative overflow-hidden" id="card-perfil">
+    <!-- ================================================================================== -->
+    <!-- MODAL POP-UP GLOBAL: NOVA MOVIMENTAÇÃO E LAZY LOADING                              -->
+    <!-- Este modal agora nasce COLADO no topo, mas com margens para não cobrir o header/navbar -->
+    <!-- ================================================================================== -->
+    <div id="modal-global" class="hidden fixed inset-0 flex items-start justify-center bg-black/60 backdrop-blur-sm pt-[72px] pb-[72px] md:pt-6 md:pb-6 md:p-6 opacity-0 transition-opacity duration-300" style="z-index: 400;">
+        <div class="bg-white dark:bg-[#111b21] w-full max-w-2xl h-full rounded-t-[24px] rounded-b-none md:rounded-[24px] shadow-2xl flex flex-col transform translate-y-full md:scale-95 transition-transform duration-300 border border-gray-100 dark:border-gray-800 overflow-hidden" id="card-global">
+            <div class="p-4 bg-gray-50 dark:bg-[#0b141a] border-b border-gray-200 dark:border-white/5 flex justify-between items-center shrink-0">
+                <h3 id="titulo-modal-global" class="font-black text-gray-800 dark:text-white flex items-center gap-2 text-sm md:text-base">
+                    <div class="p-1.5 bg-indigo-100 dark:bg-indigo-900/50 rounded-lg"><i data-lucide="loader" class="w-4 h-4 text-indigo-600 dark:text-indigo-400 animate-spin"></i></div>
+                    Carregando...
+                </h3>
+                <button type="button" onclick="fecharModalGlobal()" class="text-gray-400 hover:text-red-500 p-1.5 rounded-full transition-colors focus:outline-none bg-gray-100 dark:bg-white/5">
+                    <i data-lucide="x" class="w-5 h-5"></i>
+                </button>
+            </div>
+            <div id="conteudo-modal-global" class="flex-grow overflow-y-auto sidebar-scroll p-4 md:p-6 relative">
+                <div class="flex flex-col items-center justify-center py-10 h-full">
+                    <i data-lucide="loader-2" class="w-8 h-8 text-indigo-500 animate-spin mb-2"></i>
+                    <span class="text-xs text-gray-500">Puxando dados do servidor...</span>
+                </div>
+            </div>
+        </div>
+    </div>
 
-            <button type="button" onclick="fecharModalPerfil()" class="absolute top-4 right-4 bg-black/20 hover:bg-black/40 text-white p-1.5 rounded-full transition-colors focus:outline-none backdrop-blur-sm z-[200]">
+    <!-- OUTROS MODAIS GLOBAIS -->
+    <div id="modal-perfil" class="hidden fixed inset-0 flex items-center justify-center bg-black/60 backdrop-blur-sm p-2 sm:p-4 opacity-0 transition-opacity duration-300" style="z-index: 600;">
+        <div class="bg-gray-50 dark:bg-[#0b141a] rounded-[24px] shadow-2xl w-full max-w-2xl transform scale-95 transition-transform duration-300 border border-gray-100 dark:border-gray-800 flex flex-col max-h-[90vh] relative overflow-hidden" id="card-perfil">
+            <button type="button" onclick="fecharModalPerfil()" class="absolute top-4 right-4 bg-black/20 hover:bg-black/40 text-white p-1.5 rounded-full transition-colors focus:outline-none backdrop-blur-sm z-[50]">
                 <i data-lucide="x" class="w-4 h-4"></i>
             </button>
-
             <div class="w-full h-full overflow-y-auto sidebar-scroll flex flex-col">
                 <div class="h-28 md:h-32 bg-gradient-to-r from-blue-600 to-indigo-600 w-full relative shrink-0">
                     <div class="absolute inset-0 bg-black/10"></div>
                 </div>
-
                 <div class="px-4 md:px-8 pb-6 relative flex-grow">
-
                     <div class="flex flex-col sm:flex-row items-center sm:items-end gap-4 sm:gap-6 -mt-14 sm:-mt-16 mb-6">
                         <div class="relative group cursor-pointer shrink-0 z-10">
                             <form action="/upload_foto_perfil" method="POST" enctype="multipart/form-data" id="form-foto-modal" class="hidden">
@@ -456,7 +375,6 @@
                     </div>
 
                     <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-
                         <div class="bg-white dark:bg-[#111b21] rounded-2xl p-4 md:p-5 border border-gray-200 dark:border-gray-800 shadow-sm flex flex-col gap-4">
                             <div>
                                 <h4 class="text-xs font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wider mb-2" data-i18n="seu_acesso">Seu Acesso</h4>
@@ -465,7 +383,6 @@
                                     <i data-lucide="user" class="w-4 h-4 text-gray-400"></i>
                                 </div>
                             </div>
-
                             <div>
                                 <h4 class="text-xs font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wider mb-2" data-i18n="detalhes_plano">Detalhes do Plano</h4>
                                 <div class="bg-gradient-to-b from-gray-50 to-white dark:from-gray-900/50 dark:to-gray-800/30 rounded-xl p-3 border border-gray-200 dark:border-gray-800 space-y-2">
@@ -513,37 +430,26 @@
                                 </form>
                             </div>
                         </div>
-
                     </div>
                 </div>
             </div>
         </div>
     </div>
 
-    <!-- ============================================== -->
-    <!-- MODAL APOIE O PROJETO                          -->
-    <!-- ============================================== -->
-    <div id="modal-apoio" class="hidden fixed inset-0 z-[160] flex items-center justify-center bg-black/60 backdrop-blur-sm p-2 sm:p-4 opacity-0 transition-opacity duration-300">
+    <div id="modal-apoio" class="hidden fixed inset-0 flex items-center justify-center bg-black/60 backdrop-blur-sm p-2 sm:p-4 opacity-0 transition-opacity duration-300" style="z-index: 600;">
         <div class="bg-white dark:bg-[#111b21] rounded-3xl shadow-2xl w-full max-w-sm transform scale-95 transition-transform duration-300 border border-gray-100 dark:border-gray-800 flex flex-col relative overflow-hidden text-center" id="card-apoio">
-
-            <button type="button" onclick="fecharModalApoio()" class="absolute top-4 right-4 text-gray-400 hover:text-gray-600 dark:hover:text-gray-200 transition-colors focus:outline-none z-[200]">
+            <button type="button" onclick="fecharModalApoio()" class="absolute top-4 right-4 text-gray-400 hover:text-gray-600 dark:hover:text-gray-200 transition-colors focus:outline-none z-[50]">
                 <i data-lucide="x" class="w-5 h-5"></i>
             </button>
-
             <div class="p-6 md:p-8">
                 <div class="w-16 h-16 bg-red-100 dark:bg-red-900/30 text-red-500 rounded-full flex items-center justify-center mx-auto mb-4 animate-bounce">
                     <i data-lucide="heart" class="w-8 h-8 fill-current"></i>
                 </div>
-
                 <h3 class="text-xl font-black text-gray-900 dark:text-white mb-2" data-i18n="apoie_projeto">Apoie o Desenvolvimento</h3>
                 <p class="text-xs text-gray-500 dark:text-gray-400 mb-6 leading-relaxed">Este sistema é mantido de forma independente. Sua doação ajuda a pagar os servidores e me motiva a trazer novas atualizações incríveis!</p>
-
-                <!-- QR Code -->
                 <div class="bg-gray-50 dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-2xl p-4 mb-4 flex justify-center">
                     <img src="{{ url_for('static', filename='meu_pix.png') }}" alt="QR Code PIX" class="w-32 h-32 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700">
                 </div>
-
-                <!-- Chave PIX Copiável -->
                 <div class="text-left">
                     <label class="block text-[10px] font-bold text-gray-500 dark:text-gray-400 uppercase mb-1 ml-1" data-i18n="chave_pix">Chave PIX</label>
                     <div class="flex items-center gap-2">
@@ -557,25 +463,16 @@
         </div>
     </div>
 
-    <!-- ========================================================= -->
-    <!-- MODAL TERMOS DE USO E PRIVACIDADE (OBRIGATÓRIO / INICIAL) -->
-    <!-- ========================================================= -->
     {% if session.get('logado') and request.endpoint not in ['termos_uso', 'politica_privacidade'] %}
-    <div id="modal-termos" class="hidden fixed inset-0 z-[9999] items-center justify-center bg-black/80 backdrop-blur-md p-4 opacity-0 transition-opacity duration-300">
+    <div id="modal-termos" class="hidden fixed inset-0 items-center justify-center bg-black/80 backdrop-blur-md p-4 opacity-0 transition-opacity duration-300" style="z-index: 9999;">
         <div class="bg-white dark:bg-[#111b21] rounded-3xl shadow-2xl w-full max-w-lg transform scale-95 transition-transform duration-300 border border-gray-100 dark:border-gray-800 flex flex-col relative overflow-hidden">
-
-            <!-- Barra superior decorativa -->
             <div class="h-2 w-full bg-gradient-to-r from-indigo-500 to-purple-600"></div>
-
             <div class="p-6 md:p-8 flex flex-col items-center text-center">
                 <div class="w-16 h-16 bg-indigo-100 dark:bg-indigo-900/30 text-indigo-600 dark:text-indigo-400 rounded-full flex items-center justify-center mb-4">
                     <i data-lucide="shield-check" class="w-8 h-8"></i>
                 </div>
-
                 <h3 class="text-xl font-black text-gray-900 dark:text-white mb-2" data-i18n="termos_privacidade">Termos e Privacidade</h3>
                 <p class="text-xs md:text-sm text-gray-500 dark:text-gray-400 mb-6 leading-relaxed">Para continuar usando o <strong>Meu Controle Financeiro</strong>, precisamos que você leia e concorde com nossos termos atualizados de uso e política de privacidade.</p>
-
-                <!-- Botões para leitura -->
                 <div class="flex gap-4 mb-6 w-full">
                     <a href="/termos_uso" class="flex-1 py-2.5 px-4 bg-gray-50 dark:bg-gray-800 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-xl text-xs font-bold text-indigo-600 dark:text-indigo-400 transition-colors border border-gray-200 dark:border-gray-700 flex items-center justify-center gap-2">
                         <i data-lucide="file-text" class="w-4 h-4"></i> <span data-i18n="ler_termos">Ler Termos</span>
@@ -584,8 +481,6 @@
                         <i data-lucide="lock" class="w-4 h-4"></i> <span data-i18n="ler_politica">Ler Política</span>
                     </a>
                 </div>
-
-                <!-- Checkbox -->
                 <label class="flex items-start gap-3 cursor-pointer group mb-6 w-full text-left bg-indigo-50/50 dark:bg-indigo-900/10 p-4 rounded-xl border border-indigo-100 dark:border-indigo-800/30">
                     <div class="relative flex items-center justify-center mt-0.5 shrink-0">
                         <input type="checkbox" id="check-aceite-termos" class="peer appearance-none w-5 h-5 border-2 border-gray-300 dark:border-gray-600 rounded bg-white dark:bg-gray-800 checked:bg-indigo-600 checked:border-indigo-600 transition-colors cursor-pointer">
@@ -595,8 +490,6 @@
                         Eu li, entendi e <strong>concordo</strong> com os Termos de Uso e com a Política de Privacidade do sistema.
                     </span>
                 </label>
-
-                <!-- Botão de Aceite -->
                 <button type="button" id="btn-aceitar-termos" disabled onclick="aceitarTermosGlobais()" class="w-full bg-gray-300 dark:bg-gray-700 text-gray-500 dark:text-gray-400 font-bold py-3.5 px-4 rounded-xl transition-all flex items-center justify-center gap-2 text-sm cursor-not-allowed">
                     <span data-i18n="aceitar_continuar">Aceitar e Continuar</span> <i data-lucide="arrow-right" class="w-4 h-4"></i>
                 </button>
@@ -605,90 +498,11 @@
     </div>
     {% endif %}
 
-    <!-- ========================================== -->
-    <!-- CHATBOT INTELIGENTE HIR3 (BOTÃO E JANELA)  -->
-    <!-- ========================================== -->
-    {% if request.endpoint not in ['login', 'recuperar', 'recuperar_senha'] %}
-    <button type="button" onclick="toggleChatHir3()" class="fixed bottom-24 md:bottom-6 right-4 md:right-6 z-[90] w-12 h-12 md:w-14 md:h-14 bg-gradient-to-tr from-indigo-600 to-purple-600 rounded-full shadow-[0_8px_30px_rgba(79,70,229,0.4)] flex items-center justify-center text-white hover:scale-110 transition-transform focus:outline-none">
-        <i data-lucide="bot" class="w-6 h-6 md:w-7 md:h-7"></i>
-        <span class="absolute top-0 right-0 w-3 h-3 md:w-3.5 md:h-3.5 bg-green-50 border-2 border-white dark:border-[#0b141a] rounded-full"></span>
-    </button>
-
-    <div id="janela-chat-hir3" class="fixed bottom-40 md:bottom-24 right-4 md:right-6 w-[calc(100vw-2rem)] md:w-96 h-[450px] md:h-[500px] max-h-[65vh] bg-white dark:bg-[#111b21] rounded-2xl shadow-2xl border border-gray-200 dark:border-gray-800 z-[100] flex flex-col overflow-hidden transition-all duration-300 origin-bottom-right scale-0 opacity-0 pointer-events-none">
-        <!-- Header -->
-        <div class="p-3 md:p-4 bg-gradient-to-r from-indigo-600 to-purple-600 text-white flex justify-between items-center shrink-0">
-            <div class="flex items-center gap-2.5 md:gap-3">
-                <div class="w-8 h-8 bg-white/20 rounded-full flex items-center justify-center backdrop-blur-sm shadow-inner">
-                    <i data-lucide="sparkles" class="w-4 h-4 text-yellow-300"></i>
-                </div>
-                <div>
-                    <h4 class="font-bold text-xs md:text-sm">IA Hir3</h4>
-                    <p class="text-[9px] md:text-[10px] text-indigo-100 flex items-center gap-1"><span class="w-1.5 h-1.5 bg-green-400 rounded-full inline-block animate-pulse"></span> Mentor Online</p>
-                </div>
-            </div>
-            <button type="button" onclick="toggleChatHir3()" class="text-white/80 hover:text-white transition-colors focus:outline-none bg-white/10 p-1.5 rounded-lg hover:bg-white/20">
-                <i data-lucide="x" class="w-4 h-4 md:w-5 md:h-5"></i>
-            </button>
-        </div>
-
-        <!-- Area de Mensagens -->
-        <div id="chat-messages" class="flex-grow p-3 md:p-4 overflow-y-auto bg-gray-50/50 dark:bg-[#0b141a]/50 flex flex-col gap-3 md:gap-4 scroll-smooth">
-            <div class="flex gap-2 w-full max-w-[85%]">
-                <div class="w-6 h-6 rounded-full bg-gradient-to-tr from-indigo-600 to-purple-600 shrink-0 flex items-center justify-center mt-1 shadow-sm"><i data-lucide="bot" class="w-3 h-3 text-white"></i></div>
-                <div class="bg-white dark:bg-gray-800 p-2.5 md:p-3 rounded-2xl rounded-tl-sm shadow-sm border border-gray-100 dark:border-gray-700 text-[11px] md:text-xs text-gray-700 dark:text-gray-300 leading-relaxed">
-                    Olá! Sou o <b>Hir3</b>, sua inteligência artificial. Como posso ajudar você hoje?<br><br>
-                    <span class="text-gray-400 dark:text-gray-500 text-[9px] md:text-[10px]">Tente perguntar: "Qual meu maior gasto?" ou "Como crio uma meta?"</span>
-                </div>
-            </div>
-        </div>
-
-        <!-- Input -->
-        <div class="p-2.5 md:p-3 bg-white dark:bg-[#111b21] border-t border-gray-100 dark:border-gray-800 shrink-0">
-            <form id="form-chat-hir3" onsubmit="enviarMensagemHir3(event)" class="flex items-center gap-2">
-                <input type="text" id="input-msg-hir3" data-i18n="ph_hir3" placeholder="Pergunte ao Hir3..." autocomplete="off" class="flex-grow bg-gray-100 dark:bg-gray-900 border border-transparent rounded-xl px-3 py-2 md:py-2.5 text-xs text-gray-800 dark:text-gray-200 focus:bg-white dark:focus:bg-gray-800 focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/20 outline-none transition-all">
-                <button type="submit" class="w-9 h-9 md:w-10 md:h-10 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl flex items-center justify-center shrink-0 transition-all hover:scale-105 active:scale-95 shadow-sm shadow-indigo-500/30">
-                    <i data-lucide="send" class="w-4 h-4 ml-0.5"></i>
-                </button>
-            </form>
-        </div>
-    </div>
-    {% endif %}
-
-    <!-- ================================================================================== -->
-    <!-- MODAL POP-UP GLOBAL: NOVA MOVIMENTAÇÃO E LAZY LOADING                              -->
-    <!-- ================================================================================== -->
-    <div id="modal-global" class="hidden fixed inset-0 z-[300] flex items-center justify-center bg-black/60 backdrop-blur-sm p-3 md:p-6 opacity-0 transition-opacity duration-300">
-        <div class="bg-white dark:bg-[#111b21] w-full max-w-2xl max-h-[95vh] rounded-[24px] shadow-2xl flex flex-col transform scale-95 transition-transform duration-300 border border-gray-100 dark:border-gray-800 overflow-hidden" id="card-global">
-
-            <!-- Cabeçalho Fixo do Modal -->
-            <div class="p-4 bg-gray-50 dark:bg-[#0b141a] border-b border-gray-200 dark:border-white/5 flex justify-between items-center shrink-0">
-                <h3 id="titulo-modal-global" class="font-black text-gray-800 dark:text-white flex items-center gap-2 text-sm md:text-base">
-                    <div class="p-1.5 bg-indigo-100 dark:bg-indigo-900/50 rounded-lg"><i data-lucide="loader" class="w-4 h-4 text-indigo-600 dark:text-indigo-400 animate-spin"></i></div>
-                    Carregando...
-                </h3>
-                <button type="button" onclick="fecharModalGlobal()" class="text-gray-400 hover:text-red-500 p-1.5 rounded-full transition-colors focus:outline-none bg-gray-100 dark:bg-white/5">
-                    <i data-lucide="x" class="w-5 h-5"></i>
-                </button>
-            </div>
-
-            <!-- Corpo Dinâmico (Vai receber HTML via AJAX) -->
-            <div id="conteudo-modal-global" class="flex-grow overflow-y-auto sidebar-scroll p-4 md:p-6">
-                <div class="flex flex-col items-center justify-center py-10">
-                    <i data-lucide="loader-2" class="w-8 h-8 text-indigo-500 animate-spin mb-2"></i>
-                    <span class="text-xs text-gray-500">Puxando dados do servidor...</span>
-                </div>
-            </div>
-
-        </div>
-    </div>
-
     <!-- SCRIPTS GLOBAIS -->
     <script src="https://unpkg.com/lucide@latest"></script>
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
-    <!-- SCRIPT DO TUTORIAL (INTRO.JS) -->
     <script src="https://unpkg.com/intro.js/minified/intro.min.js"></script>
 
-    <!-- SCRIPT DO LAZY LOADING (AJAX) -->
     <script>
         function abrirModalAjax(url, titulo, icone = 'layers') {
             const modal = document.getElementById('modal-global');
@@ -696,7 +510,6 @@
             const container = document.getElementById('conteudo-modal-global');
             const tituloEl = document.getElementById('titulo-modal-global');
 
-            // 1. Prepara a casca do Modal
             tituloEl.innerHTML = `
                 <div class="p-1.5 bg-indigo-100 dark:bg-indigo-900/50 rounded-lg">
                     <i data-lucide="${icone}" class="w-4 h-4 text-indigo-600 dark:text-indigo-400"></i>
@@ -704,27 +517,29 @@
                 ${titulo}
             `;
             container.innerHTML = `
-                <div class="flex flex-col items-center justify-center py-10">
+                <div class="flex flex-col items-center justify-center py-10 h-full">
                     <i data-lucide="loader-2" class="w-8 h-8 text-indigo-500 animate-spin mb-2"></i>
                     <span class="text-xs text-gray-500">Carregando módulo...</span>
                 </div>`;
             if(typeof lucide !== 'undefined') lucide.createIcons();
 
-            // 2. Abre a tela com animação
             modal.classList.remove('hidden'); modal.classList.add('flex');
-            setTimeout(() => { modal.classList.remove('opacity-0'); card.classList.remove('scale-95'); }, 10);
+            
+            // Alteração da animação de entrada do Modal Global: ele sobe vindo de baixo
+            setTimeout(() => { 
+                modal.classList.remove('opacity-0'); 
+                card.classList.remove('translate-y-full', 'scale-95'); 
+            }, 10);
 
-            // 3. Puxa o template do Python usando um parâmetro "?modal=true"
             fetch(url + (url.includes('?') ? '&' : '?') + 'modal=true')
                 .then(res => {
                     if(!res.ok) throw new Error("Erro na resposta do servidor");
                     return res.text();
                 })
                 .then(html => {
-                    container.innerHTML = html; // Injeta o formulário/tabela aqui
+                    container.innerHTML = html;
                     if(typeof lucide !== 'undefined') lucide.createIcons();
 
-                    // Se o HTML puxado tiver scripts embutidos (ex: funções de calculadora), precisamos executá-los
                     const scripts = container.querySelectorAll('script');
                     scripts.forEach(s => {
                         const newScript = document.createElement('script');
@@ -734,7 +549,7 @@
                     });
                 })
                 .catch(err => {
-                    container.innerHTML = `<div class="text-center text-red-500 py-10 flex flex-col items-center gap-2"><i data-lucide="alert-triangle" class="w-8 h-8"></i>Falha ao carregar os dados. Verifique sua conexão.</div>`;
+                    container.innerHTML = `<div class="text-center text-red-500 py-10 flex flex-col items-center gap-2 h-full"><i data-lucide="alert-triangle" class="w-8 h-8"></i>Falha ao carregar os dados. Verifique sua conexão.</div>`;
                     if(typeof lucide !== 'undefined') lucide.createIcons();
                 });
         }
@@ -742,12 +557,11 @@
         function fecharModalGlobal() {
             const modal = document.getElementById('modal-global'), card = document.getElementById('card-global');
             if (modal && card) {
-                modal.classList.add('opacity-0'); card.classList.add('scale-95');
+                modal.classList.add('opacity-0'); card.classList.add('translate-y-full');
                 setTimeout(() => { modal.classList.add('hidden'); modal.classList.remove('flex'); }, 300);
             }
         }
 
-        // Fecha o modal global ao clicar fora do card
         document.addEventListener('click', function(e) {
             const m = document.getElementById('modal-global');
             const c = document.getElementById('card-global');
@@ -757,15 +571,9 @@
         });
     </script>
 
-    <!-- SCRIPT DO CHAT E MODAIS MENORES -->
     <script>
-        // Função para o Admin desligar o alerta
         function limparAlertaGeral() {
-            fetch('/api/limpar_alerta', { method: 'POST' })
-            .then(res => res.json())
-            .then(data => {
-                if(data.status === 'sucesso') location.reload();
-            });
+            fetch('/api/limpar_alerta', { method: 'POST' }).then(res => res.json()).then(data => { if(data.status === 'sucesso') location.reload(); });
         }
 
         function toggleChatHir3() {
@@ -783,7 +591,6 @@
         function appendMessage(sender, text) {
             const chatMessages = document.getElementById('chat-messages');
             const isHir3 = sender === 'hir3';
-
             const msgDiv = document.createElement('div');
             msgDiv.className = `flex gap-2 w-full max-w-[90%] md:max-w-[85%] ${isHir3 ? 'self-start' : 'self-end flex-row-reverse'}`;
 
@@ -791,63 +598,27 @@
                 ? `<div class="w-6 h-6 rounded-full bg-gradient-to-tr from-indigo-600 to-purple-600 shrink-0 flex items-center justify-center mt-1 shadow-sm"><i data-lucide="bot" class="w-3 h-3 text-white"></i></div>`
                 : `<div class="w-6 h-6 rounded-full bg-gray-200 dark:bg-gray-700 shrink-0 flex items-center justify-center mt-1 shadow-sm"><i data-lucide="user" class="w-3 h-3 text-gray-500 dark:text-gray-400"></i></div>`;
 
-            const bubbleClass = isHir3
-                ? 'bg-white dark:bg-gray-800 rounded-tl-sm border-gray-100 dark:border-gray-700 text-gray-700 dark:text-gray-300'
-                : 'bg-indigo-600 text-white rounded-tr-sm border-transparent';
-
-            msgDiv.innerHTML = `
-                ${avatar}
-                <div class="p-2.5 md:p-3 rounded-2xl shadow-sm border text-[11px] md:text-xs leading-relaxed ${bubbleClass}">
-                    ${text}
-                </div>
-            `;
-
-            chatMessages.appendChild(msgDiv);
-            chatMessages.scrollTop = chatMessages.scrollHeight;
+            const bubbleClass = isHir3 ? 'bg-white dark:bg-gray-800 rounded-tl-sm border-gray-100 dark:border-gray-700 text-gray-700 dark:text-gray-300' : 'bg-indigo-600 text-white rounded-tr-sm border-transparent';
+            msgDiv.innerHTML = `${avatar}<div class="p-2.5 md:p-3 rounded-2xl shadow-sm border text-[11px] md:text-xs leading-relaxed ${bubbleClass}">${text}</div>`;
+            chatMessages.appendChild(msgDiv); chatMessages.scrollTop = chatMessages.scrollHeight;
             if(typeof lucide !== 'undefined') lucide.createIcons();
         }
 
         function enviarMensagemHir3(e) {
             e.preventDefault();
-            const input = document.getElementById('input-msg-hir3');
-            const msg = input.value.trim();
-            if (!msg) return;
-
-            appendMessage('user', msg);
-            input.value = '';
+            const input = document.getElementById('input-msg-hir3'); const msg = input.value.trim(); if (!msg) return;
+            appendMessage('user', msg); input.value = '';
 
             const typingId = 'typing-' + Date.now();
             const chatMessages = document.getElementById('chat-messages');
-            chatMessages.insertAdjacentHTML('beforeend', `
-                <div id="${typingId}" class="flex gap-2 w-full max-w-[85%] self-start">
-                    <div class="w-6 h-6 rounded-full bg-gradient-to-tr from-indigo-600 to-purple-600 shrink-0 flex items-center justify-center mt-1"><i data-lucide="bot" class="w-3 h-3 text-white"></i></div>
-                    <div class="bg-white dark:bg-gray-800 p-3 rounded-2xl rounded-tl-sm shadow-sm border border-gray-100 dark:border-gray-700 flex items-center gap-1.5 h-9">
-                        <span class="w-1.5 h-1.5 bg-gray-400 rounded-full animate-bounce"></span>
-                        <span class="w-1.5 h-1.5 bg-gray-400 rounded-full animate-bounce" style="animation-delay: 0.2s"></span>
-                        <span class="w-1.5 h-1.5 bg-gray-400 rounded-full animate-bounce" style="animation-delay: 0.4s"></span>
-                    </div>
-                </div>
-            `);
-            chatMessages.scrollTop = chatMessages.scrollHeight;
-            if(typeof lucide !== 'undefined') lucide.createIcons();
+            chatMessages.insertAdjacentHTML('beforeend', `<div id="${typingId}" class="flex gap-2 w-full max-w-[85%] self-start"><div class="w-6 h-6 rounded-full bg-gradient-to-tr from-indigo-600 to-purple-600 shrink-0 flex items-center justify-center mt-1"><i data-lucide="bot" class="w-3 h-3 text-white"></i></div><div class="bg-white dark:bg-gray-800 p-3 rounded-2xl rounded-tl-sm shadow-sm border border-gray-100 dark:border-gray-700 flex items-center gap-1.5 h-9"><span class="w-1.5 h-1.5 bg-gray-400 rounded-full animate-bounce"></span><span class="w-1.5 h-1.5 bg-gray-400 rounded-full animate-bounce" style="animation-delay: 0.2s"></span><span class="w-1.5 h-1.5 bg-gray-400 rounded-full animate-bounce" style="animation-delay: 0.4s"></span></div></div>`);
+            chatMessages.scrollTop = chatMessages.scrollHeight; if(typeof lucide !== 'undefined') lucide.createIcons();
 
-            fetch('/api/chat_hir3', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ mensagem: msg })
-            })
-            .then(res => res.json())
-            .then(data => {
-                document.getElementById(typingId).remove();
-                appendMessage('hir3', data.resposta);
-            })
-            .catch(err => {
-                document.getElementById(typingId).remove();
-                appendMessage('hir3', 'Desculpe, a conexão falhou. Poderia tentar novamente?');
-            });
+            fetch('/api/chat_hir3', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ mensagem: msg }) })
+            .then(res => res.json()).then(data => { document.getElementById(typingId).remove(); appendMessage('hir3', data.resposta); })
+            .catch(err => { document.getElementById(typingId).remove(); appendMessage('hir3', 'Desculpe, a conexão falhou. Poderia tentar novamente?'); });
         }
 
-        /* --- MODAL APOIO --- */
         function abrirModalApoio() {
             const m = document.getElementById('modal-apoio'), c = document.getElementById('card-apoio');
             m.classList.remove('hidden'); m.classList.add('flex');
@@ -861,17 +632,9 @@
         }
 
         function copiarPix() {
-            const input = document.getElementById('chave-pix');
-            input.select();
-            input.setSelectionRange(0, 99999);
-            navigator.clipboard.writeText(input.value);
-
+            const input = document.getElementById('chave-pix'); input.select(); input.setSelectionRange(0, 99999); navigator.clipboard.writeText(input.value);
             Swal.fire({
-                icon: 'success',
-                title: 'PIX Copiado!',
-                text: 'Muito obrigado pelo seu apoio! ❤️',
-                timer: 2500,
-                showConfirmButton: false,
+                icon: 'success', title: 'PIX Copiado!', text: 'Muito obrigado pelo seu apoio! ❤️', timer: 2500, showConfirmButton: false,
                 background: document.documentElement.classList.contains('dark') ? '#111b21' : '#ffffff',
                 color: document.documentElement.classList.contains('dark') ? '#ffffff' : '#1f2937',
                 customClass: { popup: 'rounded-2xl border border-gray-100 dark:border-gray-800' }
@@ -879,14 +642,11 @@
         }
     </script>
 
-    <!-- LÓGICA DO MENU DO PERFIL E GLOBAIS -->
     <script>
         let contagemNotificacoes = parseInt("{{ total_notificacoes | default(0) }}") || 0;
 
         document.addEventListener("DOMContentLoaded", function() {
-            if (localStorage.getItem('tema') === 'dark') {
-                document.documentElement.classList.add('dark');
-            }
+            if (localStorage.getItem('tema') === 'dark') document.documentElement.classList.add('dark');
             const isDark = document.documentElement.classList.contains('dark');
             atualizarIconesTema(isDark);
 
@@ -894,35 +654,24 @@
             const textoIdiomaEl = document.getElementById('texto-idioma');
             if(textoIdiomaEl) textoIdiomaEl.innerText = idiomaSalvo;
 
-            const menuLateral = document.getElementById('menu-lateral');
-            const menuDivisor = document.querySelector('.menu-divisor');
+            const menuLateral = document.getElementById('menu-lateral'), menuDivisor = document.querySelector('.menu-divisor');
             if(menuLateral && menuDivisor) {
                 const observer = new MutationObserver(function() {
-                    if (menuLateral.classList.contains('w-64')) {
-                        menuDivisor.classList.remove('w-8');
-                        menuDivisor.classList.add('w-[85%]');
-                    } else {
-                        menuDivisor.classList.add('w-8');
-                        menuDivisor.classList.remove('w-[85%]');
-                    }
+                    if (menuLateral.classList.contains('w-64')) { menuDivisor.classList.remove('w-8'); menuDivisor.classList.add('w-[85%]'); } 
+                    else { menuDivisor.classList.add('w-8'); menuDivisor.classList.remove('w-[85%]'); }
                 });
                 observer.observe(menuLateral, { attributes: true, attributeFilter: ['class'] });
             }
         });
 
         function toggleFullScreenMenu() {
-            if (!document.fullscreenElement) {
-                document.documentElement.requestFullscreen().catch((err) => console.log(`Erro ao tentar tela cheia: ${err.message}`));
-            } else {
-                document.exitFullscreen();
-            }
+            if (!document.fullscreenElement) document.documentElement.requestFullscreen().catch((err) => console.log(err));
+            else document.exitFullscreen();
             toggleProfileMenu();
         }
 
         document.addEventListener('fullscreenchange', (event) => {
-            const text = document.getElementById('text-fullscreen');
-            const icon = document.getElementById('icon-fullscreen');
-
+            const text = document.getElementById('text-fullscreen'), icon = document.getElementById('icon-fullscreen');
             if (document.fullscreenElement) {
                 if(text) text.innerText = "Sair da Tela Cheia";
                 if(icon) icon.setAttribute('data-lucide', 'minimize');
@@ -934,8 +683,7 @@
         });
 
         function atualizarIconesTema(isDark) {
-            const iconeTema = document.getElementById('icone-tema');
-            const textoTema = document.getElementById('texto-tema');
+            const iconeTema = document.getElementById('icone-tema'), textoTema = document.getElementById('texto-tema');
             if (iconeTema && textoTema) {
                 iconeTema.setAttribute('data-lucide', isDark ? 'sun' : 'moon');
                 textoTema.innerText = isDark ? 'Modo Claro' : 'Modo Escuro';
@@ -949,39 +697,19 @@
                 localStorage.setItem('tema', isDark ? 'dark' : 'light');
                 atualizarIconesTema(isDark);
             };
-
-            if (document.startViewTransition) {
-                document.startViewTransition(() => alternarTemaVisual());
-            } else {
-                alternarTemaVisual();
-            }
+            if (document.startViewTransition) document.startViewTransition(() => alternarTemaVisual()); else alternarTemaVisual();
         }
 
         function confirmarLogout(e) {
-            e.preventDefault();
-            toggleProfileMenu();
-
+            e.preventDefault(); toggleProfileMenu();
             if(typeof Swal !== 'undefined') {
                 Swal.fire({
-                    title: 'Sair do Sistema?',
-                    text: "Sua sessão atual será encerrada.",
-                    icon: 'warning',
-                    showCancelButton: true,
-                    confirmButtonColor: '#ef4444',
-                    cancelButtonColor: document.documentElement.classList.contains('dark') ? '#374151' : '#9ca3af',
-                    confirmButtonText: 'Sim, sair!',
-                    cancelButtonText: 'Cancelar',
-                    background: document.documentElement.classList.contains('dark') ? '#111b21' : '#ffffff',
-                    color: document.documentElement.classList.contains('dark') ? '#ffffff' : '#1f2937',
+                    title: 'Sair do Sistema?', text: "Sua sessão atual será encerrada.", icon: 'warning', showCancelButton: true, confirmButtonColor: '#ef4444',
+                    cancelButtonColor: document.documentElement.classList.contains('dark') ? '#374151' : '#9ca3af', confirmButtonText: 'Sim, sair!', cancelButtonText: 'Cancelar',
+                    background: document.documentElement.classList.contains('dark') ? '#111b21' : '#ffffff', color: document.documentElement.classList.contains('dark') ? '#ffffff' : '#1f2937',
                     customClass: { popup: 'rounded-2xl border border-gray-100 dark:border-gray-800' }
-                }).then((result) => {
-                    if (result.isConfirmed) {
-                        window.location.href = '/logout';
-                    }
-                });
-            } else {
-                window.location.href = '/logout';
-            }
+                }).then((result) => { if (result.isConfirmed) window.location.href = '/logout'; });
+            } else { window.location.href = '/logout'; }
         }
 
         function marcarNotificacaoLida(id) {
@@ -998,16 +726,11 @@
 
         function toggleProfileMenu() {
             const m = document.getElementById('profile-menu');
-            if(m) {
-                m.classList.toggle('opacity-0');
-                m.classList.toggle('pointer-events-none');
-                m.classList.toggle('scale-95');
-            }
+            if(m) { m.classList.toggle('opacity-0'); m.classList.toggle('pointer-events-none'); m.classList.toggle('scale-95'); }
         }
 
         function abrirModalPerfil() {
-            toggleProfileMenu();
-            const m = document.getElementById('modal-perfil'), c = document.getElementById('card-perfil');
+            toggleProfileMenu(); const m = document.getElementById('modal-perfil'), c = document.getElementById('card-perfil');
             m.classList.remove('hidden'); m.classList.add('flex');
             setTimeout(() => { m.classList.remove('opacity-0'); c.classList.remove('scale-95'); }, 10);
         }
@@ -1018,331 +741,101 @@
             setTimeout(() => { m.classList.add('hidden'); m.classList.remove('flex'); }, 300);
         }
 
-        // Fechar Dropdowns e Modais ao clicar fora
         document.addEventListener('click', function(e) {
-            const profileMenu = document.getElementById('profile-menu');
-            const profileBtn = document.getElementById('btn-avatar-perfil');
-            if (profileMenu && profileBtn && !profileMenu.classList.contains('opacity-0') && !profileMenu.contains(e.target) && !profileBtn.contains(e.target)) {
-                toggleProfileMenu();
-            }
-
-            const mPerfil = document.getElementById('modal-perfil');
-            const cPerfil = document.getElementById('card-perfil');
-            if (mPerfil && !mPerfil.classList.contains('hidden') && e.target === mPerfil && !cPerfil.contains(e.target)) {
-                fecharModalPerfil();
-            }
-
-            const mApoio = document.getElementById('modal-apoio');
-            const cApoio = document.getElementById('card-apoio');
-            if (mApoio && !mApoio.classList.contains('hidden') && e.target === mApoio && !cApoio.contains(e.target)) {
-                fecharModalApoio();
-            }
+            const profileMenu = document.getElementById('profile-menu'), profileBtn = document.getElementById('btn-avatar-perfil');
+            if (profileMenu && profileBtn && !profileMenu.classList.contains('opacity-0') && !profileMenu.contains(e.target) && !profileBtn.contains(e.target)) toggleProfileMenu();
+            const mPerfil = document.getElementById('modal-perfil'), cPerfil = document.getElementById('card-perfil');
+            if (mPerfil && !mPerfil.classList.contains('hidden') && e.target === mPerfil && !cPerfil.contains(e.target)) fecharModalPerfil();
+            const mApoio = document.getElementById('modal-apoio'), cApoio = document.getElementById('card-apoio');
+            if (mApoio && !mApoio.classList.contains('hidden') && e.target === mApoio && !cApoio.contains(e.target)) fecharModalApoio();
         });
     </script>
 
-    <!-- SCRIPT GLOBAL (TERMOS, LOADER BLINDADO E TRANSIÇÕES) -->
     <script>
-        // 1. Função para gravar o aceite dos termos
         function aceitarTermosGlobais() {
             const userId = "{{ session.get('user_id', '') }}";
-            if (userId) {
-                localStorage.setItem('termos_aceitos_' + userId, 'sim');
-            }
-
+            if (userId) localStorage.setItem('termos_aceitos_' + userId, 'sim');
             const mTermos = document.getElementById('modal-termos');
             if (mTermos) {
-                mTermos.classList.add('opacity-0');
-                const card = mTermos.querySelector('.transform');
-                if(card) card.classList.add('scale-95');
-
+                mTermos.classList.add('opacity-0'); const card = mTermos.querySelector('.transform'); if(card) card.classList.add('scale-95');
                 setTimeout(() => {
-                    mTermos.classList.add('hidden');
-                    mTermos.classList.remove('flex');
-
-                    if (!localStorage.getItem('tutorial_hir3_visto_v1')) {
-                        if (typeof iniciarTourGuiado === 'function') {
-                            iniciarTourGuiado();
-                        }
-                        localStorage.setItem('tutorial_hir3_visto_v1', 'sim');
-                    }
+                    mTermos.classList.add('hidden'); mTermos.classList.remove('flex');
+                    if (!localStorage.getItem('tutorial_hir3_visto_v1')) { if (typeof iniciarTourGuiado === 'function') iniciarTourGuiado(); localStorage.setItem('tutorial_hir3_visto_v1', 'sim'); }
                 }, 300);
             }
         }
 
-        // 2. Função à prova de falhas para esconder o Loader
         function esconderLoader() {
             const loader = document.getElementById('global-loader');
-            if (loader && loader.style.display !== 'none') {
-                loader.style.opacity = '0';
-                setTimeout(() => { loader.style.display = 'none'; }, 300);
-            }
+            if (loader && loader.style.display !== 'none') { loader.style.opacity = '0'; setTimeout(() => { loader.style.display = 'none'; }, 300); }
             if (typeof lucide !== 'undefined') lucide.createIcons();
         }
 
-        // --- INICIALIZAÇÃO DA PÁGINA ---
         document.addEventListener("DOMContentLoaded", function() {
-
-            // A) Forçar esconder o loader assim que a página é montada
             esconderLoader();
-
-            // B) Lógica do Modal de Termos Obrigatório
-            const userId = "{{ session.get('user_id', '') }}";
-            const modalTermos = document.getElementById('modal-termos');
-
+            const userId = "{{ session.get('user_id', '') }}", modalTermos = document.getElementById('modal-termos');
             if (userId && modalTermos && !localStorage.getItem('termos_aceitos_' + userId)) {
-                modalTermos.classList.remove('hidden');
-                modalTermos.classList.add('flex');
-                setTimeout(() => {
-                    modalTermos.classList.remove('opacity-0');
-                    const card = modalTermos.querySelector('.transform');
-                    if(card) card.classList.remove('scale-95');
-                }, 50);
-
-                const checkTermos = document.getElementById('check-aceite-termos');
-                const btnAceitar = document.getElementById('btn-aceitar-termos');
-
+                modalTermos.classList.remove('hidden'); modalTermos.classList.add('flex');
+                setTimeout(() => { modalTermos.classList.remove('opacity-0'); const card = modalTermos.querySelector('.transform'); if(card) card.classList.remove('scale-95'); }, 50);
+                const checkTermos = document.getElementById('check-aceite-termos'), btnAceitar = document.getElementById('btn-aceitar-termos');
                 if (checkTermos && btnAceitar) {
                     checkTermos.addEventListener('change', function() {
                         if(this.checked) {
-                            btnAceitar.removeAttribute('disabled');
-                            btnAceitar.classList.remove('bg-gray-300', 'dark:bg-gray-700', 'text-gray-500', 'dark:text-gray-400', 'cursor-not-allowed');
-                            btnAceitar.classList.add('bg-indigo-600', 'hover:bg-indigo-700', 'text-white', 'shadow-md', 'shadow-indigo-500/30');
+                            btnAceitar.removeAttribute('disabled'); btnAceitar.classList.remove('bg-gray-300', 'dark:bg-gray-700', 'text-gray-500', 'dark:text-gray-400', 'cursor-not-allowed'); btnAceitar.classList.add('bg-indigo-600', 'hover:bg-indigo-700', 'text-white', 'shadow-md', 'shadow-indigo-500/30');
                         } else {
-                            btnAceitar.setAttribute('disabled', 'true');
-                            btnAceitar.classList.add('bg-gray-300', 'dark:bg-gray-700', 'text-gray-500', 'dark:text-gray-400', 'cursor-not-allowed');
-                            btnAceitar.classList.remove('bg-indigo-600', 'hover:bg-indigo-700', 'text-white', 'shadow-md', 'shadow-indigo-500/30');
+                            btnAceitar.setAttribute('disabled', 'true'); btnAceitar.classList.add('bg-gray-300', 'dark:bg-gray-700', 'text-gray-500', 'dark:text-gray-400', 'cursor-not-allowed'); btnAceitar.classList.remove('bg-indigo-600', 'hover:bg-indigo-700', 'text-white', 'shadow-md', 'shadow-indigo-500/30');
                         }
                     });
                 }
             }
         });
 
-        // C) Salva-vidas para o cache do navegador (Botão Voltar)
-        window.addEventListener("pageshow", function(event) {
-            // Se a página foi carregada da memória do navegador (usuário clicou em voltar)
-            if (event.persisted) {
-                esconderLoader();
-            }
-        });
+        window.addEventListener("pageshow", function(event) { if (event.persisted) esconderLoader(); });
 
-        // D) Gatilho do Loader ao clicar em links válidos
         document.addEventListener('click', function(e) {
             const link = e.target.closest('a');
             if (link) {
-                const href = link.getAttribute('href');
-                const target = link.getAttribute('target');
-                const isDownload = link.hasAttribute('download');
-
-                // Exceção importante: não pisca o loader se o clique acionar o Modal Global de Ajax!
+                const href = link.getAttribute('href'), target = link.getAttribute('target'), isDownload = link.hasAttribute('download');
                 const isAjaxModal = link.hasAttribute('onclick') && link.getAttribute('onclick').includes('abrirModalAjax');
-
                 if (href && !href.startsWith('#') && !href.startsWith('javascript:') && target !== '_blank' && !isDownload && !isAjaxModal) {
                     const loader = document.getElementById('global-loader');
-                    if (loader) {
-                        loader.style.display = 'flex';
-                        void loader.offsetWidth; // Força renderização imediata do CSS
-                        loader.style.opacity = '1';
-
-                        // FALLBACK DE SEGURANÇA: Desliga o loader forçadamente após 6 segundos
-                        // Isso previne que a tela fique preta caso a internet caia ou o link falhe
-                        setTimeout(esconderLoader, 6000);
-                    }
+                    if (loader) { loader.style.display = 'flex'; void loader.offsetWidth; loader.style.opacity = '1'; setTimeout(esconderLoader, 6000); }
                 }
             }
         });
     </script>
 
-    <!-- SCRIPT DO TUTORIAL GUIADO (INTRO.JS) -->
     <script>
         function iniciarTourGuiado() {
             if(window.location.pathname.includes('login') || window.location.pathname.includes('recuperar')) return;
-
             const isDark = document.documentElement.classList.contains('dark') || localStorage.theme === 'dark';
-
             const tour = introJs();
             tour.setOptions({
-                nextLabel: 'Próximo',
-                prevLabel: 'Voltar',
-                doneLabel: 'Começar!',
-                showBullets: true,
-                showProgress: true,
-                tooltipClass: isDark ? 'dark' : '',
+                nextLabel: 'Próximo', prevLabel: 'Voltar', doneLabel: 'Começar!', showBullets: true, showProgress: true, tooltipClass: isDark ? 'dark' : '',
                 steps: [
-                    {
-                        title: "👋 Olá, sou o Hir3!",
-                        intro: "Bem-vindo ao <b>Meu Controle Financeiro</b>! Serei sua IA mentora por aqui. Vamos fazer um tour rápido para você dominar suas finanças?"
-                    },
-                    {
-                        element: document.querySelector('#tour-lancamentos') || document.querySelector('a[href="/movimentacoes"]'),
-                        title: "💸 Lançamentos Rápidos",
-                        intro: "Tudo começa aqui. É por este atalho que você vai registrar suas despesas do dia a dia de forma super rápida.",
-                        position: 'right'
-                    },
-                    {
-                        element: document.querySelector('#tour-planejamento') || document.querySelector('a[href="/dividas"]'),
-                        title: "🎯 Suas Metas e Contratos",
-                        intro: "Neste módulo, você cria suas <b>Caixinhas de Reservas</b> e gerencia as amortizações dos seus <b>Contratos a Longo Prazo</b>.",
-                        position: 'right'
-                    },
-                    {
-                        element: document.querySelector('#tour-notificacoes'),
-                        title: "🔔 Inteligência Artificial",
-                        intro: "Fique de olho no sino! É por aqui que eu vou te mandar relatórios automáticos, dicas de economia e alertas de vencimentos.",
-                        position: 'bottom-right-aligned'
-                    },
-                    {
-                        element: document.querySelector('#btn-avatar-perfil'),
-                        title: "⚙️ Seu Painel",
-                        intro: "Aqui no seu perfil você consegue ativar o Modo Escuro, mudar o idioma, colocar o sistema em Tela Cheia e ajustar sua Renda.",
-                        position: 'left'
-                    },
-                    {
-                        title: "🚀 Tudo Pronto!",
-                        intro: "Você já está pronto para começar. Qualquer dúvida, é só me chamar clicando no <b>botão roxo de Chat</b> no canto da tela. Boas finanças!"
-                    }
+                    { title: "👋 Olá, sou o Hir3!", intro: "Bem-vindo ao <b>Meu Controle Financeiro</b>! Serei sua IA mentora por aqui. Vamos fazer um tour rápido para você dominar suas finanças?" },
+                    { element: document.querySelector('#tour-lancamentos') || document.querySelector('a[href="/movimentacoes"]'), title: "💸 Lançamentos Rápidos", intro: "Tudo começa aqui. É por este atalho que você vai registrar suas despesas do dia a dia de forma super rápida.", position: 'right' },
+                    { element: document.querySelector('#tour-planejamento') || document.querySelector('a[href="/dividas"]'), title: "🎯 Suas Metas e Contratos", intro: "Neste módulo, você cria suas <b>Caixinhas de Reservas</b> e gerencia as amortizações dos seus <b>Contratos a Longo Prazo</b>.", position: 'right' },
+                    { element: document.querySelector('#tour-notificacoes'), title: "🔔 Inteligência Artificial", intro: "Fique de olho no sino! É por aqui que eu vou te mandar relatórios automáticos, dicas de economia e alertas de vencimentos.", position: 'bottom-right-aligned' },
+                    { element: document.querySelector('#btn-avatar-perfil'), title: "⚙️ Seu Painel", intro: "Aqui no seu perfil você consegue ativar o Modo Escuro, mudar o idioma, colocar o sistema em Tela Cheia e ajustar sua Renda.", position: 'left' },
+                    { title: "🚀 Tudo Pronto!", intro: "Você já está pronto para começar. Qualquer dúvida, é só me chamar clicando no <b>botão roxo de Chat</b> no canto da tela. Boas finanças!" }
                 ]
             });
-
-            tour.onchange(function() {
-                setTimeout(() => { if (typeof lucide !== 'undefined') lucide.createIcons(); }, 50);
-            });
-
+            tour.onchange(function() { setTimeout(() => { if (typeof lucide !== 'undefined') lucide.createIcons(); }, 50); });
             tour.start();
         }
 
         document.addEventListener("DOMContentLoaded", function() {
             setTimeout(() => {
                 const userId = "{{ session.get('user_id', '') }}";
-                // O tutorial guiado AGORA SÓ RODA automaticamente se os Termos já tiverem sido aceitos (ou se a pessoa logou e já tinha aceitado antes).
-                // Caso contrário, quem chama o tutorial é a função aceitarTermosGlobais() quando o usuário clica no botão "Aceitar".
                 if (!localStorage.getItem('tutorial_hir3_visto_v1') && localStorage.getItem('termos_aceitos_' + userId)) {
-                    iniciarTourGuiado();
-                    localStorage.setItem('tutorial_hir3_visto_v1', 'sim');
+                    iniciarTourGuiado(); localStorage.setItem('tutorial_hir3_visto_v1', 'sim');
                 }
             }, 1500);
         });
     </script>
 
-    <!-- ======================================================= -->
-    <!-- SISTEMA DE TRADUÇÃO DINÂMICA (CÉREBRO POLIGLOTA)        -->
-    <!-- ======================================================= -->
-    <script>
-        const dicionarioGlobal = {
-            "PT-BR": {
-                "saudacao": "Olá", "saldo_disponivel": "Saldo Disponível", "extrato_mes": "Extrato do Mês", "entradas": "Entradas", "saidas": "Saídas",
-                "comparativo_titulo": "Comparativo Mensal", "fluxo_mes": "Fluxo do mês", "fluxo_sub": "Da renda já consumida", "score_pagamento": "Score de pagamento",
-                "reputacao_financeira": "Sua reputação financeira", "pagos": "Pagos", "pendentes": "Pendentes", "em_dia": "Em dia", "nivel": "Nível",
-                "categorias": "Categorias", "tendencia": "Tendência", "sem_despesas": "Sem dados registrados", "todos": "Todos", "primeira_q": "1ª Q.", "segunda_q": "2ª Q.",
-                "pago_min": "Pago", "pend_min": "Pend.", "cancelar": "Cancelar", "salvar": "Salvar", "editar_despesa": "Editar Despesa", "label_descricao": "Descrição",
-                "label_valor": "Valor (R$)", "label_data": "Data", "label_categoria": "Categoria", "quinzena": "Quinzena", "primeira_quinzena": "1ª Quinzena",
-                "segunda_quinzena": "2ª Quinzena", "mes_integral": "Mês Integral", "nenhum_encontrado": "Nenhum gasto encontrado neste filtro.", "nenhum_registrado": "Nenhum gasto registrado.",
-                "ajustar_renda": "Ajustar Renda Base", "desc_ajustar_renda": "Atualize o valor da sua renda mensal. O sistema recalculará o saldo e fluxo do mês.",
-                "renda_total": "Renda Total (R$)", "salvar_renda": "Salvar Renda", "tendencia_gastos": "Tendência de Gastos", "projecao_fim_mes": "Projeção Fim do Mês",
-                "gasto_atual": "Gasto Atual", "hoje": "Hoje", "ritmo_diario": "Ritmo Diário", "estimativa_total": "Estimativa Total", "saldo_projetado": "Saldo Projetado",
-                "aviso_assinatura": "Aviso de Assinatura", "fatura_pendente": "Fatura pendente:", "suporte": "Suporte", "nav_dashboard": "Dashboard Inicial",
-                "nav_gasto": "Movimentações", "nav_compras": "Lista de Compras", "nav_metas": "Planejamento Financeiro", "nav_usuarios": "Gestão de Usuários",
-                "nav_relatorios": "Relatório Premium", "nav_novidades": "Novidades", "menu_titulo": "MENU", "mob_inicio": "Início", "mob_compras": "Compras",
-                "mob_lancar": "Movimentos", "mob_metas": "Metas", "mob_mais": "Mais",
-                "ph_hir3": "Pergunte ao Hir3...", "ph_senha": "Nova Senha", "ph_renda": "Renda Mensal (R$)", "ph_desc": "Descrição",
-                "meu_painel": "Meu Painel", "config_pref": "Configurações e Preferências", "meu_perfil": "Meu Perfil", "idioma": "Idioma", "tela_cheia": "Tela Cheia",
-                "modo_escuro": "Modo Escuro", "sair_sistema": "Sair do Sistema", "seu_acesso": "Seu Acesso", "detalhes_plano": "Detalhes do Plano", "seguranca": "Segurança", "config_renda": "Config. de Renda",
-                "licenca": "Licença", "modulos": "Módulos", "atualizar_senha": "Atualizar Senha", "e_variavel": "É Variável?", "sim": "Sim", "nao": "Não",
-                "termos_privacidade": "Termos e Privacidade", "ler_termos": "Ler Termos", "ler_politica": "Ler Política", "aceitar_continuar": "Aceitar e Continuar",
-                "apoie_projeto": "Apoie o Desenvolvimento", "chave_pix": "Chave PIX", "analise_mes": "Análise do Mês", "fechar_resumo": "Fechar Resumo", "total_atual": "Total Atual:", "total_passado": "Total Mês Passado:",
-                "aviso_beta": "SISTEMA EM BETA: Funcionalidades em teste. Podem ocorrer instabilidades."
-            },
-            "EN-US": {
-                "saudacao": "Hello", "saldo_disponivel": "Available Balance", "extrato_mes": "Monthly Statement", "entradas": "Incomes", "saidas": "Expenses",
-                "comparativo_titulo": "Monthly Comparison", "fluxo_mes": "Monthly Flow", "fluxo_sub": "Of consumed income", "score_pagamento": "Payment Score",
-                "reputacao_financeira": "Your financial reputation", "pagos": "Paid", "pendentes": "Pending", "em_dia": "Up to date", "nivel": "Level",
-                "categorias": "Categories", "tendencia": "Trend", "sem_despesas": "No data recorded", "todos": "All", "primeira_q": "1st Q.", "segunda_q": "2nd Q.",
-                "pago_min": "Paid", "pend_min": "Pend.", "cancelar": "Cancel", "salvar": "Save", "editar_despesa": "Edit Expense", "label_descricao": "Description",
-                "label_valor": "Amount ($)", "label_data": "Date", "label_categoria": "Category", "quinzena": "Fortnight", "primeira_quinzena": "1st Fortnight",
-                "segunda_quinzena": "2nd Fortnight", "mes_integral": "Full Month", "nenhum_encontrado": "No expenses found in this filter.", "nenhum_registrado": "No expenses recorded.",
-                "ajustar_renda": "Adjust Base Income", "desc_ajustar_renda": "Update your monthly income. The system will recalculate balance and flow.",
-                "renda_total": "Total Income ($)", "salvar_renda": "Save Income", "tendencia_gastos": "Expense Trend", "projecao_fim_mes": "End of Month Projection",
-                "gasto_atual": "Current Expense", "hoje": "Today", "ritmo_diario": "Daily Pace", "estimativa_total": "Total Estimate", "saldo_projetado": "Projected Balance",
-                "aviso_assinatura": "Subscription Notice", "fatura_pendente": "Pending invoice:", "suporte": "Support", "nav_dashboard": "Home Dashboard",
-                "nav_gasto": "Transactions", "nav_compras": "Shopping List", "nav_metas": "Financial Planning", "nav_usuarios": "User Management",
-                "nav_relatorios": "Premium Report", "nav_novidades": "Updates", "menu_titulo": "MENU", "mob_inicio": "Home", "mob_compras": "Shop",
-                "mob_lancar": "Add", "mob_metas": "Goals", "mob_mais": "More",
-                "ph_hir3": "Ask Hir3...", "ph_senha": "New Password", "ph_renda": "Monthly Income ($)", "ph_desc": "Description",
-                "meu_painel": "My Dashboard", "config_pref": "Settings & Preferences", "meu_perfil": "My Profile", "idioma": "Language", "tela_cheia": "Full Screen",
-                "modo_escuro": "Dark Mode", "sair_sistema": "Logout", "seu_acesso": "Your Access", "detalhes_plano": "Plan Details", "seguranca": "Security", "config_renda": "Income Setup",
-                "licenca": "License", "modulos": "Modules", "atualizar_senha": "Update Password", "e_variavel": "Is Variable?", "sim": "Yes", "nao": "No",
-                "termos_privacidade": "Terms & Privacy", "ler_termos": "Read Terms", "ler_politica": "Read Policy", "aceitar_continuar": "Accept & Continue",
-                "apoie_projeto": "Support Development", "chave_pix": "PIX Key", "analise_mes": "Month Analysis", "fechar_resumo": "Close Summary", "total_atual": "Current Total:", "total_passado": "Last Month Total:",
-                "aviso_beta": "BETA SYSTEM: Features in testing. Instabilities may occur."
-            },
-            "ZH-CN": {
-                "saudacao": "你好", "saldo_disponivel": "可用余额", "extrato_mes": "月度对账单", "entradas": "收入", "saidas": "支出",
-                "comparativo_titulo": "月度对比", "fluxo_mes": "月度流量", "fluxo_sub": "已消耗收入的", "score_pagamento": "支付得分",
-                "reputacao_financeira": "您的财务声誉", "pagos": "已付", "pendentes": "待办", "em_dia": "最新", "nivel": "级别",
-                "categorias": "类别", "tendencia": "趋势", "sem_despesas": "没有记录数据", "todos": "全部", "primeira_q": "前半月", "segunda_q": "后半月",
-                "pago_min": "已付", "pend_min": "待办", "cancelar": "取消", "salvar": "保存", "editar_despesa": "编辑支出", "label_descricao": "描述",
-                "label_valor": "金额", "label_data": "日期", "label_categoria": "类别", "quinzena": "半月", "primeira_quinzena": "前半月",
-                "segunda_quinzena": "后半月", "mes_integral": "整月", "nenhum_encontrado": "未找到符合此筛选条件的支出。", "nenhum_registrado": "未记录任何支出。",
-                "ajustar_renda": "调整基础收入", "desc_ajustar_renda": "更新您的月收入。系统将重新计算余额和流量。",
-                "renda_total": "总收入", "salvar_renda": "保存收入", "tendencia_gastos": "支出趋势", "projecao_fim_mes": "月底预测",
-                "gasto_atual": "当前支出", "hoje": "今天", "ritmo_diario": "每日节奏", "estimativa_total": "总估算", "saldo_projetado": "预计余额",
-                "aviso_assinatura": "订阅通知", "fatura_pendente": "待付发票:", "suporte": "支持", "nav_dashboard": "主仪表板",
-                "nav_gasto": "交易", "nav_compras": "购物清单", "nav_metas": "财务规划", "nav_usuarios": "用户管理",
-                "nav_relatorios": "高级报告", "nav_novidades": "更新", "menu_titulo": "菜单", "mob_inicio": "首页", "mob_compras": "购物",
-                "mob_lancar": "添加", "mob_metas": "目标", "mob_mais": "更多",
-                "ph_hir3": "问问 Hir3...", "ph_senha": "新密码", "ph_renda": "月收入", "ph_desc": "描述",
-                "meu_painel": "我的仪表板", "config_pref": "设置和首选项", "meu_perfil": "我的个人资料", "idioma": "语言", "tela_cheia": "全屏",
-                "modo_escuro": "深色模式", "sair_sistema": "退出系统", "seu_acesso": "您的访问权限", "detalhes_plano": "计划详情", "seguranca": "安全", "config_renda": "收入设置",
-                "licenca": "许可证", "modulos": "模块", "atualizar_senha": "更新密码", "e_variavel": "是否浮动?", "sim": "是", "nao": "否",
-                "termos_privacidade": "条款和隐私", "ler_termos": "阅读条款", "ler_politica": "阅读政策", "aceitar_continuar": "接受并继续",
-                "apoie_projeto": "支持开发", "chave_pix": "PIX密钥", "analise_mes": "月度分析", "fechar_resumo": "关闭摘要", "total_atual": "当前总计:", "total_passado": "上月总计:",
-                "aviso_beta": "测试系统：功能测试中，可能会出现不稳定情况。"
-            }
-        };
-
-        const listaIdiomas = ['PT-BR', 'EN-US', 'ZH-CN'];
-
-        function cicloIdioma() {
-            let idiomaAtual = localStorage.getItem('idioma_sistema') || 'PT-BR';
-            let proximoIdioma = listaIdiomas[(listaIdiomas.indexOf(idiomaAtual) + 1) % listaIdiomas.length];
-            localStorage.setItem('idioma_sistema', proximoIdioma);
-
-            const labelNoMenu = document.getElementById('texto-idioma');
-            if(labelNoMenu) labelNoMenu.innerText = proximoIdioma;
-
-            window.aplicarTraducao(proximoIdioma);
-        }
-
-        window.aplicarTraducao = function(idioma) {
-            const dicionario = dicionarioGlobal[idioma] || dicionarioGlobal['PT-BR'];
-
-            // 1. Traduz todos os elementos
-            document.querySelectorAll('[data-i18n]').forEach(elemento => {
-                const chave = elemento.getAttribute('data-i18n');
-                if (dicionario[chave]) {
-                    // SE for um input com placeholder, traduz o placeholder em vez do texto interno
-                    if (elemento.tagName === 'INPUT' || elemento.tagName === 'TEXTAREA') {
-                        elemento.placeholder = dicionario[chave];
-                    } else {
-                        // Respeita os ícones que possam estar dentro do innerHTML se houver
-                        elemento.innerHTML = dicionario[chave];
-                    }
-                }
-            });
-
-            // 2. Dispara evento para o Dashboard JS atualizar os textos dinâmicos (como o Totalizador)
-            window.dispatchEvent(new CustomEvent('idiomaTrocado', { detail: idioma }));
-
-            if(typeof atualizarNomeMes === 'function') atualizarNomeMes();
-            if(typeof lucide !== 'undefined') lucide.createIcons();
-        }
-
-        document.addEventListener("DOMContentLoaded", () => {
-            let idiomaAtual = localStorage.getItem('idioma_sistema') || 'PT-BR';
-            const labelNoMenu = document.getElementById('texto-idioma');
-            if(labelNoMenu) labelNoMenu.innerText = idiomaAtual;
-            window.aplicarTraducao(idiomaAtual);
-        });
-    </script>
+    {% include 'partials/sistema_idiomas.html' %}
 
     <script src="{{ url_for('static', filename='js/main.js') }}?v=2"></script>
 </body>

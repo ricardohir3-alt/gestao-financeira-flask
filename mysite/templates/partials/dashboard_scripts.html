@@ -19,12 +19,20 @@
             m.classList.remove('hidden'); m.classList.add('flex'); 
             setTimeout(() => { 
                 m.classList.remove('opacity-0'); 
-                if(c) c.classList.remove('scale-95'); 
+                if(c) c.classList.remove('translate-y-full', 'scale-95'); 
                 if(typeof filtrarGastos === 'function') filtrarGastos(window.tabAtivaExtrato || 'TODOS'); 
             }, 10); 
         } catch (e) { console.error("Erro abrir extrato: ", e); }
     }
-    function fecharModalExtrato() { const m = document.getElementById('modal-extrato'), c = document.getElementById('card-extrato'); if(!m) return; m.classList.add('opacity-0'); if(c) c.classList.add('scale-95'); setTimeout(() => { m.classList.add('hidden'); m.classList.remove('flex'); }, 300); }
+    
+    function fecharModalExtrato() { 
+        const m = document.getElementById('modal-extrato'), c = document.getElementById('card-extrato'); 
+        if(!m) return; 
+        m.classList.add('opacity-0'); 
+        if(c) c.classList.add('translate-y-full'); 
+        setTimeout(() => { m.classList.add('hidden'); m.classList.remove('flex'); }, 300); 
+    }
+
     function abrirModalRenda() { const m = document.getElementById('modal-renda'), c = document.getElementById('card-renda'); m.classList.remove('hidden'); m.classList.add('flex'); setTimeout(() => { m.classList.remove('opacity-0'); c.classList.remove('scale-95'); }, 10); }
     function fecharModalRenda() { const m = document.getElementById('modal-renda'), c = document.getElementById('card-renda'); m.classList.add('opacity-0'); c.classList.add('scale-95'); setTimeout(() => { m.classList.add('hidden'); m.classList.remove('flex'); }, 300); }
     function abrirModalGraficoLinha() { const m = document.getElementById('modal-grafico-linha'); m.classList.remove('hidden'); m.classList.add('flex'); setTimeout(() => { m.classList.remove('opacity-0'); m.children[0].classList.remove('scale-95'); }, 10); }
@@ -77,35 +85,35 @@
 
     function abrirModalEditarGasto(id, desc, valor, data, cat, q, status, tipo) {
         const form = document.getElementById('form-editar-gasto');
-        
+
         // ROTA CORRIGIDA DE ACORDO COM O FLASK_APP:
         form.action = '/editar_movimentacao/' + id + '?mes={{ mes_filtro }}';
-        
+
         document.getElementById('edit-gasto-desc').value = desc;
-        
+
         // BLINDAGEM DE VALOR: Transforma o número em formato seguro de string (com vírgula)
         const valorAjustado = String(valor).replace(',', '.');
         document.getElementById('edit-gasto-valor').value = parseFloat(valorAjustado).toFixed(2).replace('.', ',');
-        
+
         // BLINDAGEM DE DATA: Alimenta o input oficial e o fallback (data_gasto)
         document.getElementById('edit-gasto-data').value = data;
         const dataAlt = document.getElementById('edit-gasto-data-alt');
         if(dataAlt) dataAlt.value = data;
-        
+
         const catField = document.getElementById('edit-gasto-categoria'); if(catField) catField.value = cat;
         const qField = document.getElementById('edit-gasto-quinzena'); if(qField) qField.value = q;
         const statusField = document.getElementById('edit-gasto-status'); if(statusField) statusField.value = status || 'PENDENTE';
 
         const tipoFiltro = tipo || 'despesa';
         toggleEditTipo(tipoFiltro);
-        
+
         const radio = document.getElementById('edit-tipo-' + tipoFiltro);
         if (radio) radio.checked = true;
 
         const m = document.getElementById('modal-editar-gasto'), c = document.getElementById('card-editar-gasto');
         if(m && c) { m.classList.remove('hidden'); m.classList.add('flex'); setTimeout(() => { m.classList.remove('opacity-0'); c.classList.remove('scale-95'); }, 10); }
     }
-    
+
     function fecharModalEditarGasto() { const m = document.getElementById('modal-editar-gasto'), c = document.getElementById('card-editar-gasto'); if(!m) return; m.classList.add('opacity-0'); if(c) c.classList.add('scale-95'); setTimeout(() => { m.classList.add('hidden'); m.classList.remove('flex'); }, 300); }
 
     document.addEventListener('click', function(e) {
@@ -116,10 +124,10 @@
             {bg: 'modal-grafico-linha', card: 'modal-grafico-linha', close: fecharModalGraficoLinha},
             {bg: 'modal-projecao', card: 'modal-projecao', close: fecharModalProjecao}
         ];
-        modais.forEach(m => { 
-            const elBg = document.getElementById(m.bg); 
-            const elCard = document.getElementById(m.card) || (elBg ? elBg.children[0] : null); 
-            if (elBg && elCard && e.target === elBg && !elCard.contains(e.target)) m.close(); 
+        modais.forEach(m => {
+            const elBg = document.getElementById(m.bg);
+            const elCard = document.getElementById(m.card) || (elBg ? elBg.children[0] : null);
+            if (elBg && elCard && e.target === elBg && !elCard.contains(e.target)) m.close();
         });
     });
 
@@ -146,7 +154,7 @@
             if (id === st) b.className = "px-3 py-1.5 text-[10px] font-bold rounded-lg bg-white dark:bg-[#111b21] text-indigo-600 dark:text-indigo-400 shadow-sm transition-all border border-gray-200 dark:border-white/10";
             else b.className = "px-3 py-1.5 text-[10px] font-bold rounded-lg text-gray-500 hover:bg-white dark:hover:bg-[#111b21] hover:text-gray-800 dark:hover:text-gray-100 transition-all border border-transparent";
         });
-        
+
         let qtdVisiveis = 0; let valorTotal = 0;
         document.querySelectorAll('.item-gasto').forEach(i => {
             const statusItem = i.getAttribute('data-status');
@@ -155,12 +163,12 @@
 
             const deveAparecer = (st === 'TODOS') || (st === 'PAGO' && statusItem === 'PAGO') || (st === 'PENDENTE' && statusItem !== 'PAGO') || (st === 'Q1' && quinzenaItem === '1') || (st === 'Q2' && quinzenaItem === '2');
 
-            if (deveAparecer) { 
+            if (deveAparecer) {
                 i.style.display = 'flex'; qtdVisiveis++; valorTotal += valorItem;
             } else { i.style.display = 'none'; }
         });
 
-        const msg = document.getElementById('msg-filtro-vazio'); 
+        const msg = document.getElementById('msg-filtro-vazio');
         if (msg) msg.style.display = qtdVisiveis === 0 ? 'block' : 'none';
 
         const labelTot = document.getElementById('label-totalizador');
@@ -194,6 +202,12 @@
 
         const elGraficoScore = document.querySelector("#grafico-score");
         if(elGraficoScore && typeof ApexCharts !== 'undefined') {
+
+            if (window.graficoScoreChart) {
+                window.graficoScoreChart.destroy();
+            }
+            elGraficoScore.innerHTML = '';
+
             window.graficoScoreChart = new ApexCharts(elGraficoScore, {
                 series: [pagoPerc],
                 chart: { type: 'radialBar', height: window.innerWidth < 768 ? 180 : 200, sparkline: { enabled: true }, foreColor: textColor },
@@ -212,6 +226,148 @@
             });
             window.graficoScoreChart.render();
         }
+
+        // ==============================================================================
+        // GRÁFICO: ENTRADAS E SAÍDAS
+        // ==============================================================================
+        const elGraficoES = document.querySelector("#grafico-entradas-saidas");
+        if(elGraficoES && typeof ApexCharts !== 'undefined') {
+
+            var optionsES = {
+                series: [{
+                    name: 'Entradas',
+                    data: {{ entradas_grafico_es | tojson | safe }}
+                }, {
+                    name: 'Saídas',
+                    data: {{ saidas_grafico_es | tojson | safe }}
+                }],
+                chart: {
+                    type: 'bar',
+                    height: 180,
+                    stacked: true,
+                    toolbar: { show: false },
+                    parentHeightOffset: 0
+                },
+                colors: ['#10b981', '#cbd5e1'],
+                plotOptions: {
+                    bar: {
+                        borderRadius: 5,
+                        columnWidth: '35%',
+                        borderRadiusApplication: 'end',
+                        borderRadiusWhenStacked: 'all'
+                    }
+                },
+                dataLabels: { enabled: false },
+                stroke: { width: 0 },
+                xaxis: {
+                    categories: {{ labels_grafico_es | tojson | safe }},
+                    axisBorder: { show: false },
+                    axisTicks: { show: false },
+                    labels: {
+                        style: { colors: '#9ca3af', fontSize: '14px', fontWeight: 600, fontFamily: 'inherit' },
+                        offsetY: 5
+                    }
+                },
+                yaxis: {
+                    show: false,
+                },
+                grid: {
+                    show: true,
+                    borderColor: '#e5e7eb',
+                    strokeDashArray: 0,
+                    position: 'back',
+                    xaxis: { lines: { show: false } },
+                    yaxis: { lines: { show: true } },
+                    padding: { top: 0, right: 0, bottom: 0, left: 10 }
+                },
+                legend: { show: false },
+                tooltip: {
+                    y: {
+                        formatter: function (val) {
+                            return "R$ " + Math.abs(val).toLocaleString('pt-BR', {minimumFractionDigits: 2});
+                        }
+                    }
+                }
+            };
+
+            var chartES = new ApexCharts(elGraficoES, optionsES);
+            chartES.render();
+        }
+        
+        // ==============================================================================
+        // GRÁFICO: CATEGORIAS (DONUT)
+        // ==============================================================================
+        const elGraficoDonut = document.querySelector("#grafico-donut-container");
+        if(elGraficoDonut && typeof ApexCharts !== 'undefined') {
+            
+            const labelsCat = {{ labels_categorias | tojson | safe }};
+            const valoresCat = {{ valores_categorias | tojson | safe }};
+            
+            // Só desenha se tiver algum gasto no mês (evita rosca em branco dando erro)
+            if (valoresCat.length > 0 && valoresCat.some(v => v > 0)) {
+                var optionsDonut = {
+                    series: valoresCat,
+                    labels: labelsCat,
+                    chart: {
+                        type: 'donut',
+                        height: 280,
+                        background: 'transparent'
+                    },
+                    colors: ['#6366f1', '#10b981', '#f59e0b', '#ef4444', '#8b5cf6', '#06b6d4', '#ec4899', '#f97316'],
+                    plotOptions: {
+                        pie: {
+                            donut: {
+                                size: '75%',
+                                background: 'transparent',
+                                labels: {
+                                    show: true,
+                                    name: { show: true, fontSize: '11px', color: textColor, offsetY: -10 },
+                                    value: {
+                                        show: true, 
+                                        fontSize: '18px', 
+                                        fontWeight: 800, 
+                                        color: titleColor,
+                                        formatter: function (val) {
+                                            return "R$ " + parseFloat(val).toLocaleString('pt-BR', {minimumFractionDigits: 2});
+                                        }
+                                    },
+                                    total: {
+                                        show: true,
+                                        showAlways: true,
+                                        label: 'Total',
+                                        fontSize: '11px',
+                                        color: textColor,
+                                        formatter: function (w) {
+                                            const total = w.globals.seriesTotals.reduce((a, b) => a + b, 0);
+                                            return "R$ " + total.toLocaleString('pt-BR', {minimumFractionDigits: 2});
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    },
+                    stroke: { show: true, colors: isDark ? ['#1a1b26'] : ['#ffffff'], width: 3 },
+                    dataLabels: { enabled: false },
+                    legend: {
+                        show: true,
+                        position: 'bottom',
+                        fontSize: '11px',
+                        labels: { colors: textColor },
+                        markers: { width: 8, height: 8, radius: 12 }
+                    },
+                    tooltip: {
+                        y: {
+                            formatter: function (val) {
+                                return "R$ " + parseFloat(val).toLocaleString('pt-BR', {minimumFractionDigits: 2});
+                            }
+                        }
+                    }
+                };
+
+                var chartDonut = new ApexCharts(elGraficoDonut, optionsDonut);
+                chartDonut.render();
+            }
+        }
     });
 
     function extrairValoresDoFundo(html) {
@@ -219,7 +375,7 @@
         const novoDoc = parser.parseFromString(html, 'text/html');
         const valoresAtuais = document.querySelectorAll('.valor-sensivel');
         const valoresNovos = novoDoc.querySelectorAll('.valor-sensivel');
-        
+
         for(let i = 0; i < 3; i++) {
             if(valoresAtuais[i] && valoresNovos[i]) {
                 valoresAtuais[i].innerHTML = valoresNovos[i].innerHTML;
@@ -228,11 +384,11 @@
         }
 
         const secScoreNovo = novoDoc.getElementById('section-score');
-        
+
         if (secScoreNovo) {
             const textPagoAntigo = document.getElementById('texto-perc-pago');
             if (textPagoAntigo) textPagoAntigo.innerHTML = novoDoc.getElementById('texto-perc-pago').innerHTML;
-            
+
             const textPendenteAntigo = document.getElementById('texto-perc-pendente');
             const textPendenteNovo = novoDoc.getElementById('texto-perc-pendente');
             if (textPendenteAntigo && textPendenteNovo) {
@@ -261,11 +417,15 @@
     }
 
     function excluirSemReload(event, form, id) {
-        event.preventDefault(); 
+        event.preventDefault();
         const executarExclusaoAJAX = () => {
             const btn = form.querySelector('button');
             btn.innerHTML = '<i data-lucide="loader" class="w-3.5 h-3.5 animate-spin"></i>';
-            fetch(form.action, { method: 'POST', body: new FormData(form) }).then(() => {
+            fetch(form.action, {
+                method: 'POST',
+                body: new FormData(form),
+                headers: { 'X-Requested-With': 'XMLHttpRequest' }
+            }).then(() => {
                 const card = document.querySelector(`.item-gasto[data-id="${id}"]`);
                 if(card) {
                     card.style.transition = 'all 0.3s ease'; card.style.opacity = '0'; card.style.transform = 'scale(0.9)';
@@ -278,25 +438,30 @@
 
     function editarSemReload(event, form) {
         event.preventDefault();
-        
-        // BLINDAGEM DE ROTA: Regex melhorado (Aceita editar_movimentacao ou editar_gasto)
+
         const idMatch = form.action.match(/\/editar_(?:movimentacao|gasto)\/(\d+)/);
-        
+
         if (!idMatch) {
             console.error("Erro Crítico na URL de Action. O Regex falhou na tentativa de achar a Rota.");
             return;
         }
-        
+
         const btn = form.querySelector('button[type="submit"]');
         const txtOriginal = btn.innerHTML;
         btn.innerHTML = '<i data-lucide="loader" class="w-4 h-4 animate-spin"></i> Salvando...';
         if(typeof lucide !== 'undefined') lucide.createIcons();
-        
-        fetch(form.action, { method: 'POST', body: new FormData(form) })
-        .then(res => {
-            if (!res.ok) throw new Error("Falha no servidor. Verifique os dados.");
-            
-            // QUEBRANDO O CACHE: Adiciona o timestamp na URL para forçar atualização
+
+        fetch(form.action, {
+            method: 'POST',
+            body: new FormData(form),
+            headers: { 'X-Requested-With': 'XMLHttpRequest' }
+        })
+        .then(async res => {
+            if (!res.ok) {
+                const erroDoPython = await res.text();
+                throw new Error(erroDoPython);
+            }
+
             const currentUrl = window.location.href;
             const sep = currentUrl.includes('?') ? '&' : '?';
             return fetch(currentUrl + sep + 't=' + Date.now());
@@ -307,25 +472,25 @@
             const novoDoc = parser.parseFromString(html, 'text/html');
             const cardAntigo = document.querySelector(`.item-gasto[data-id="${idMatch[1]}"]`);
             const cardNovo = novoDoc.querySelector(`.item-gasto[data-id="${idMatch[1]}"]`);
-            
+
             if(cardAntigo && cardNovo) {
                 cardAntigo.innerHTML = cardNovo.innerHTML;
-                ['data-descricao', 'data-valor', 'data-data', 'data-categoria', 'data-quinzena', 'data-status', 'data-tipo'].forEach(attr => { 
-                    cardAntigo.setAttribute(attr, cardNovo.getAttribute(attr)); 
+                ['data-descricao', 'data-valor', 'data-data', 'data-categoria', 'data-quinzena', 'data-status', 'data-tipo'].forEach(attr => {
+                    cardAntigo.setAttribute(attr, cardNovo.getAttribute(attr));
                 });
             }
-            
+
             fecharModalEditarGasto();
-            btn.innerHTML = txtOriginal; 
+            btn.innerHTML = txtOriginal;
             if(typeof lucide !== 'undefined') lucide.createIcons();
             filtrarGastos(window.tabAtivaExtrato || 'TODOS');
             extrairValoresDoFundo(html);
         })
-        .catch(err => { 
-            console.error("Erro:", err); 
-            btn.innerHTML = txtOriginal; 
+        .catch(err => {
+            btn.innerHTML = txtOriginal;
             if(typeof lucide !== 'undefined') lucide.createIcons();
-            alert("Aconteceu um pequeno erro ao salvar. Atualize a página e tente novamente.");
+
+            alert("ERRO DO SERVIDOR:\n\n" + err.message);
         });
     }
 
@@ -345,9 +510,135 @@
             btn.className = "px-2.5 py-1.5 bg-orange-50 dark:bg-orange-500/10 text-orange-600 dark:text-orange-400 rounded-lg text-[9px] font-bold flex items-center gap-1 transition-colors";
             btn.innerHTML = '<i data-lucide="clock" class="w-3 h-3"></i> <span>Pend.</span>';
         }
-        
+
         if(typeof lucide !== 'undefined') lucide.createIcons();
         filtrarGastos(window.tabAtivaExtrato || 'TODOS');
-        fetch(form.action, { method: 'POST', body: new FormData(form) }).catch(err => console.error(err));
+
+        fetch(form.action, {
+            method: 'POST',
+            body: new FormData(form),
+            headers: { 'X-Requested-With': 'XMLHttpRequest' }
+        }).catch(err => console.error(err));
     }
+
+    // ==============================================================================
+    // MOTOR DE GESTOS (SWIPE MOBILE) - Estilo Aplicativo Nativo
+    // ==============================================================================
+    document.addEventListener('DOMContentLoaded', () => {
+        let touchstartX = 0;
+        let touchendX = 0;
+        let touchstartY = 0;
+        let touchendY = 0;
+
+        document.addEventListener('touchstart', e => {
+            touchstartX = e.changedTouches[0].screenX;
+            touchstartY = e.changedTouches[0].screenY;
+        }, {passive: true});
+
+        document.addEventListener('touchend', e => {
+            touchendX = e.changedTouches[0].screenX;
+            touchendY = e.changedTouches[0].screenY;
+            processarGesto(e.target);
+        }, {passive: true});
+
+        function processarGesto(alvo) {
+            let distX = touchendX - touchstartX;
+            let distY = touchendY - touchstartY;
+
+            // Arraste de no mínimo 60px e majoritariamente horizontal
+            if (Math.abs(distX) > Math.abs(distY) && Math.abs(distX) > 60) {
+
+                // 🛑 Trava de Segurança: Não faz nada se tocou num gráfico, barra de alerta ou input
+                if (alvo.closest('.apexcharts-canvas') || alvo.closest('#wrapper-alertas') || alvo.closest('input') || alvo.closest('select')) return;
+
+                let direcao = distX < 0 ? 'esquerda' : 'direita';
+
+                const modalExtrato = document.getElementById('modal-extrato');
+                const extratoAberto = modalExtrato && !modalExtrato.classList.contains('hidden');
+
+                // ==========================================
+                // REGRA 1: EXTRATO DO MÊS (Alternar Abas)
+                // ==========================================
+                if (extratoAberto) {
+                    const abas = ['TODOS', 'PAGO', 'PENDENTE', 'Q1', 'Q2'];
+                    let abaAtual = window.tabAtivaExtrato || 'TODOS';
+                    let index = abas.indexOf(abaAtual);
+                    if (direcao === 'esquerda' && index < abas.length - 1) filtrarGastos(abas[index + 1]);
+                    else if (direcao === 'direita' && index > 0) filtrarGastos(abas[index - 1]);
+                    return;
+                }
+
+                // ==========================================
+                // REGRA 2: TOQUE NO TOPO (Mudar o Mês)
+                // ==========================================
+                const formMes = alvo.closest('form[action="/"]');
+                if (formMes) {
+                    const inputMes = formMes.querySelector('input[type="month"]');
+                    if(inputMes) {
+                        let data = new Date(inputMes.value + '-02');
+                        data.setMonth(data.getMonth() + (direcao === 'esquerda' ? 1 : -1));
+                        inputMes.value = data.toISOString().substring(0, 7);
+                        if(document.getElementById('display-month')) {
+                            document.getElementById('display-month').innerHTML = '<i data-lucide="loader" class="w-3 h-3 animate-spin"></i>';
+                            if(typeof lucide !== 'undefined') lucide.createIcons();
+                        }
+                        formMes.submit();
+                        return;
+                    }
+                }
+
+                // ==========================================
+                // REGRA 3: NAVEGAR PELA TELA PRINCIPAL (Navegação AJAX)
+                // ==========================================
+                const modalApoio = document.getElementById('modal-apoio');
+                const modalPerfil = document.getElementById('modal-perfil');
+
+                // Trava: se modal de perfil ou apoio estiverem na tela, bloqueia o swipe
+                if ((modalApoio && !modalApoio.classList.contains('hidden')) || (modalPerfil && !modalPerfil.classList.contains('hidden'))) return;
+
+                let abaAtual = 0; // Começa em 0 (Início)
+                const mGlobal = document.getElementById('modal-global');
+                const modalMais = document.getElementById('mobile-menu-mais');
+
+                // Descobre em qual aba estamos baseando-se no AJAX modal que está aberto na tela
+                if (modalMais && !modalMais.classList.contains('translate-y-full')) {
+                    abaAtual = 4;
+                } else if (mGlobal && !mGlobal.classList.contains('hidden')) {
+                    const tituloEl = document.getElementById('titulo-modal-global');
+                    if(tituloEl) {
+                        const t = tituloEl.innerText.toLowerCase();
+                        if (t.includes('compras')) abaAtual = 1;
+                        else if (t.includes('movimenta') || t.includes('lançar')) abaAtual = 2;
+                        else if (t.includes('caixinhas') || t.includes('metas')) abaAtual = 3;
+                        else return; // Bloqueia swipe se for outro modal admin (como Gestão de Equipe)
+                    }
+                }
+
+                let novaAba = abaAtual + (direcao === 'esquerda' ? 1 : -1);
+
+                // Limites da navegação da barra inferior (0 a 4)
+                if (novaAba >= 0 && novaAba <= 4 && novaAba !== abaAtual) {
+
+                    // Se estávamos com o menu "Mais" aberto, precisamos fechá-lo antes de mudar
+                    if (abaAtual === 4 && typeof toggleMobileMenu === 'function') {
+                        toggleMobileMenu();
+                    }
+
+                    // Dispara a navegação para a aba escolhida (A mesma coisa de clicar na barra de baixo)
+                    if (novaAba === 0) {
+                        fecharModalGlobal();
+                    } else if (novaAba === 1) {
+                        abrirModalAjax('/compras', 'Lista de Compras', 'shopping-cart');
+                    } else if (novaAba === 2) {
+                        abrirModalAjax('/movimentacoes', 'Nova Movimentação', 'arrow-right-left');
+                    } else if (novaAba === 3) {
+                        abrirModalAjax('/metas', 'Minhas Caixinhas', 'compass');
+                    } else if (novaAba === 4) {
+                        fecharModalGlobal();
+                        if (typeof toggleMobileMenu === 'function') toggleMobileMenu();
+                    }
+                }
+            }
+        }
+    });
 </script>

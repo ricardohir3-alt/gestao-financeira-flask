@@ -1,0 +1,120 @@
+<!-- ======================================================= -->
+<!-- SISTEMA DE TRADUÇÃO DINÂMICA (CÉREBRO POLIGLOTA)        -->
+<!-- ======================================================= -->
+<script>
+    const dicionarioGlobal = {
+        "PT-BR": {
+            "saudacao": "Olá", "saldo_disponivel": "Saldo Disponível", "extrato_mes": "Extrato do Mês", "entradas": "Entradas", "saidas": "Saídas",
+            "comparativo_titulo": "Comparativo Mensal", "fluxo_mes": "Fluxo do mês", "fluxo_sub": "Da renda já consumida", "score_pagamento": "Score de pagamento",
+            "reputacao_financeira": "Sua reputação financeira", "pagos": "Pagos", "pendentes": "Pendentes", "em_dia": "Em dia", "nivel": "Nível",
+            "categorias": "Categorias", "tendencia": "Tendência", "sem_despesas": "Sem dados registrados", "todos": "Todos", "primeira_q": "1ª Q.", "segunda_q": "2ª Q.",
+            "pago_min": "Pago", "pend_min": "Pend.", "cancelar": "Cancelar", "salvar": "Salvar", "editar_despesa": "Editar Despesa", "label_descricao": "Descrição",
+            "label_valor": "Valor (R$)", "label_data": "Data", "label_categoria": "Categoria", "quinzena": "Quinzena", "primeira_quinzena": "1ª Quinzena",
+            "segunda_quinzena": "2ª Quinzena", "mes_integral": "Mês Integral", "nenhum_encontrado": "Nenhum gasto encontrado neste filtro.", "nenhum_registrado": "Nenhum gasto registrado.",
+            "ajustar_renda": "Ajustar Renda Base", "desc_ajustar_renda": "Atualize o valor da sua renda mensal. O sistema recalculará o saldo e fluxo do mês.",
+            "renda_total": "Renda Total (R$)", "salvar_renda": "Salvar Renda", "tendencia_gastos": "Tendência de Gastos", "projecao_fim_mes": "Projeção Fim do Mês",
+            "gasto_atual": "Gasto Atual", "hoje": "Hoje", "ritmo_diario": "Ritmo Diário", "estimativa_total": "Estimativa Total", "saldo_projetado": "Saldo Projetado",
+            "aviso_assinatura": "Aviso de Assinatura", "fatura_pendente": "Fatura pendente:", "suporte": "Suporte", "nav_dashboard": "Dashboard Inicial",
+            "nav_gasto": "Movimentações", "nav_compras": "Lista de Compras", "nav_metas": "Planejamento Financeiro", "nav_usuarios": "Gestão de Usuários",
+            "nav_relatorios": "Relatório Premium", "nav_novidades": "Novidades", "menu_titulo": "MENU", "mob_inicio": "Início", "mob_compras": "Compras",
+            "mob_lancar": "Movimentos", "mob_metas": "Metas", "mob_mais": "Mais",
+            "ph_hir3": "Pergunte ao Hir3...", "ph_senha": "Nova Senha", "ph_renda": "Renda Mensal (R$)", "ph_desc": "Descrição",
+            "meu_painel": "Meu Painel", "config_pref": "Configurações e Preferências", "meu_perfil": "Meu Perfil", "idioma": "Idioma", "tela_cheia": "Tela Cheia",
+            "modo_escuro": "Modo Escuro", "sair_sistema": "Sair do Sistema", "seu_acesso": "Seu Acesso", "detalhes_plano": "Detalhes do Plano", "seguranca": "Segurança", "config_renda": "Config. de Renda",
+            "licenca": "Licença", "modulos": "Módulos", "atualizar_senha": "Atualizar Senha", "e_variavel": "É Variável?", "sim": "Sim", "nao": "Não",
+            "termos_privacidade": "Termos e Privacidade", "ler_termos": "Ler Termos", "ler_politica": "Ler Política", "aceitar_continuar": "Aceitar e Continuar",
+            "apoie_projeto": "Apoie o Desenvolvimento", "chave_pix": "Chave PIX", "analise_mes": "Análise do Mês", "fechar_resumo": "Fechar Resumo", "total_atual": "Total Atual:", "total_passado": "Total Mês Passado:",
+            "aviso_beta": "SISTEMA EM BETA: Funcionalidades em teste. Podem ocorrer instabilidades."
+        },
+        "EN-US": {
+            "saudacao": "Hello", "saldo_disponivel": "Available Balance", "extrato_mes": "Monthly Statement", "entradas": "Incomes", "saidas": "Expenses",
+            "comparativo_titulo": "Monthly Comparison", "fluxo_mes": "Monthly Flow", "fluxo_sub": "Of consumed income", "score_pagamento": "Payment Score",
+            "reputacao_financeira": "Your financial reputation", "pagos": "Paid", "pendentes": "Pending", "em_dia": "Up to date", "nivel": "Level",
+            "categorias": "Categories", "tendencia": "Trend", "sem_despesas": "No data recorded", "todos": "All", "primeira_q": "1st Q.", "segunda_q": "2nd Q.",
+            "pago_min": "Paid", "pend_min": "Pend.", "cancelar": "Cancel", "salvar": "Save", "editar_despesa": "Edit Expense", "label_descricao": "Description",
+            "label_valor": "Amount ($)", "label_data": "Date", "label_categoria": "Category", "quinzena": "Fortnight", "primeira_quinzena": "1st Fortnight",
+            "segunda_quinzena": "2nd Fortnight", "mes_integral": "Full Month", "nenhum_encontrado": "No expenses found in this filter.", "nenhum_registrado": "No expenses recorded.",
+            "ajustar_renda": "Adjust Base Income", "desc_ajustar_renda": "Update your monthly income. The system will recalculate balance and flow.",
+            "renda_total": "Total Income ($)", "salvar_renda": "Save Income", "tendencia_gastos": "Expense Trend", "projecao_fim_mes": "End of Month Projection",
+            "gasto_atual": "Current Expense", "hoje": "Today", "ritmo_diario": "Daily Pace", "estimativa_total": "Total Estimate", "saldo_projetado": "Projected Balance",
+            "aviso_assinatura": "Subscription Notice", "fatura_pendente": "Pending invoice:", "suporte": "Support", "nav_dashboard": "Home Dashboard",
+            "nav_gasto": "Transactions", "nav_compras": "Shopping List", "nav_metas": "Financial Planning", "nav_usuarios": "User Management",
+            "nav_relatorios": "Premium Report", "nav_novidades": "Updates", "menu_titulo": "MENU", "mob_inicio": "Home", "mob_compras": "Shop",
+            "mob_lancar": "Add", "mob_metas": "Goals", "mob_mais": "More",
+            "ph_hir3": "Ask Hir3...", "ph_senha": "New Password", "ph_renda": "Monthly Income ($)", "ph_desc": "Description",
+            "meu_painel": "My Dashboard", "config_pref": "Settings & Preferences", "meu_perfil": "My Profile", "idioma": "Language", "tela_cheia": "Full Screen",
+            "modo_escuro": "Dark Mode", "sair_sistema": "Logout", "seu_acesso": "Your Access", "detalhes_plano": "Plan Details", "seguranca": "Security", "config_renda": "Income Setup",
+            "licenca": "License", "modulos": "Modules", "atualizar_senha": "Update Password", "e_variavel": "Is variable?", "sim": "Yes", "nao": "No",
+            "termos_privacidade": "Terms & Privacy", "ler_termos": "Read Terms", "ler_politica": "Read Policy", "aceitar_continuar": "Accept & Continue",
+            "apoie_projeto": "Support Development", "chave_pix": "PIX Key", "analise_mes": "Month Analysis", "fechar_resumo": "Close Summary", "total_atual": "Current Total:", "total_passado": "Last Month Total:",
+            "aviso_beta": "BETA SYSTEM: Features in testing. Instabilities may occur."
+        },
+        "ZH-CN": {
+            "saudacao": "你好", "saldo_disponivel": "可用余额", "extrato_mes": "月度对账单", "entradas": "收入", "saidas": "支出",
+            "comparativo_titulo": "月度对比", "fluxo_mes": "月度流量", "fluxo_sub": "已消耗收入的", "score_pagamento": "支付得分",
+            "reputacao_financeira": "您的财务声誉", "pagos": "已付", "pendentes": "待办", "em_dia": "最新", "nivel": "级别",
+            "categorias": "类别", "tendencia": "趋势", "sem_despesas": "没有记录数据", "todos": "全部", "primeira_q": "前半月", "segunda_q": "后半月",
+            "pago_min": "已付", "pend_min": "待办", "cancelar": "取消", "salvar": "保存", "editar_despesa": "编辑支出", "label_descricao": "描述",
+            "label_valor": "金额", "label_data": "日期", "label_categoria": "类别", "quinzena": "半月", "primeira_quinzena": "前半月",
+            "segunda_quinzena": "后半月", "mes_integral": "整月", "nenhum_encontrado": "未找到符合此筛选条件的支出。", "nenhum_registrado": "未记录任何支出。",
+            "ajustar_renda": "调整基础收入", "desc_ajustar_renda": "更新您的月收入。系统将重新计算余额和流量。",
+            "renda_total": "总收入", "salvar_renda": "保存收入", "tendencia_gastos": "支出趋势", "projecao_fim_mes": "月底预测",
+            "gasto_atual": "当前支出", "hoje": "今天", "ritmo_diario": "每日节奏", "estimativa_total": "总估算", "saldo_projetado": "预计余额",
+            "aviso_assinatura": "订阅通知", "fatura_pendente": "待付发票:", "suporte": "支持", "nav_dashboard": "主仪表板",
+            "nav_gasto": "交易", "nav_compras": "购物清单", "nav_metas": "财务规划", "nav_usuarios": "用户管理",
+            "nav_relatorios": "高级报告", "nav_novidades": "更新", "menu_titulo": "菜单", "mob_inicio": "首页", "mob_compras": "购物",
+            "mob_lancar": "添加", "mob_metas": "目标", "mob_mais": "更多",
+            "ph_hir3": "问问 Hir3...", "ph_senha": "新密码", "ph_renda": "月收入", "ph_desc": "描述",
+            "meu_painel": "我的仪表板", "config_pref": "设置和首选项", "meu_perfil": "我的个人资料", "idioma": "语言", "tela_cheia": "全屏",
+            "modo_escuro": "深色模式", "sair_sistema": "退出系统", "seu_acesso": "您的访问权限", "detalhes_plano": "计划详情", "seguranca": "安全", "config_renda": "收入设置",
+            "licenca": "许可证", "modulos": "模块", "atualizar_senha": "更新密码", "e_variavel": "是否浮动?", "sim": "是", "nao": "否",
+            "termos_privacidade": "条款和隐私", "ler_termos": "阅读条款", "ler_politica": "阅读政策", "aceitar_continuar": "接受并继续",
+            "apoie_projeto": "支持开发", "chave_pix": "PIX密钥", "analise_mes": "月度分析", "fechar_resumo": "关闭摘要", "total_atual": "当前总计:", "total_passado": "上月总计:",
+            "aviso_beta": "测试系统：功能测试中，可能会出现不稳定情况。"
+        }
+    };
+
+    const listaIdiomas = ['PT-BR', 'EN-US', 'ZH-CN'];
+
+    function cicloIdioma() {
+        let idiomaAtual = localStorage.getItem('idioma_sistema') || 'PT-BR';
+        let proximoIdioma = listaIdiomas[(listaIdiomas.indexOf(idiomaAtual) + 1) % listaIdiomas.length];
+        localStorage.setItem('idioma_sistema', proximoIdioma);
+
+        const labelNoMenu = document.getElementById('texto-idioma');
+        if(labelNoMenu) labelNoMenu.innerText = proximoIdioma;
+
+        window.aplicarTraducao(proximoIdioma);
+    }
+
+    window.aplicarTraducao = function(idioma) {
+        const dicionario = dicionarioGlobal[idioma] || dicionarioGlobal['PT-BR'];
+
+        // 1. Traduz todos os elementos
+        document.querySelectorAll('[data-i18n]').forEach(elemento => {
+            const chave = elemento.getAttribute('data-i18n');
+            if (dicionario[chave]) {
+                // SE for um input com placeholder, traduz o placeholder em vez do texto interno
+                if (elemento.tagName === 'INPUT' || elemento.tagName === 'TEXTAREA') {
+                    elemento.placeholder = dicionario[chave];
+                } else {
+                    // Respeita os ícones que possam estar dentro do innerHTML se houver
+                    elemento.innerHTML = dicionario[chave];
+                }
+            }
+        });
+
+        // 2. Dispara evento para o Dashboard JS atualizar os textos dinâmicos (como o Totalizador)
+        window.dispatchEvent(new CustomEvent('idiomaTrocado', { detail: idioma }));
+
+        if(typeof atualizarNomeMes === 'function') atualizarNomeMes();
+        if(typeof lucide !== 'undefined') lucide.createIcons();
+    }
+
+    document.addEventListener("DOMContentLoaded", () => {
+        let idiomaAtual = localStorage.getItem('idioma_sistema') || 'PT-BR';
+        const labelNoMenu = document.getElementById('texto-idioma');
+        if(labelNoMenu) labelNoMenu.innerText = idiomaAtual;
+        window.aplicarTraducao(idiomaAtual);
+    });
+</script>

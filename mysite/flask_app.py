@@ -12,6 +12,7 @@ import calendar
 import json
 import traceback
 import re
+from flask import request
 from io import StringIO
 from datetime import datetime, timedelta, date
 from functools import wraps
@@ -96,7 +97,9 @@ def verificacoes_globais():
 # ==============================================================================
 # 3. CONFIGURAÇÃO DA IA (GEMINI - HIR3)
 # ==============================================================================
-chave_gemini = os.environ.get('GEMINI_API_KEY', 'SUA_CHAVE_API_AQUI')
+
+genai.configure(api_key=os.getenv("GEMINI_API_KEY"))
+
 genai.configure(api_key=chave_gemini)
 modelo_hir3 = genai.GenerativeModel('gemini-1.5-flash')
 
@@ -183,33 +186,44 @@ def iniciar_banco():
     conexao.close()
 
 # ==============================================================================
-# LOGS E CORREÇÃO DE ERROS (A TELA DE MANUTENÇÃO ELEGANTE)
+# LOGS E CORREÇÃO DE ERROS (A TELA DE MANUTENÇÃO INTELIGENTE)
 # ==============================================================================
 @app.errorhandler(Exception)
 def handle_exception(e):
-    # Se for um erro padrão de rota (ex: 404), mostra a tela sem gravar log
+    # 1. Se for um erro padrão de rota (ex: 404), mostra a tela sem gravar log
     if isinstance(e, HTTPException):
         return render_template('erro.html', codigo=e.code), e.code
 
-    # Se for erro fatal no banco ou código, capta a "Caixa Preta"
+    # 2. Captura o erro detalhado (A "Caixa Preta")
     erro_raw = traceback.format_exc()
-    print(f"ERRO INTERNO DETECTADO: {e}")
 
+    # 3. GARANTIA DE LOG NO PYTHONANYWHERE (Imprime antes de qualquer coisa!)
+    print("\n" + "="*50)
+    print("🚨 ERRO CRÍTICO DETECTADO NO SERVIDOR 🚨")
+    print("="*50)
+    print(erro_raw)
+    print("="*50 + "\n")
+
+    # 4. Tenta salvar na tabela de logs (silenciosamente)
     try:
         conn = get_db_connection()
         cursor = conn.cursor()
         agora = datetime.now().strftime('%d/%m/%Y %H:%M:%S')
-
-        # Salva silenciosamente no banco
         cursor.execute('INSERT INTO logs_sistema (data_hora, erro_raw) VALUES (?, ?)', (agora, erro_raw))
         conn.commit()
         conn.close()
-    except:
-        pass # Ignora se o próprio DB estiver com erro
+    except Exception as db_erro:
+        print(f"⚠️ Falha ao salvar log no banco de dados: {db_erro}")
 
-    # Mostra a tela amigável (erro.html) em vez da tela de código feio do Flask
+    # 5. INTELIGÊNCIA DE RESPOSTA (O Segredo para o AJAX funcionar)
+    # Se a requisição for do tipo POST (formulários AJAX, edições, exclusões...)
+    # ou se o JavaScript explicitamente avisar que aceita JSON/Texto.
+    if request.method == 'POST' or request.headers.get('X-Requested-With') == 'XMLHttpRequest':
+        # Devolve apenas o erro cru para o nosso 'alert()' do JavaScript capturar
+        return f"Falha no Servidor:\n{str(e)}", 500
+
+    # 6. Se for um clique normal no navegador, mostra a tela amigável
     return render_template('erro.html', codigo=500), 500
-
 
 # ==============================================================================
 # ROTA DE LOGIN, LOGOUT E RECUPERAÇÃO DE SENHAS
@@ -557,9 +571,69 @@ def home():
     cursor.execute("SELECT valor_fatura, data_vencimento FROM cobrancas WHERE usuario_id = ? AND status_pagamento = 'PENDENTE'", (user_id,))
     fatura_pendente = cursor.fetchone()
 
+    # ==============================================================================
+    # 4. NOVO: DADOS PARA O GRÁFICO DE ENTRADAS E SAÍDAS (Últimos 3 meses)
+    # ==============================================================================
+    meses_pt = ["Jan", "Fev", "Mar", "Abr", "Mai", "Jun", "Jul", "Ago", "Set", "Out", "Nov", "Dez"]
+
+    def obter_mes_anterior(mes_str):
+        a, m = map(int, mes_str.split('-'))
+        return f"{a - 1}-12" if m == 1 else f"{a}-{m - 1:02d}"
+
+    mes3_str = mes_filtro
+    mes2_str = obter_mes_anterior(mes3_str)
+    mes1_str = obter_mes_anterior(mes2_str)
+
+    labels_grafico_es = []
+    entradas_grafico_es = []
+    saidas_grafico_es = []
+
+    for m_str in [mes1_str, mes2_str, mes3_str]:
+        a_str, n_str = m_str.split('-')
+        labels_grafico_es.append(meses_pt[int(n_str) - 1])
+
+        # Puxa Saídas do Mês
+        cursor.execute("SELECT SUM(valor) as total FROM gastos WHERE data LIKE ? AND usuario_id = ? AND (tipo = 'despesa' OR tipo IS NULL)", (m_str + '%', user_id))
+        s_val = cursor.fetchone()
+        is_d_s = hasattr(s_val, 'keys') if s_val else False
+        val_s = s_val['total'] if is_d_s else (s_val[0] if s_val else 0)
+        saida_m = float(val_s) if val_s else 0.0
+
+        # Puxa Receitas Extras do Mês
+        cursor.execute("SELECT SUM(valor) as total FROM gastos WHERE data LIKE ? AND usuario_id = ? AND tipo = 'receita'", (m_str + '%', user_id))
+        r_val = cursor.fetchone()
+        is_d_r = hasattr(r_val, 'keys') if r_val else False
+        val_r = r_val['total'] if is_d_r else (r_val[0] if r_val else 0)
+        receita_extra_m = float(val_r) if val_r else 0.0
+
+        # Puxa Renda Base do Mês
+        cursor.execute("SELECT valor FROM renda WHERE mes = ? AND usuario_id = ?", (m_str, user_id))
+        renda_val = cursor.fetchone()
+
+        renda_base_m = 0.0
+        if renda_val:
+            is_d_rv = hasattr(renda_val, 'keys')
+            renda_base_m = float(renda_val['valor'] if is_d_rv else renda_val[0])
+        else:
+            try:
+                is_d_usr = hasattr(resultado_usuario, 'keys') if resultado_usuario else False
+                usr_r_var = resultado_usuario['renda_variavel'] if is_d_usr else (resultado_usuario[1] if resultado_usuario else None)
+                usr_r_fixa = resultado_usuario['renda'] if is_d_usr else (resultado_usuario[0] if resultado_usuario else None)
+                if m_str > mes_atual_real and usr_r_var == 'sim':
+                    renda_base_m = 0.0
+                elif usr_r_fixa is not None:
+                    renda_base_m = float(usr_r_fixa)
+            except (ValueError, TypeError):
+                renda_base_m = 0.0
+
+        entradas_grafico_es.append(renda_base_m + receita_extra_m)
+        saidas_grafico_es.append(-saida_m) # Força negativo para as barras do gráfico irem para baixo
+
     conexao.close()
 
-    # Filtra apenas os gastos puros para os cálculos de Donut, Top 3 e Quinzenas
+    # ==============================================================================
+    # 5. CÁLCULOS FINAIS DA TELA
+    # ==============================================================================
     gastos_puros = [g for g in lista_movimentos if g.get('tipo', 'despesa') == 'despesa']
 
     categorias_dict = {}
@@ -615,7 +689,9 @@ def home():
                            total_pago=fmt(total_pago), total_pendente=fmt(total_pendente),
                            top3_gastos=top3_gastos, fatura_pendente=fatura_pendente,
                            comparativo=comparativo,
-                           versao_atual="1.6.6")
+                           labels_grafico_es=labels_grafico_es,
+                           entradas_grafico_es=entradas_grafico_es,
+                           saidas_grafico_es=saidas_grafico_es)
 
 @app.route('/historico_notificacoes')
 @login_obrigatorio
@@ -727,7 +803,7 @@ def usuarios():
         'disk_percent': disk_percent,
         'python_version': platform.python_version(),
         'flask_version': flask.__version__,
-        'app_version': "v1.6.6"
+        'app_version': "v1.6.8" # <- ATUALIZE AQUI
     }
 
     # TRAVA DO AJAX APLICADA AQUI
@@ -1265,9 +1341,9 @@ def registrar_aprendizado_ia(user_id, modulo, acao, dados):
     except Exception as e: print(f"[IA] Erro: {e}")
     finally: conexao.close()
 
-# ==========================================
+# ==============================================================================
 # ROTA ATUALIZADA: MOVIMENTAÇÕES (Receitas e Despesas)
-# ==========================================
+# ==============================================================================
 @app.route('/movimentacoes', methods=['GET', 'POST'])
 @login_obrigatorio
 def movimentacoes():
@@ -1340,86 +1416,50 @@ def movimentacoes():
     is_ajax = request.args.get('modal') == 'true'
     return render_template('telas/movimentacoes.html', ajax_request=is_ajax, gasto=None)
 
+# ==============================================================================
+# ROTA: EDITAR MOVIMENTAÇÃO (Com suporte a AJAX)
+# ==============================================================================
 @app.route('/editar_movimentacao/<int:id>', methods=['POST'])
 @login_obrigatorio
 def editar_movimentacao(id):
     try:
-        valor = float(str(request.form.get('valor', '0')).replace(',', '.'))
-    except ValueError:
-        valor = 0.0
+        # Tratamento blindado de valores (aceita 36, 36,00 ou 1.500,00)
+        valor_str = str(request.form.get('valor', '0')).strip()
+        if '.' in valor_str and ',' in valor_str:
+            valor_str = valor_str.replace('.', '').replace(',', '.')
+        elif ',' in valor_str:
+            valor_str = valor_str.replace(',', '.')
+        valor = float(valor_str)
 
-    tipo = request.form.get('tipo_movimento', 'despesa')
-    quinzena = int(request.form.get('quinzena', '0')) if tipo == 'despesa' else 0
+        tipo = request.form.get('tipo') or request.form.get('tipo_movimento', 'despesa')
+        quinzena = int(request.form.get('quinzena', '0')) if tipo == 'despesa' else 0
+        descricao = request.form.get('descricao', 'Sem descrição')
+        data_gasto = request.form.get('data') or request.form.get('data_gasto')
+        categoria = request.form.get('categoria', 'Outros')
+        status = request.form.get('status', 'PENDENTE')
 
-    conexao = get_db_connection()
-    try:
+        conexao = get_db_connection()
         cursor = conexao.cursor()
         cursor.execute(
             "UPDATE gastos SET descricao=?, data=?, valor=?, categoria=?, quinzena=?, status=?, tipo=? WHERE id=? AND usuario_id=?",
-            (request.form.get('descricao'), request.form.get('data'), valor, request.form.get('categoria'), quinzena, request.form.get('status', 'PENDENTE'), tipo, id, session['user_id'])
+            (descricao, data_gasto, valor, categoria, quinzena, status, tipo, id, session['user_id'])
         )
         conexao.commit()
-    finally:
         conexao.close()
 
-    mes_filtro = request.form.get('mes_filtro')
-    return redirect(url_for('home', mes=mes_filtro) if mes_filtro else url_for('home'))
+        # SE FOR UMA REQUISIÇÃO AJAX (DO FETCH API NO JS):
+        if request.headers.get('X-Requested-With') == 'XMLHttpRequest' or request.headers.get('Accept', '').find('text/html') == -1:
+            return "OK", 200 # Devolve apenas um OK simples pro Javascript
 
-@app.route('/api/movimentacoes_mes', methods=['GET'])
-@login_obrigatorio
-def api_movimentacoes_mes():
-    mes = request.args.get('mes')
-    if not mes:
-        return jsonify([])
+        # SE FOR UMA REQUISIÇÃO NORMAL (Navegador antigo ou fallback):
+        mes_filtro = request.form.get('mes_filtro')
+        return redirect(url_for('home', mes=mes_filtro) if mes_filtro else url_for('home'))
 
-    conexao = get_db_connection()
-    try:
-        cursor = conexao.cursor()
-        cursor.execute('SELECT id, descricao, valor, categoria, IFNULL(tipo, "despesa") as tipo FROM gastos WHERE data LIKE ? AND usuario_id = ? ORDER BY data ASC', (mes + '%', session['user_id']))
-        movimentacoes = [{'id': m['id'], 'descricao': m['descricao'], 'valor': float(m['valor']), 'categoria': m['categoria'], 'tipo': m['tipo']} for m in cursor.fetchall()]
-    finally:
-        conexao.close()
+    except Exception as e:
+        import traceback
+        erro_real = traceback.format_exc()
+        return f"ERRO FATAL NO SERVIDOR:\n{erro_real}", 418
 
-    return jsonify(movimentacoes)
-
-
-@app.route('/duplicar_movimentacoes_lote', methods=['POST'])
-@login_obrigatorio
-def duplicar_movimentacoes_lote():
-    mes_destino = request.form.get('mes_destino')
-    contas = request.form.getlist('contas_selecionadas')
-
-    if not mes_destino or not contas:
-        return redirect(url_for('movimentacoes'))
-
-    ano_dest, mes_dest = map(int, mes_destino.split('-'))
-    ultimo_dia = calendar.monthrange(ano_dest, mes_dest)[1]
-
-    conexao = get_db_connection()
-    try:
-        cursor = conexao.cursor()
-        placeholders = ','.join('?' * len(contas))
-        query = f"SELECT * FROM gastos WHERE id IN ({placeholders}) AND usuario_id = ?"
-        cursor.execute(query, contas + [session['user_id']])
-
-        for m in cursor.fetchall():
-            try:
-                dia_origem = int(m['data'][8:10])
-            except ValueError:
-                dia_origem = 1
-
-            nova_data = f"{ano_dest:04d}-{mes_dest:02d}-{min(dia_origem, ultimo_dia):02d}"
-            tipo_conta = m['tipo'] if 'tipo' in m.keys() and m['tipo'] else 'despesa'
-
-            cursor.execute(
-                "INSERT INTO gastos (descricao, categoria, valor, quinzena, status, data, tipo, usuario_id) VALUES (?, ?, ?, ?, 'PENDENTE', ?, ?, ?)",
-                (m['descricao'], m['categoria'], m['valor'], m['quinzena'], nova_data, tipo_conta, session['user_id'])
-            )
-        conexao.commit()
-    finally:
-        conexao.close()
-
-    return redirect(url_for('home', mes=mes_destino))
 
 # ==============================================================================
 # ROTA: ATUALIZAR STATUS DO GASTO (Com Motor Inteligente de Contratos)
@@ -1472,8 +1512,13 @@ def atualizar_status(id):
         conexao.commit()
     conexao.close()
 
+    # SUPORTE AJAX
+    if request.headers.get('X-Requested-With') == 'XMLHttpRequest' or request.headers.get('Accept', '').find('text/html') == -1:
+        return "OK", 200
+
     mes_filtro = request.args.get('mes', datetime.now().strftime('%Y-%m'))
     return redirect(url_for('home', mes=mes_filtro))
+
 
 # ==============================================================================
 # ROTA: EXCLUIR MOVIMENTAÇÃO (Com Reversão Inteligente de Contratos)
@@ -1508,6 +1553,10 @@ def excluir_movimentacao(id):
 
     conexao.commit()
     conexao.close()
+
+    # SUPORTE AJAX
+    if request.headers.get('X-Requested-With') == 'XMLHttpRequest' or request.headers.get('Accept', '').find('text/html') == -1:
+        return "OK", 200
 
     mes = request.form.get('mes_filtro', datetime.now().strftime('%Y-%m'))
     return redirect(url_for('home', mes=mes))
@@ -1977,7 +2026,7 @@ def webhook_whatsapp():
 # ==============================================================================
 # CONTEXTOS GLOBAIS E INICIALIZAÇÃO
 # ==============================================================================
-VERSAO_SISTEMA = "1.6.6" # <--- No futuro, você altera a versão APENAS nesta linha!
+VERSAO_SISTEMA = "1.6.8" # <--- No futuro, você altera a versão APENAS nesta linha!
 
 @app.context_processor
 def inject_global_vars():
