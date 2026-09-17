@@ -98,8 +98,7 @@ def verificacoes_globais():
 # 3. CONFIGURAÇÃO DA IA (GEMINI - HIR3)
 # ==============================================================================
 
-genai.configure(api_key=os.getenv("GEMINI_API_KEY"))
-
+chave_gemini = os.getenv("GEMINI_API_KEY")
 genai.configure(api_key=chave_gemini)
 modelo_hir3 = genai.GenerativeModel('gemini-1.5-flash')
 
