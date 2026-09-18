@@ -26,7 +26,7 @@ import requests
 import pdfplumber
 import pytesseract
 from PIL import Image
-import google.generativeai as genai
+from google import genai
 
 # ==============================================================================
 # 2. CONFIGURAÇÕES INICIAIS DO FLASK E BANCO DE DADOS
@@ -99,8 +99,9 @@ def verificacoes_globais():
 # ==============================================================================
 
 chave_gemini = os.getenv("GEMINI_API_KEY")
-genai.configure(api_key=chave_gemini)
-modelo_hir3 = genai.GenerativeModel('gemini-1.5-flash')
+
+# Novo padrão oficial do Google: Iniciamos o "Client" em vez de declarar o modelo solto
+cliente_hir3 = genai.Client(api_key=chave_gemini)
 
 TOKEN_VERIFICACAO = "minhas_financas_secreto_123"
 
@@ -482,8 +483,30 @@ def home():
     conexao = get_db_connection()
     cursor = conexao.cursor()
 
-    cursor.execute("SELECT renda, renda_variavel FROM usuarios WHERE id = ?", (user_id,))
-    resultado_usuario = cursor.fetchone()
+    # BUSCA OS DADOS GERAIS DO USUÁRIO (Incluindo os novos do Onboarding)
+    # Obs: Se o banco SQLite der erro de "no such column: idade", você precisa
+    # rodar o comando: ALTER TABLE usuarios ADD COLUMN idade INTEGER;
+    try:
+        cursor.execute("SELECT renda, renda_variavel, idade, profissao, patrimonio FROM usuarios WHERE id = ?", (user_id,))
+        resultado_usuario = cursor.fetchone()
+    except Exception:
+        # Fallback caso a tabela ainda não tenha as colunas de onboarding criadas
+        cursor.execute("SELECT renda, renda_variavel FROM usuarios WHERE id = ?", (user_id,))
+        resultado_usuario = cursor.fetchone()
+
+    # ==============================================================================
+    # VERIFICAÇÃO DO ONBOARDING
+    # ==============================================================================
+    precisa_onboarding = False
+    if resultado_usuario:
+        is_dict_usr = hasattr(resultado_usuario, 'keys')
+        # Tenta pegar a idade, se der KeyError (coluna não existe), considera como vazio
+        try:
+            idade_usr = resultado_usuario['idade'] if is_dict_usr else (resultado_usuario[2] if len(resultado_usuario) > 2 else None)
+            if idade_usr is None or idade_usr == "" or idade_usr == 0:
+                precisa_onboarding = True
+        except (IndexError, KeyError):
+            precisa_onboarding = True
 
     mes_atual_real = datetime.now().strftime('%Y-%m')
     mes_filtro = request.args.get('mes', mes_atual_real)
@@ -513,7 +536,6 @@ def home():
             renda_base = 0.00
 
     # 2. BUSCA TODAS AS MOVIMENTAÇÕES (RECEITAS E DESPESAS)
-    # Usa IFNULL para garantir compatibilidade caso a coluna 'tipo' ainda não esteja em todos os registros
     cursor.execute('''SELECT id, descricao, categoria, valor, quinzena, status, data, divida_id, IFNULL(tipo, "despesa") as tipo
                       FROM gastos WHERE data LIKE ? AND usuario_id = ? ORDER BY data DESC''', (mes_filtro + '%', user_id))
     lista_movimentos_raw = cursor.fetchall()
@@ -528,7 +550,6 @@ def home():
     total_gastos = sum(float(g.get('valor', 0)) for g in lista_movimentos if g.get('tipo', 'despesa') == 'despesa')
     total_receitas_extras = sum(float(g.get('valor', 0)) for g in lista_movimentos if g.get('tipo') == 'receita')
 
-    # A renda real do mês é a Fixa + As extras
     renda_atual = renda_base + total_receitas_extras
 
     try:
@@ -544,7 +565,6 @@ def home():
 
         mes_passado_str = f"{ano_passado}-{mes_passado_num:02d}"
 
-        # Compara apenas DESPESAS do mês passado
         cursor.execute("SELECT SUM(valor) as total FROM gastos WHERE data LIKE ? AND usuario_id = ? AND (tipo = 'despesa' OR tipo IS NULL)", (mes_passado_str + '%', user_id))
         resultado_passado = cursor.fetchone()
 
@@ -555,7 +575,6 @@ def home():
     except Exception:
         total_passado = 0.0
 
-    # Gráfico só exibe as despesas
     cursor.execute('''SELECT substr(data, 9, 2) as dia, SUM(valor) as total FROM gastos
                       WHERE data LIKE ? AND usuario_id = ? AND (tipo = 'despesa' OR tipo IS NULL) GROUP BY dia ORDER BY dia''', (mes_filtro + '%', user_id))
     dados_grafico = cursor.fetchall()
@@ -570,9 +589,7 @@ def home():
     cursor.execute("SELECT valor_fatura, data_vencimento FROM cobrancas WHERE usuario_id = ? AND status_pagamento = 'PENDENTE'", (user_id,))
     fatura_pendente = cursor.fetchone()
 
-    # ==============================================================================
-    # 4. NOVO: DADOS PARA O GRÁFICO DE ENTRADAS E SAÍDAS (Últimos 3 meses)
-    # ==============================================================================
+    # 4. GRÁFICO DE ENTRADAS E SAÍDAS
     meses_pt = ["Jan", "Fev", "Mar", "Abr", "Mai", "Jun", "Jul", "Ago", "Set", "Out", "Nov", "Dez"]
 
     def obter_mes_anterior(mes_str):
@@ -591,21 +608,18 @@ def home():
         a_str, n_str = m_str.split('-')
         labels_grafico_es.append(meses_pt[int(n_str) - 1])
 
-        # Puxa Saídas do Mês
         cursor.execute("SELECT SUM(valor) as total FROM gastos WHERE data LIKE ? AND usuario_id = ? AND (tipo = 'despesa' OR tipo IS NULL)", (m_str + '%', user_id))
         s_val = cursor.fetchone()
         is_d_s = hasattr(s_val, 'keys') if s_val else False
         val_s = s_val['total'] if is_d_s else (s_val[0] if s_val else 0)
         saida_m = float(val_s) if val_s else 0.0
 
-        # Puxa Receitas Extras do Mês
         cursor.execute("SELECT SUM(valor) as total FROM gastos WHERE data LIKE ? AND usuario_id = ? AND tipo = 'receita'", (m_str + '%', user_id))
         r_val = cursor.fetchone()
         is_d_r = hasattr(r_val, 'keys') if r_val else False
         val_r = r_val['total'] if is_d_r else (r_val[0] if r_val else 0)
         receita_extra_m = float(val_r) if val_r else 0.0
 
-        # Puxa Renda Base do Mês
         cursor.execute("SELECT valor FROM renda WHERE mes = ? AND usuario_id = ?", (m_str, user_id))
         renda_val = cursor.fetchone()
 
@@ -626,13 +640,11 @@ def home():
                 renda_base_m = 0.0
 
         entradas_grafico_es.append(renda_base_m + receita_extra_m)
-        saidas_grafico_es.append(-saida_m) # Força negativo para as barras do gráfico irem para baixo
+        saidas_grafico_es.append(-saida_m)
 
     conexao.close()
 
-    # ==============================================================================
-    # 5. CÁLCULOS FINAIS DA TELA
-    # ==============================================================================
+    # 5. CÁLCULOS FINAIS
     gastos_puros = [g for g in lista_movimentos if g.get('tipo', 'despesa') == 'despesa']
 
     categorias_dict = {}
@@ -690,20 +702,51 @@ def home():
                            comparativo=comparativo,
                            labels_grafico_es=labels_grafico_es,
                            entradas_grafico_es=entradas_grafico_es,
-                           saidas_grafico_es=saidas_grafico_es)
+                           saidas_grafico_es=saidas_grafico_es,
+                           precisa_onboarding=precisa_onboarding) # <--- VARIÁVEL INJETADA AQUI!
 
-@app.route('/historico_notificacoes')
-@login_obrigatorio
-def historico_notificacoes():
-    conexao = get_db_connection()
-    cursor = conexao.cursor()
-    cursor.execute('SELECT * FROM notificacoes WHERE usuario_id = ? ORDER BY data_criacao DESC', (session['user_id'],))
+# ==============================================================================
+# ROTA API: SALVAR OS DADOS DO ONBOARDING
+# ==============================================================================
+from flask import request, jsonify
 
-    # Tratamento para dict
-    notificacoes_historico = [dict(row) for row in cursor.fetchall()] if cursor.description else []
+@app.route('/api/salvar_onboarding', methods=['POST'])
+def salvar_onboarding():
+    # Verifica se o usuário está logado
+    if 'user_id' not in session:
+        return jsonify({'sucesso': False, 'erro': 'Não autenticado'}), 401
 
-    conexao.close()
-    return render_template('telas/historico_notificacoes.html', notificacoes=notificacoes_historico)
+    try:
+        dados = request.get_json()
+        usuario = Usuario.query.get(session['user_id']) # Ajuste o nome da classe 'Usuario' se for diferente
+
+        if usuario:
+            # Atualiza os dados no banco
+            usuario.nome = dados.get('nome', usuario.nome)
+
+            # Tratamento para evitar erros se o campo vier vazio
+            if dados.get('idade'):
+                usuario.idade = int(dados.get('idade'))
+
+            usuario.profissao = dados.get('profissao', '')
+
+            if dados.get('patrimonio'):
+                # Troca vírgula por ponto para não quebrar o float
+                patrimonio_str = str(dados.get('patrimonio')).replace(',', '.')
+                usuario.patrimonio = float(patrimonio_str)
+
+            db.session.commit()
+
+            # Atualiza a sessão para o nome novo refletir no topo da tela na hora
+            session['nome'] = usuario.nome
+
+            return jsonify({'sucesso': True})
+
+        return jsonify({'sucesso': False, 'erro': 'Usuário não encontrado'}), 404
+
+    except Exception as e:
+        print(f"Erro no onboarding: {e}")
+        return jsonify({'sucesso': False, 'erro': str(e)}), 500
 
 # ==============================================================================
 # GESTÃO DE USUÁRIOS E ADMINISTRAÇÃO
@@ -802,7 +845,7 @@ def usuarios():
         'disk_percent': disk_percent,
         'python_version': platform.python_version(),
         'flask_version': flask.__version__,
-        'app_version': "v1.6.8" # <- ATUALIZE AQUI
+        'app_version': "v1.7.0" # <- ATUALIZE AQUI
     }
 
     # TRAVA DO AJAX APLICADA AQUI
@@ -1221,39 +1264,83 @@ def api_limpar_alerta():
     except Exception as e: return jsonify({'status': 'erro', 'mensagem': str(e)})
 
 # ==============================================================================
-# PERFIL E ATUALIZAÇÕES
+# PERFIL DO USUÁRIO (LEITURA DE DADOS)
 # ==============================================================================
-@app.route('/perfil', methods=['GET', 'POST'])
+@app.route('/perfil', methods=['GET'])
 @login_obrigatorio
 def perfil():
     conexao = get_db_connection()
+    conexao.row_factory = sqlite3.Row  # Permite acessar os dados pelo nome da coluna
     cursor = conexao.cursor()
 
-    if request.method == 'POST':
-        novo_nome = request.form.get('nome')
-        if novo_nome:
-            cursor.execute("UPDATE usuarios SET usuario = ? WHERE id = ?", (novo_nome, session['user_id']))
-            conexao.commit()
-            session['nome'] = novo_nome
-
     try:
-        cursor.execute("SELECT usuario, licenca, valor_licencas, modulos_liberados FROM usuarios WHERE id = ?", (session['user_id'],))
+        # Tenta buscar o pacote completo de dados do novo perfil
+        cursor.execute("""
+            SELECT usuario, email, idade, profissao, patrimonio, renda_mensal, renda_variavel,
+                   licenca, valor_licencas, modulos_liberados
+            FROM usuarios
+            WHERE id = ?
+        """, (session['user_id'],))
         usuario_data = cursor.fetchone()
+
     except sqlite3.OperationalError:
+        # Fallback de segurança: Caso as colunas novas ainda não tenham sido criadas no banco
         cursor.execute("SELECT usuario, licenca FROM usuarios WHERE id = ?", (session['user_id'],))
         row = cursor.fetchone()
         if row:
-            usuario_data = {'usuario': row['usuario'], 'licenca': row['licenca'], 'valor_licencas': 0.0, 'modulos_liberados': 'Todos'}
+            usuario_data = {
+                'usuario': row['usuario'], 'email': '', 'idade': '', 'profissao': '',
+                'patrimonio': '', 'renda_mensal': '', 'renda_variavel': 'nao',
+                'licenca': row['licenca'], 'valor_licencas': 0.0, 'modulos_liberados': 'Todos'
+            }
         else:
             usuario_data = None
 
     conexao.close()
 
-    return render_template('perfil.html',
-        nome_usuario=usuario_data['usuario'] if usuario_data else session.get('usuario'),
-        licenca_usuario=usuario_data['licenca'] if usuario_data else 'Básica',
-        valor_licenca=usuario_data['valor_licencas'] if usuario_data else 0.0,
-        modulos_liberados=usuario_data['modulos_liberados'] if usuario_data else 'Todos')
+    # Passa todos os dados organizados para preencher os blocos do perfil.html
+    if usuario_data:
+        return render_template('perfil.html',
+            nome_usuario=usuario_data['usuario'],
+            email_usuario=usuario_data.get('email', ''),
+            idade_usuario=usuario_data.get('idade', ''),
+            profissao_usuario=usuario_data.get('profissao', ''),
+            patrimonio_usuario=usuario_data.get('patrimonio', ''),
+            renda_atual=usuario_data.get('renda_mensal', ''),
+            renda_variavel=usuario_data.get('renda_variavel', 'nao'),
+            licenca_usuario=usuario_data.get('licenca', 'Básica'),
+            valor_licenca=usuario_data.get('valor_licencas', 0.0),
+            modulos_liberados=usuario_data.get('modulos_liberados', 'Todos')
+        )
+
+    return redirect(url_for('home'))
+
+# ==============================================================================
+# ATUALIZAR DADOS PESSOAIS DO PERFIL (GRAVAÇÃO)
+# ==============================================================================
+@app.route('/api/atualizar_perfil', methods=['POST'])
+@login_obrigatorio
+def atualizar_perfil():
+    email = request.form.get('email', '')
+    idade = request.form.get('idade', '')
+    profissao = request.form.get('profissao', '')
+
+    conexao = get_db_connection()
+    cursor = conexao.cursor()
+
+    try:
+        cursor.execute("""
+            UPDATE usuarios
+            SET email = ?, idade = ?, profissao = ?
+            WHERE id = ?
+        """, (email, idade, profissao, session['user_id']))
+        conexao.commit()
+    except sqlite3.OperationalError as e:
+        print(f"Erro ao salvar perfil: {e}")
+    finally:
+        conexao.close()
+
+    return redirect(url_for('perfil'))
 
 # ==============================================================================
 # NOVIDADES E ATUALIZAÇÕES
@@ -1865,6 +1952,7 @@ def exportar_compras_csv():
 
     if len(itens) > 0: writer.writerow(['', '', 'TOTAL GERAL:', f'=SOMA(D2:D{len(itens)+1})'])
     return Response(output.getvalue(), mimetype="text/csv; charset=utf-8", headers={"Content-Disposition": f"attachment;filename=lista_{mes}.csv"})
+
 # ==============================================================================
 # CHAT BOT - IA HIR3
 # ==============================================================================
@@ -2025,7 +2113,7 @@ def webhook_whatsapp():
 # ==============================================================================
 # CONTEXTOS GLOBAIS E INICIALIZAÇÃO
 # ==============================================================================
-VERSAO_SISTEMA = "1.6.8" # <--- No futuro, você altera a versão APENAS nesta linha!
+VERSAO_SISTEMA = "1.7.0" # <--- No futuro, você altera a versão APENAS nesta linha!
 
 @app.context_processor
 def inject_global_vars():

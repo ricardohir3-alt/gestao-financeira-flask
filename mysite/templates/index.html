@@ -17,7 +17,7 @@
 {% endblock %}
 
 {% block content %}
-    <!-- ESTILOS OTIMIZADOS PARA A NOVA IDENTIDADE VISUAL DARK -->
+    <!-- ESTILOS OTIMIZADOS PARA A NOVA IDENTIDADE VISUAL DARK E ANIMAÇÕES -->
     <style>
         .dark .apexcharts-datalabel-value { fill: #ffffff !important; opacity: 1 !important; font-weight: 900 !important; }
         .dark .apexcharts-datalabel-label { fill: #9ca3af !important; opacity: 1 !important; }
@@ -26,6 +26,12 @@
         html:not(.dark) .apexcharts-datalabel-label { fill: #6b7280 !important; opacity: 1 !important; }
         html:not(.dark) .apexcharts-legend-text { color: #6b7280 !important; }
         .progress-bar-indigo { background: linear-gradient(90deg, #6366f1 0%, #8b5cf6 100%); }
+        
+        /* Animação do Brilho da Barra de XP */
+        @keyframes shimmer {
+            0% { transform: translateX(-100%); }
+            100% { transform: translateX(100%); }
+        }
     </style>
 
     <!-- ALERTAS GERAIS -->
@@ -68,10 +74,10 @@
     <!-- SUPER CARD: Análise Financeira (Substitui Comparativo, Fluxo e Entradas/Saídas)-->
     <!-- ============================================================================== -->
     <section class="bg-white dark:bg-[#1a1b26] border border-gray-100 dark:border-white/5 rounded-3xl p-5 md:p-6 mb-6 shadow-sm flex flex-col gap-6">
-        
+
         <!-- Cabeçalho do Super Card -->
         <div class="flex justify-between items-center">
-            <h2 class="text-lg md:text-xl font-bold text-gray-900 dark:text-white">Análise de setembro</h2>
+            <h2 class="text-lg md:text-xl font-bold text-gray-900 dark:text-white">Análise do mês</h2>
             <button onclick="abrirModalComparativo()" class="text-xs md:text-sm font-semibold text-indigo-600 dark:text-indigo-400 hover:underline flex items-center gap-1 focus:outline-none">
                 Analisar <i data-lucide="arrow-right" class="w-3.5 h-3.5 md:w-4 md:h-4"></i>
             </button>
@@ -79,7 +85,7 @@
 
         <!-- GRID INTERNO: Gráfico de Barras + Resumo Numérico -->
         <div class="grid grid-cols-1 md:grid-cols-2 gap-4 items-center">
-            
+
             <!-- Gráfico ApexCharts (Estilo Nubank) -->
             <div class="w-full relative -ml-3">
                 <div id="grafico-entradas-saidas" class="min-h-[150px]"></div>
@@ -112,7 +118,7 @@
                 <div id="barra-fluxo-mes" class="progress-bar-indigo h-1.5 rounded-full transition-all duration-1000 w-0"></div>
             </div>
         </div>
-        
+
         <!-- TAG DE ECONOMIA: Comparativo Direto -->
         {% if comparativo.economizou %}
             <div class="bg-emerald-50 dark:bg-emerald-500/10 text-emerald-700 dark:text-emerald-400 p-3 rounded-xl text-[11px] md:text-xs font-medium flex items-center gap-2 border border-emerald-100 dark:border-emerald-800/30">
@@ -130,7 +136,7 @@
 
     <!-- CARDS SECUNDÁRIOS: Score e Nível -->
     <section class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
-        
+
         <!-- Score de Pagamento -->
         <div id="section-score" data-pago="{{ perc_pago }}" data-gastos="{{ gastos_totais }}" class="bg-white dark:bg-[#1a1b26] border border-gray-100 dark:border-white/5 rounded-3xl p-4 shadow-sm relative overflow-hidden">
             <h3 class="font-bold text-xs text-gray-900 dark:text-white mb-2 uppercase tracking-widest" data-i18n="score_pagamento">Score</h3>
@@ -149,19 +155,9 @@
             </div>
         </div>
 
-        <!-- Nível / XP -->
-        <div class="bg-white dark:bg-[#1a1b26] border border-gray-100 dark:border-white/5 rounded-3xl p-5 shadow-sm flex flex-col justify-center cursor-pointer group" onclick="ganharXP(10, 'Exploração de App')">
-            <div class="flex justify-between items-end mb-3">
-                <h3 class="font-bold text-xs text-gray-900 dark:text-white flex items-center gap-1.5 uppercase tracking-widest">
-                    <span data-i18n="nivel">Nível</span> <span id="user-level-number" class="text-lg font-black text-indigo-500 leading-none">1</span>
-                </h3>
-                <span id="xp-text" class="text-[10px] text-gray-500 dark:text-gray-400 font-medium">0 / 500 XP</span>
-            </div>
-            <div class="w-full bg-gray-100 dark:bg-gray-800/60 rounded-full h-1.5 overflow-hidden">
-                <div id="xp-bar" class="progress-bar-indigo h-1.5 rounded-full transition-all duration-1000 ease-out" style="width: 0%"></div>
-            </div>
-        </div>
-        
+        <!-- O NOVO CARD DE GAMIFICAÇÃO MODULARIZADO ESTÁ SENDO INJETADO AQUI -->
+        {% include 'gamificacao.html' %}
+
     </section>
 
     <!-- CARD INFERIOR: CATEGORIAS (DONUT) -->
@@ -189,7 +185,7 @@
     <!-- ========================================== -->
     <div id="modal-comparativo" class="fixed inset-0 z-50 hidden flex items-center justify-center bg-gray-900/60 backdrop-blur-sm px-4 transition-opacity">
         <div class="bg-white dark:bg-[#1a1b26] border border-gray-100 dark:border-white/10 rounded-3xl w-full max-w-sm shadow-2xl p-5 md:p-6 relative">
-            
+
             <!-- Botão Fechar -->
             <button onclick="fecharModalComparativo()" class="absolute top-4 right-4 text-gray-400 hover:text-gray-700 dark:hover:text-gray-200 focus:outline-none">
                 <i data-lucide="x" class="w-5 h-5"></i>
@@ -206,7 +202,7 @@
                 <h2 class="text-3xl font-black text-gray-900 dark:text-white valor-sensivel" data-valor="R$ {{ comparativo.diferenca_absoluta }}">
                     R$ {{ comparativo.diferenca_absoluta }}
                 </h2>
-                
+
                 {% if comparativo.economizou %}
                     <span class="bg-emerald-100 text-emerald-700 dark:bg-emerald-500/20 dark:text-emerald-400 text-xs font-black px-2 py-1 rounded-lg border border-emerald-200 dark:border-emerald-500/30">
                         -{{ comparativo.percentual }}%
@@ -257,9 +253,52 @@
     <!-- INCLUINDO OS MODAIS E SCRIPTS EXTERNOS -->
     {% include 'partials/dashboard_modais.html' %}
     {% include 'partials/dashboard_scripts.html' %}
+    {% include 'notificacoes.html' %}
 
-    <!-- SCRIPT PARA CONTROLAR O MODAL DO COMPARATIVO E SALVAR XP -->
+    <!-- SCRIPT PARA CONTROLAR O MODAL DO COMPARATIVO E GAVETA -->
     <script>
+        // ==========================================
+        // SISTEMA DE NOTIFICAÇÕES (GAVETA LATERAL)
+        // ==========================================
+        function abrirNotificacoes() {
+            const d = document.getElementById('drawer-notificacoes');
+            const bg = document.getElementById('bg-drawer-notif');
+            const painel = document.getElementById('painel-notif');
+
+            if(d && bg && painel) {
+                // Verifica se a gaveta JÁ ESTÁ aberta. Se sim, ele fecha e para a função.
+                if (!d.classList.contains('hidden')) {
+                    fecharNotificacoes();
+                    return;
+                }
+
+                // Se estiver fechada, ele abre normalmente
+                d.classList.remove('hidden');
+                d.classList.add('flex');
+
+                setTimeout(() => {
+                    bg.classList.remove('opacity-0');
+                    painel.classList.remove('translate-x-full');
+                }, 10);
+            }
+        }
+
+        function fecharNotificacoes() {
+            const d = document.getElementById('drawer-notificacoes');
+            const bg = document.getElementById('bg-drawer-notif');
+            const painel = document.getElementById('painel-notif');
+
+            if(d && bg && painel) {
+                bg.classList.add('opacity-0');
+                painel.classList.add('translate-x-full');
+
+                setTimeout(() => {
+                    d.classList.add('hidden');
+                    d.classList.remove('flex');
+                }, 300);
+            }
+        }
+
         function abrirModalComparativo() {
             const modal = document.getElementById('modal-comparativo');
             modal.classList.remove('hidden');
@@ -278,63 +317,6 @@
             if (e.target === this) {
                 fecharModalComparativo();
             }
-        });
-
-        // ==========================================
-        // SISTEMA DE GAMIFICAÇÃO LOCAL (LOCALSTORAGE)
-        // ==========================================
-        function carregarXP() {
-            const user_id = "{{ session.get('user_id', 'visitante') }}";
-            let xp_atual = parseInt(localStorage.getItem('user_xp_' + user_id)) || 0;
-            let nivel_atual = parseInt(localStorage.getItem('user_level_' + user_id)) || 1;
-            
-            const maxXP = nivel_atual * 500; 
-
-            document.getElementById('user-level-number').innerText = nivel_atual;
-            document.getElementById('xp-text').innerText = `${xp_atual} / ${maxXP} XP`;
-            
-            let percentual = (xp_atual / maxXP) * 100;
-            if(percentual > 100) percentual = 100;
-            
-            document.getElementById('xp-bar').style.width = percentual + '%';
-        }
-
-        // Esta função substitui o ganharXP original que estava nos scripts
-        window.ganharXP = function(quantidade, acao) {
-            const user_id = "{{ session.get('user_id', 'visitante') }}";
-            let xp_atual = parseInt(localStorage.getItem('user_xp_' + user_id)) || 0;
-            let nivel_atual = parseInt(localStorage.getItem('user_level_' + user_id)) || 1;
-            
-            xp_atual += quantidade;
-            let maxXP = nivel_atual * 500;
-            
-            // Subiu de Nível!
-            if (xp_atual >= maxXP) {
-                nivel_atual += 1;
-                xp_atual = xp_atual - maxXP; // O que sobrou vai pro próximo nível
-                
-                if(typeof Swal !== 'undefined') {
-                    Swal.fire({
-                        title: 'Nível ' + nivel_atual + '!',
-                        text: 'Parabéns! Você alcançou um novo nível financeiro.',
-                        icon: 'success',
-                        timer: 3000,
-                        showConfirmButton: false
-                    });
-                }
-            }
-            
-            // Salva no navegador
-            localStorage.setItem('user_xp_' + user_id, xp_atual);
-            localStorage.setItem('user_level_' + user_id, nivel_atual);
-            
-            // Atualiza a tela
-            carregarXP();
-        };
-
-        // Carrega o XP salvo assim que a página abre
-        document.addEventListener('DOMContentLoaded', () => {
-            carregarXP();
         });
     </script>
 {% endblock %}

@@ -1,0 +1,132 @@
+<!-- gamificacao.html -->
+<div class="bg-white dark:bg-[#1a1b26] border border-gray-100 dark:border-white/5 rounded-3xl p-5 shadow-sm relative overflow-hidden flex flex-col justify-between cursor-pointer group" onclick="ganharXP(10, 'Exploração de App')">
+    
+    <!-- Efeito de brilho de fundo no hover -->
+    <div class="absolute -inset-2 bg-gradient-to-r from-indigo-500/0 via-indigo-500/5 to-purple-500/0 opacity-0 group-hover:opacity-100 transition-opacity duration-700 pointer-events-none blur-xl z-0"></div>
+
+    <div class="flex items-center gap-4 relative z-10 mb-4">
+        <!-- Badge / Ícone do Nível -->
+        <div class="w-12 h-12 rounded-2xl bg-gradient-to-br from-indigo-500 to-purple-600 p-[1px] shadow-lg shadow-indigo-500/20 shrink-0 transform group-hover:scale-105 transition-transform duration-300">
+            <div class="w-full h-full bg-white dark:bg-[#1a1b26] rounded-[15px] flex items-center justify-center relative overflow-hidden">
+                <div class="absolute inset-0 bg-indigo-500/10 dark:bg-indigo-500/20"></div>
+                <i id="icone-nivel" data-lucide="star" class="w-6 h-6 text-indigo-500 dark:text-indigo-400 fill-indigo-500/30"></i>
+            </div>
+        </div>
+
+        <!-- Informações do Nível -->
+        <div class="flex-grow min-w-0">
+            <div class="flex justify-between items-end mb-0.5">
+                <h3 class="font-bold text-[10px] text-gray-500 dark:text-gray-400 uppercase tracking-widest flex items-center gap-1.5">
+                    <span data-i18n="nivel">Nível</span> <span id="user-level-number" class="text-xl font-black text-transparent bg-clip-text bg-gradient-to-r from-indigo-500 to-purple-500 dark:from-indigo-400 dark:to-purple-400 leading-none">1</span>
+                </h3>
+                <span id="xp-text" class="text-[10px] font-black text-indigo-600 dark:text-indigo-300 bg-indigo-50 dark:bg-indigo-900/30 px-2 py-0.5 rounded-lg border border-indigo-100 dark:border-indigo-800/50 shadow-sm">
+                    0 / 500
+                </span>
+            </div>
+            <p id="user-rank-title" class="text-[11px] font-bold text-gray-800 dark:text-gray-200 truncate">Aprendiz Financeiro</p>
+        </div>
+    </div>
+
+    <!-- Barra de Progresso e Footer -->
+    <div class="relative z-10 mt-auto">
+        <div class="w-full bg-gray-100 dark:bg-gray-800/60 rounded-full h-2.5 overflow-hidden shadow-inner border border-gray-200/50 dark:border-white/5 relative">
+            <div id="xp-bar" class="progress-bar-indigo h-2.5 rounded-full transition-all duration-1000 ease-out relative overflow-hidden" style="width: 0%">
+                <!-- Reflexo de brilho dentro da barra -->
+                <div class="absolute inset-0 bg-gradient-to-r from-transparent via-white/40 to-transparent w-full h-full translate-x-[-100%] animate-[shimmer_2s_infinite]"></div>
+            </div>
+        </div>
+        <p id="xp-motivational" class="text-[9px] text-center text-gray-400 dark:text-gray-500 mt-2 font-medium tracking-wide">Faltam 500 XP para subir de nível</p>
+    </div>
+</div>
+
+<script>
+    // ==========================================
+    // SISTEMA DE GAMIFICAÇÃO LOCAL (LOCALSTORAGE)
+    // ==========================================
+    function carregarXP() {
+        const user_id = "{{ session.get('user_id', 'visitante') }}";
+        let xp_atual = parseInt(localStorage.getItem('user_xp_' + user_id)) || 0;
+        let nivel_atual = parseInt(localStorage.getItem('user_level_' + user_id)) || 1;
+        
+        const maxXP = nivel_atual * 500; 
+
+        // Sistema de Títulos (Ranks) e Ícones
+        const patentes = {
+            1: { titulo: 'Aprendiz Financeiro', icone: 'star' },
+            2: { titulo: 'Explorador Consciente', icone: 'compass' },
+            3: { titulo: 'Guardião do Orçamento', icone: 'shield' },
+            4: { titulo: 'Mestre da Poupança', icone: 'piggy-bank' },
+            5: { titulo: 'Investidor Estrategista', icone: 'trending-up' },
+            6: { titulo: 'Lobo de Wall Street', icone: 'gem' }
+        };
+
+        // Se passar do nível 6, ele ganha o título máximo
+        const patenteAtual = patentes[nivel_atual] || { titulo: 'Magnata Supremo', icone: 'crown' };
+
+        // Atualiza os Textos na Tela
+        const levelNum = document.getElementById('user-level-number');
+        if(levelNum) levelNum.innerText = nivel_atual;
+        
+        const xpText = document.getElementById('xp-text');
+        if(xpText) xpText.innerText = `${xp_atual} / ${maxXP}`;
+        
+        const rankEl = document.getElementById('user-rank-title');
+        if(rankEl) rankEl.innerText = patenteAtual.titulo;
+
+        const iconeEl = document.getElementById('icone-nivel');
+        if(iconeEl) {
+            iconeEl.setAttribute('data-lucide', patenteAtual.icone);
+            if(typeof lucide !== 'undefined') lucide.createIcons();
+        }
+
+        const motivacionalEl = document.getElementById('xp-motivational');
+        if(motivacionalEl) {
+            const xpFaltante = maxXP - xp_atual;
+            motivacionalEl.innerText = `Faltam ${xpFaltante} XP para subir de nível`;
+        }
+        
+        let percentual = (xp_atual / maxXP) * 100;
+        if(percentual > 100) percentual = 100;
+        
+        const xpBar = document.getElementById('xp-bar');
+        if(xpBar) xpBar.style.width = percentual + '%';
+    }
+
+    // Esta função substitui o ganharXP original que estava nos scripts do index
+    window.ganharXP = function(quantidade, acao) {
+        const user_id = "{{ session.get('user_id', 'visitante') }}";
+        let xp_atual = parseInt(localStorage.getItem('user_xp_' + user_id)) || 0;
+        let nivel_atual = parseInt(localStorage.getItem('user_level_' + user_id)) || 1;
+        
+        xp_atual += quantidade;
+        let maxXP = nivel_atual * 500;
+        
+        // Subiu de Nível!
+        if (xp_atual >= maxXP) {
+            nivel_atual += 1;
+            xp_atual = xp_atual - maxXP; // O que sobrou vai pro próximo nível
+            
+            if(typeof Swal !== 'undefined') {
+                Swal.fire({
+                    title: 'Nível ' + nivel_atual + '!',
+                    text: `Parabéns! Você alcançou o nível ${nivel_atual}.`,
+                    icon: 'success',
+                    timer: 3000,
+                    showConfirmButton: false
+                });
+            }
+        }
+        
+        // Salva no navegador
+        localStorage.setItem('user_xp_' + user_id, xp_atual);
+        localStorage.setItem('user_level_' + user_id, nivel_atual);
+        
+        // Atualiza a tela
+        carregarXP();
+    };
+
+    // Carrega o XP salvo assim que a página abre
+    document.addEventListener('DOMContentLoaded', () => {
+        carregarXP();
+    });
+</script>

@@ -1,22 +1,22 @@
 {% extends "base.html" %}
 
 {% block content %}
-    <a href="javascript:history.back()" class="flex items-center gap-1 text-gray-500 hover:text-blue-600 dark:text-gray-400 dark:hover:text-blue-400 mb-2 md:mb-4 transition-colors text-xs md:text-sm font-bold w-fit group">
+    <a href="javascript:history.back()" class="flex items-center gap-1 text-gray-500 hover:text-indigo-600 dark:text-gray-400 dark:hover:text-indigo-400 mb-2 md:mb-4 transition-colors text-xs md:text-sm font-bold w-fit group">
         <i data-lucide="arrow-left" class="w-3.5 h-3.5 md:w-4 md:h-4 group-hover:-translate-x-1 transition-transform"></i>
         <span>Voltar para o Painel</span>
     </a>
 
     <div class="mb-3 md:mb-6">
         <h2 class="text-lg md:text-2xl font-black text-gray-800 dark:text-white flex items-center gap-1.5 md:gap-2">
-            <i data-lucide="user-circle" class="w-5 h-5 md:w-6 md:h-6 text-blue-600 dark:text-blue-400"></i> Meu Perfil
+            <i data-lucide="user-circle" class="w-5 h-5 md:w-6 md:h-6 text-indigo-600 dark:text-indigo-400"></i> Meu Perfil
         </h2>
         <p class="text-[9px] md:text-sm text-gray-500 dark:text-gray-400 mt-0.5 md:mt-1">Gerencie suas informações pessoais, segurança e finanças.</p>
     </div>
 
     <!-- HEADER DO PERFIL (Super Compacto no Mobile) -->
-    <div class="bg-white dark:bg-gray-800 rounded-xl md:rounded-3xl shadow-sm border border-gray-100 dark:border-gray-700 mb-3 md:mb-6 overflow-hidden">
-        <!-- Banner Background -->
-        <div class="h-14 md:h-32 bg-gradient-to-r from-blue-600 to-indigo-600 w-full relative">
+    <div class="bg-white dark:bg-[#1a1b26] rounded-xl md:rounded-3xl shadow-sm border border-gray-100 dark:border-white/5 mb-3 md:mb-6 overflow-hidden">
+        <!-- Banner Background (Degradê Índigo para Roxo) -->
+        <div class="h-14 md:h-32 bg-gradient-to-r from-indigo-600 to-purple-600 w-full relative">
             <div class="absolute inset-0 bg-black/10"></div>
         </div>
         
@@ -31,18 +31,15 @@
                     
                     <label for="input-foto" class="cursor-pointer block relative">
                         {% if foto_perfil %}
-                            <!-- Mostra a Foto se Existir -->
-                            <div class="w-14 h-14 md:w-28 md:h-28 rounded-full bg-gray-200 shadow-md md:shadow-xl border-2 md:border-4 border-white dark:border-gray-800 overflow-hidden relative">
+                            <div class="w-14 h-14 md:w-28 md:h-28 rounded-full bg-gray-200 shadow-md md:shadow-xl border-2 md:border-4 border-white dark:border-[#1a1b26] overflow-hidden relative">
                                 <img src="{{ foto_perfil }}" alt="Foto de Perfil" class="w-full h-full object-cover">
                             </div>
                         {% else %}
-                            <!-- Mostra a Inicial se NÃO Existir Foto -->
-                            <div class="w-14 h-14 md:w-28 md:h-28 bg-gradient-to-br from-gray-800 to-gray-600 dark:from-gray-700 dark:to-gray-500 rounded-full flex items-center justify-center text-white text-xl md:text-4xl font-black shadow-md md:shadow-xl border-2 md:border-4 border-white dark:border-gray-800">
+                            <div class="w-14 h-14 md:w-28 md:h-28 bg-gradient-to-br from-indigo-800 to-purple-600 dark:from-indigo-700 dark:to-purple-500 rounded-full flex items-center justify-center text-white text-xl md:text-4xl font-black shadow-md md:shadow-xl border-2 md:border-4 border-white dark:border-[#1a1b26]">
                                 {{ nome_usuario[:1].upper() if nome_usuario else 'U' }}
                             </div>
                         {% endif %}
                         
-                        <!-- Overlay de Hover -->
                         <div class="absolute inset-0 bg-black/60 rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity border-2 md:border-4 border-transparent backdrop-blur-sm">
                             <div class="flex flex-col items-center">
                                 <i data-lucide="camera" class="w-4 h-4 md:w-6 md:h-6 text-white mb-0.5"></i>
@@ -55,96 +52,106 @@
                 <!-- Info do Usuário -->
                 <div class="flex-grow pb-1 md:pb-2">
                     <h3 class="text-base md:text-2xl font-black text-gray-900 dark:text-white leading-tight truncate max-w-[200px] md:max-w-none">{{ nome_usuario }}</h3>
-                    <span class="inline-flex items-center gap-1 mt-0.5 px-1.5 py-0.5 md:px-2.5 md:py-1 rounded text-[8px] md:text-xs font-bold bg-green-100 text-green-700 dark:bg-green-900/40 dark:text-green-400 border border-green-200 dark:border-green-800/50">
-                        <i data-lucide="shield-check" class="w-2.5 h-2.5 md:w-3.5 md:h-3.5"></i> Conta Protegida
-                    </span>
+                    
+                    <!-- TAGS DINÂMICAS: Segurança e Gamificação -->
+                    <div class="flex flex-wrap items-center gap-1.5 mt-1.5">
+                        <span class="inline-flex items-center gap-1 px-1.5 py-0.5 md:px-2 md:py-1 rounded text-[8px] md:text-[10px] font-bold bg-green-100 text-green-700 dark:bg-green-900/40 dark:text-green-400 border border-green-200 dark:border-green-800/50 shadow-sm">
+                            <i data-lucide="shield-check" class="w-2.5 h-2.5 md:w-3 md:h-3"></i> Conta Protegida
+                        </span>
+                        
+                        <span class="inline-flex items-center gap-1 px-1.5 py-0.5 md:px-2 md:py-1 rounded text-[8px] md:text-[10px] font-bold bg-indigo-100 text-indigo-700 dark:bg-indigo-900/40 dark:text-indigo-400 border border-indigo-200 dark:border-indigo-800/50 shadow-sm">
+                            <i data-lucide="star" class="w-2.5 h-2.5 md:w-3 md:h-3"></i> Nível <span class="perfil-level-number">1</span>
+                        </span>
+                        
+                        <span class="inline-flex items-center gap-1 px-1.5 py-0.5 md:px-2 md:py-1 rounded text-[8px] md:text-[10px] font-bold bg-purple-100 text-purple-700 dark:bg-purple-900/40 dark:text-purple-400 border border-purple-200 dark:border-purple-800/50 shadow-sm">
+                            <i data-lucide="award" class="w-2.5 h-2.5 md:w-3 md:h-3"></i> <span class="perfil-rank-title">Aprendiz Financeiro</span>
+                        </span>
+                    </div>
                 </div>
             </div>
         </div>
     </div>
 
-    <!-- GRID DE OPÇÕES (Compactado para Mobile) -->
+    <!-- GRID DE OPÇÕES (3 Blocos Lógicos) -->
     <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-2.5 md:gap-6">
         
         <!-- ============================================== -->
-        <!-- BLOCO 1: DADOS PESSOAIS E PLANO -->
+        <!-- BLOCO 1: DADOS PESSOAIS (Com E-mail, Idade e Profissão) -->
         <!-- ============================================== -->
-        <div class="bg-white dark:bg-gray-800 rounded-xl md:rounded-3xl shadow-sm border border-gray-100 dark:border-gray-700 overflow-hidden flex flex-col hover:shadow-md transition-shadow">
-            <div class="px-3 py-2 md:px-5 md:py-4 border-b border-gray-100 dark:border-gray-700 bg-gray-50/50 dark:bg-gray-900/50">
+        <div class="bg-white dark:bg-[#1a1b26] rounded-xl md:rounded-3xl shadow-sm border border-gray-100 dark:border-white/5 overflow-hidden flex flex-col hover:shadow-md transition-shadow">
+            <div class="px-3 py-2 md:px-5 md:py-4 border-b border-gray-100 dark:border-white/5 bg-gray-50/50 dark:bg-gray-900/30">
                 <h4 class="text-xs md:text-sm font-bold text-gray-800 dark:text-gray-200 flex items-center gap-1.5 md:gap-2">
-                    <div class="p-1 bg-blue-100 dark:bg-blue-900/40 rounded md:rounded-lg"><i data-lucide="contact" class="w-3 h-3 md:w-4 md:h-4 text-blue-600 dark:text-blue-400"></i></div>
-                    Informações da Conta
+                    <div class="p-1 bg-indigo-100 dark:bg-indigo-900/40 rounded md:rounded-lg"><i data-lucide="contact" class="w-3 h-3 md:w-4 md:h-4 text-indigo-600 dark:text-indigo-400"></i></div>
+                    Dados Pessoais
                 </h4>
             </div>
             <div class="p-3 md:p-5 flex-grow">
-                <form action="#" method="POST" class="space-y-3 md:space-y-5 h-full flex flex-col">
+                <form action="/api/atualizar_perfil" method="POST" class="space-y-3 md:space-y-4 h-full flex flex-col">
                     <div>
                         <label class="block text-[8px] md:text-[10px] font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wider mb-1">Nome de Usuário</label>
                         <div class="relative">
                             <i data-lucide="user" class="absolute left-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 md:w-4 md:h-4 text-gray-400"></i>
                             <input type="text" name="nome" value="{{ nome_usuario }}" readonly
-                                   class="w-full pl-7 pr-2 md:pl-9 md:pr-3 py-1.5 md:py-2.5 bg-gray-100 dark:bg-gray-900/80 border border-gray-200 dark:border-gray-700 rounded-lg md:rounded-xl text-xs md:text-sm font-bold text-gray-600 dark:text-gray-400 cursor-not-allowed focus:ring-0">
+                                   class="w-full pl-7 pr-2 md:pl-9 md:pr-3 py-1.5 md:py-2.5 bg-gray-100 dark:bg-gray-900/80 border border-gray-200 dark:border-gray-700 rounded-lg md:rounded-xl text-xs md:text-sm font-bold text-gray-600 dark:text-gray-400 cursor-not-allowed focus:ring-0 outline-none">
                         </div>
-                        <p class="text-[8px] md:text-[9px] text-gray-400 mt-1 flex items-center gap-1 leading-tight">
-                            <i data-lucide="info" class="w-2.5 h-2.5 md:w-3 md:h-3 shrink-0"></i> Não é possível alterar o nome.
-                        </p>
                     </div>
 
-                    <!-- Detalhes do Plano do Usuário (Estilo Recibo) -->
-                    <div class="pt-1 mt-auto">
-                        <label class="block text-[8px] md:text-[10px] font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wider mb-1">Detalhes do Plano</label>
-                        <div class="bg-gradient-to-b from-gray-50 to-white dark:from-gray-900/50 dark:to-gray-800 rounded-lg md:rounded-2xl p-2.5 md:p-4 border border-gray-200 dark:border-gray-700 space-y-1.5 md:space-y-3 shadow-inner">
-                            
-                            <!-- Licença -->
-                            <div class="flex justify-between items-center">
-                                <span class="text-[9px] md:text-xs font-medium text-gray-600 dark:text-gray-400 flex items-center gap-1 md:gap-1.5">
-                                    <i data-lucide="award" class="w-3 h-3 md:w-3.5 md:h-3.5"></i> Licença
-                                </span>
-                                <span class="text-[9px] md:text-xs font-bold px-1.5 py-0.5 rounded border {% if licenca_usuario == 'Premium' %}text-amber-600 bg-amber-50 border-amber-200 dark:bg-amber-900/20 dark:text-amber-400 dark:border-amber-800/50{% else %}text-blue-600 bg-blue-50 border-blue-200 dark:bg-blue-900/20 dark:text-blue-400 dark:border-blue-800/50{% endif %} uppercase tracking-wider">
-                                    {{ licenca_usuario | default('Básica') }}
-                                </span>
-                            </div>
-
-                            <!-- Valor a Pagar -->
-                            <div class="flex justify-between items-center">
-                                <span class="text-[9px] md:text-xs font-medium text-gray-600 dark:text-gray-400 flex items-center gap-1 md:gap-1.5">
-                                    <i data-lucide="circle-dollar-sign" class="w-3 h-3 md:w-3.5 md:h-3.5"></i> Valor
-                                </span>
-                                <span class="text-[11px] md:text-sm font-black text-gray-800 dark:text-gray-200">
-                                    {% if valor_licenca and valor_licenca|float > 0 %}
-                                        R$ {{ "%.2f"|format(valor_licenca|float) }}
-                                    {% else %}
-                                        <span class="text-green-500 dark:text-green-400">Gratuito</span>
-                                    {% endif %}
-                                </span>
-                            </div>
-
-                            <!-- Módulos Liberados -->
-                            <div class="flex justify-between items-start pt-1.5 md:pt-3 border-t border-dashed border-gray-200 dark:border-gray-700">
-                                <span class="text-[9px] md:text-xs font-medium text-gray-600 dark:text-gray-400 flex items-center gap-1 md:gap-1.5 mt-0.5">
-                                    <i data-lucide="layout-grid" class="w-3 h-3 md:w-3.5 md:h-3.5"></i> Módulos
-                                </span>
-                                <span class="text-[8px] md:text-[10px] font-bold text-gray-700 dark:text-gray-300 text-right max-w-[100px] md:max-w-[140px] leading-tight">
-                                    {{ modulos_liberados | default('Básico') }}
-                                </span>
-                            </div>
+                    <div>
+                        <label class="block text-[8px] md:text-[10px] font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wider mb-1">E-mail</label>
+                        <div class="relative">
+                            <i data-lucide="mail" class="absolute left-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 md:w-4 md:h-4 text-gray-400"></i>
+                            <input type="email" name="email" value="{{ email_usuario | default('') }}" placeholder="seu@email.com"
+                                   class="w-full pl-7 pr-2 md:pl-9 md:pr-3 py-1.5 md:py-2.5 bg-gray-50 dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-lg md:rounded-xl text-xs md:text-sm font-bold text-gray-800 dark:text-gray-100 focus:ring-2 focus:ring-indigo-500 outline-none transition-all">
                         </div>
+                    </div>
+
+                    <div class="grid grid-cols-2 gap-3">
+                        <div>
+                            <label class="block text-[8px] md:text-[10px] font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wider mb-1">Idade</label>
+                            <input type="number" name="idade" value="{{ idade_usuario | default('') }}" placeholder="Ex: 28"
+                                   class="w-full px-3 py-1.5 md:py-2.5 bg-gray-50 dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-lg md:rounded-xl text-xs md:text-sm font-bold text-gray-800 dark:text-gray-100 focus:ring-2 focus:ring-indigo-500 outline-none transition-all text-center">
+                        </div>
+                        <div>
+                            <label class="block text-[8px] md:text-[10px] font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wider mb-1">Profissão</label>
+                            <input type="text" name="profissao" value="{{ profissao_usuario | default('') }}" placeholder="Ex: Analista"
+                                   class="w-full px-3 py-1.5 md:py-2.5 bg-gray-50 dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-lg md:rounded-xl text-xs md:text-sm font-bold text-gray-800 dark:text-gray-100 focus:ring-2 focus:ring-indigo-500 outline-none transition-all">
+                        </div>
+                    </div>
+
+                    <div class="mt-auto pt-2 md:pt-4">
+                        <button type="submit" class="w-full bg-indigo-600 text-white font-black py-2 md:py-3 rounded-lg md:rounded-xl text-xs md:text-sm hover:bg-indigo-700 hover:scale-[1.02] active:scale-[0.98] transition-all shadow-sm flex justify-center items-center gap-1.5 md:gap-2">
+                            <i data-lucide="save" class="w-3.5 h-3.5 md:w-4 md:h-4"></i> Salvar Perfil
+                        </button>
                     </div>
                 </form>
             </div>
         </div>
 
         <!-- ============================================== -->
-        <!-- BLOCO 2: SEGURANÇA -->
+        <!-- BLOCO 2: SEGURANÇA E PLANO -->
         <!-- ============================================== -->
-        <div class="bg-white dark:bg-gray-800 rounded-xl md:rounded-3xl shadow-sm border border-gray-100 dark:border-gray-700 overflow-hidden flex flex-col hover:shadow-md transition-shadow">
-            <div class="px-3 py-2 md:px-5 md:py-4 border-b border-gray-100 dark:border-gray-700 bg-gray-50/50 dark:bg-gray-900/50">
+        <div class="bg-white dark:bg-[#1a1b26] rounded-xl md:rounded-3xl shadow-sm border border-gray-100 dark:border-white/5 overflow-hidden flex flex-col hover:shadow-md transition-shadow">
+            <div class="px-3 py-2 md:px-5 md:py-4 border-b border-gray-100 dark:border-white/5 bg-gray-50/50 dark:bg-gray-900/30">
                 <h4 class="text-xs md:text-sm font-bold text-gray-800 dark:text-gray-200 flex items-center gap-1.5 md:gap-2">
                     <div class="p-1 bg-purple-100 dark:bg-purple-900/40 rounded md:rounded-lg"><i data-lucide="lock" class="w-3 h-3 md:w-4 md:h-4 text-purple-600 dark:text-purple-400"></i></div>
-                    Segurança
+                    Segurança e Plano
                 </h4>
             </div>
             <div class="p-3 md:p-5 flex-grow flex flex-col">
+                <!-- Mini-Card do Plano -->
+                <div class="bg-gradient-to-b from-gray-50 to-white dark:from-gray-900/50 dark:to-gray-800/30 rounded-lg md:rounded-xl p-2.5 md:p-3 border border-gray-200 dark:border-gray-800 shadow-sm mb-4">
+                    <div class="flex justify-between items-center mb-2">
+                        <span class="text-[9px] md:text-[10px] font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wider flex items-center gap-1"><i data-lucide="award" class="w-3 h-3"></i> Licença</span>
+                        <span class="text-[9px] font-bold px-1.5 py-0.5 rounded border {% if licenca_usuario == 'Premium' %}text-amber-600 bg-amber-50 border-amber-200 dark:bg-amber-900/20 dark:text-amber-400 dark:border-amber-800/50{% else %}text-indigo-600 bg-indigo-50 border-indigo-200 dark:bg-indigo-900/20 dark:text-indigo-400 dark:border-indigo-800/50{% endif %} uppercase tracking-wider shadow-sm">
+                            {{ licenca_usuario | default('Básica') }}
+                        </span>
+                    </div>
+                    <div class="flex justify-between items-center border-t border-gray-100 dark:border-gray-700/50 pt-2">
+                        <span class="text-[9px] md:text-[10px] font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wider flex items-center gap-1"><i data-lucide="layout-grid" class="w-3 h-3"></i> Módulos</span>
+                        <span class="text-[9px] md:text-[10px] font-bold text-gray-700 dark:text-gray-300">{{ modulos_liberados | default('Básico') }}</span>
+                    </div>
+                </div>
+
                 <form action="#" method="POST" class="space-y-2.5 md:space-y-4 h-full flex flex-col">
                     <div>
                         <label class="block text-[8px] md:text-[10px] font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wider mb-1">Nova Senha</label>
@@ -155,7 +162,7 @@
                         </div>
                     </div>
                     <div>
-                        <label class="block text-[8px] md:text-[10px] font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wider mb-1">Confirmar Nova Senha</label>
+                        <label class="block text-[8px] md:text-[10px] font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wider mb-1">Confirmar Senha</label>
                         <div class="relative">
                             <i data-lucide="key" class="absolute left-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 md:w-4 md:h-4 text-gray-400"></i>
                             <input type="password" name="confirmar_senha" placeholder="••••••••"
@@ -165,7 +172,7 @@
                     
                     <div class="mt-auto pt-2 md:pt-4">
                         <button type="button" onclick="alert('Funcionalidade de alteração de senha em desenvolvimento.')" class="w-full bg-gray-800 dark:bg-gray-100 text-white dark:text-gray-900 font-black py-2 md:py-3 rounded-lg md:rounded-xl text-xs md:text-sm hover:bg-gray-900 dark:hover:bg-white hover:scale-[1.02] active:scale-[0.98] transition-all shadow-sm flex justify-center items-center gap-1.5 md:gap-2">
-                            <i data-lucide="save" class="w-3.5 h-3.5 md:w-4 md:h-4"></i> Atualizar Senha
+                            <i data-lucide="shield-alert" class="w-3.5 h-3.5 md:w-4 md:h-4"></i> Atualizar Senha
                         </button>
                     </div>
                 </form>
@@ -173,13 +180,13 @@
         </div>
 
         <!-- ============================================== -->
-        <!-- BLOCO 3: AJUSTAR RENDA -->
+        <!-- BLOCO 3: FINANÇAS E PATRIMÔNIO -->
         <!-- ============================================== -->
-        <div class="bg-white dark:bg-gray-800 rounded-xl md:rounded-3xl shadow-sm border border-gray-100 dark:border-gray-700 overflow-hidden flex flex-col hover:shadow-md transition-shadow">
-            <div class="px-3 py-2 md:px-5 md:py-4 border-b border-gray-100 dark:border-gray-700 bg-gray-50/50 dark:bg-gray-900/50">
+        <div class="bg-white dark:bg-[#1a1b26] rounded-xl md:rounded-3xl shadow-sm border border-gray-100 dark:border-white/5 overflow-hidden flex flex-col hover:shadow-md transition-shadow">
+            <div class="px-3 py-2 md:px-5 md:py-4 border-b border-gray-100 dark:border-white/5 bg-gray-50/50 dark:bg-gray-900/30">
                 <h4 class="text-xs md:text-sm font-bold text-gray-800 dark:text-gray-200 flex items-center gap-1.5 md:gap-2">
                     <div class="p-1 bg-green-100 dark:bg-green-900/40 rounded md:rounded-lg"><i data-lucide="dollar-sign" class="w-3 h-3 md:w-4 md:h-4 text-green-600 dark:text-green-400"></i></div>
-                    Ajustar Renda
+                    Finanças e Patrimônio
                 </h4>
             </div>
             <div class="p-3 md:p-5 flex-grow flex flex-col">
@@ -193,38 +200,44 @@
                         </div>
                     </div>
 
-                    <!-- Pergunta: Renda Variável (Design Compacto) -->
+                    <div>
+                        <label class="block text-[8px] md:text-[10px] font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wider mb-1">Patrimônio Acumulado (R$)</label>
+                        <div class="relative">
+                            <i data-lucide="landmark" class="absolute left-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 md:w-4 md:h-4 text-gray-400"></i>
+                            <input type="number" step="0.01" name="patrimonio" placeholder="Ex: 15000.00" value="{{ patrimonio_usuario | default('') }}"
+                                   class="w-full pl-7 pr-2 md:pl-9 md:pr-3 py-1.5 md:py-2.5 bg-gray-50 dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-lg md:rounded-xl text-xs md:text-sm font-black text-gray-800 dark:text-gray-100 focus:ring-2 focus:ring-green-500 outline-none transition-all">
+                        </div>
+                    </div>
+
+                    <!-- Pergunta: Renda Variável -->
                     <div class="pt-1 md:pt-2">
                         <label class="block text-[8px] md:text-[10px] font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wider mb-1 md:mb-2">Sua renda é variável?</label>
                         <div class="grid grid-cols-2 gap-2 md:gap-3">
-                            <!-- Botão SIM -->
-                            <label class="relative flex items-center justify-center p-2 md:p-3 border border-gray-200 dark:border-gray-700 rounded-lg md:rounded-xl cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-900/50 transition-all group has-[:checked]:bg-green-50 dark:has-[:checked]:bg-green-900/20 has-[:checked]:border-green-500 dark:has-[:checked]:border-green-500">
+                            <label class="relative flex items-center justify-center p-2 md:p-2.5 border border-gray-200 dark:border-gray-700 rounded-lg md:rounded-xl cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-900/50 transition-all group has-[:checked]:bg-green-50 dark:has-[:checked]:bg-green-900/20 has-[:checked]:border-green-500 dark:has-[:checked]:border-green-500">
                                 <input type="radio" name="renda_variavel" value="sim" {% if renda_variavel == 'sim' %}checked{% endif %} class="sr-only">
                                 <div class="flex items-center gap-1 md:gap-2">
-                                    <div class="w-3 h-3 md:w-4 md:h-4 rounded-full border border-gray-300 dark:border-gray-600 flex items-center justify-center group-has-[:checked]:border-green-500 group-has-[:checked]:bg-green-500">
+                                    <div class="w-3 h-3 md:w-4 md:h-4 rounded-full border border-gray-300 dark:border-gray-600 flex items-center justify-center group-has-[:checked]:border-green-500 group-has-[:checked]:bg-green-500 transition-colors">
                                         <i data-lucide="check" class="w-2 h-2 md:w-3 md:h-3 text-white opacity-0 group-has-[:checked]:opacity-100"></i>
                                     </div>
                                     <span class="text-[9px] md:text-xs font-bold text-gray-600 dark:text-gray-400 group-has-[:checked]:text-green-700 dark:group-has-[:checked]:text-green-400">Sim</span>
                                 </div>
                             </label>
 
-                            <!-- Botão NÃO -->
-                            <label class="relative flex items-center justify-center p-2 md:p-3 border border-gray-200 dark:border-gray-700 rounded-lg md:rounded-xl cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-900/50 transition-all group has-[:checked]:bg-green-50 dark:has-[:checked]:bg-green-900/20 has-[:checked]:border-green-500 dark:has-[:checked]:border-green-500">
+                            <label class="relative flex items-center justify-center p-2 md:p-2.5 border border-gray-200 dark:border-gray-700 rounded-lg md:rounded-xl cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-900/50 transition-all group has-[:checked]:bg-green-50 dark:has-[:checked]:bg-green-900/20 has-[:checked]:border-green-500 dark:has-[:checked]:border-green-500">
                                 <input type="radio" name="renda_variavel" value="nao" {% if renda_variavel != 'sim' %}checked{% endif %} class="sr-only">
                                 <div class="flex items-center gap-1 md:gap-2">
-                                    <div class="w-3 h-3 md:w-4 md:h-4 rounded-full border border-gray-300 dark:border-gray-600 flex items-center justify-center group-has-[:checked]:border-green-500 group-has-[:checked]:bg-green-500">
+                                    <div class="w-3 h-3 md:w-4 md:h-4 rounded-full border border-gray-300 dark:border-gray-600 flex items-center justify-center group-has-[:checked]:border-green-500 group-has-[:checked]:bg-green-500 transition-colors">
                                         <i data-lucide="check" class="w-2 h-2 md:w-3 md:h-3 text-white opacity-0 group-has-[:checked]:opacity-100"></i>
                                     </div>
                                     <span class="text-[9px] md:text-xs font-bold text-gray-600 dark:text-gray-400 group-has-[:checked]:text-green-700 dark:group-has-[:checked]:text-green-400">Não (Fixa)</span>
                                 </div>
                             </label>
                         </div>
-                        <p class="text-[8px] text-gray-400 mt-1.5 leading-tight text-center md:text-left"><strong class="text-gray-500 dark:text-gray-300">Sim:</strong> Zera dia 1º. <strong class="text-gray-500 dark:text-gray-300">Não:</strong> Fixo.</p>
                     </div>
 
                     <div class="mt-auto pt-2 md:pt-4">
                         <button type="submit" class="w-full bg-gradient-to-r from-green-500 to-emerald-600 text-white font-black py-2 md:py-3 rounded-lg md:rounded-xl text-xs md:text-sm hover:from-green-600 hover:to-emerald-700 hover:scale-[1.02] active:scale-[0.98] transition-all shadow-md flex justify-center items-center gap-1.5 md:gap-2">
-                            <i data-lucide="check-circle" class="w-3.5 h-3.5 md:w-4 md:h-4"></i> Salvar Nova Renda
+                            <i data-lucide="check-circle" class="w-3.5 h-3.5 md:w-4 md:h-4"></i> Salvar Finanças
                         </button>
                     </div>
                 </form>
@@ -233,9 +246,28 @@
 
     </div>
     
+    <!-- Script Exclusivo do Perfil para puxar Dados Locais de XP -->
     <script>
         window.addEventListener('DOMContentLoaded', () => {
-            lucide.createIcons();
+            if(typeof lucide !== 'undefined') lucide.createIcons();
+            
+            // Atualiza as tags de Gamificação usando o LocalStorage
+            const user_id = "{{ session.get('user_id', 'visitante') }}";
+            let nivel_atual = parseInt(localStorage.getItem('user_level_' + user_id)) || 1;
+            
+            const patentes = {
+                1: { titulo: 'Aprendiz Financeiro' },
+                2: { titulo: 'Explorador Consciente' },
+                3: { titulo: 'Guardião do Orçamento' },
+                4: { titulo: 'Mestre da Poupança' },
+                5: { titulo: 'Investidor Estrategista' },
+                6: { titulo: 'Lobo de Wall Street' }
+            };
+
+            const patenteAtual = patentes[nivel_atual] || { titulo: 'Magnata Supremo' };
+
+            document.querySelectorAll('.perfil-level-number').forEach(el => el.innerText = nivel_atual);
+            document.querySelectorAll('.perfil-rank-title').forEach(el => el.innerText = patenteAtual.titulo);
         });
     </script>
 {% endblock %}
